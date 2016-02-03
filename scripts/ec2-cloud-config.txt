@@ -1,0 +1,6 @@
+#cloud-config
+disable_root: false
+runcmd:
+  - source /root/.bashrc
+  - sudo ln /dev/null /dev/raw1394
+

@@ -1,0 +1,5 @@
+/target/
+.DS_Store
+/src/main/jnicaffe.cpp
+/straceoutput.txt
+/jars/
