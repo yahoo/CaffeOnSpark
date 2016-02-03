@@ -1,0 +1,44 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+   <!--parent>
+        <groupId>yahoo.yinst.java_base_build</groupId>
+        <artifactId>java_base_build</artifactId>
+        <version>4.0.65</version>
+    </parent-->
+    
+    <groupId>com.yahoo.ml</groupId>
+    <artifactId>caffe</artifactId>
+    <packaging>pom</packaging>
+    <version>0.1-SNAPSHOT</version>
+    <name>caffe</name>
+	
+    <modules>
+        <module>caffe-distri</module>
+        <module>caffe-grid</module>
+    </modules>    
+
+    <distributionManagement>
+      <snapshotRepository>
+        <id>yahoo-local-snapshot</id>
+        <url>scpexe://artifactory-ssh-proxy.corp.yahoo.com:4443/maven-local-snapshot/</url>
+      </snapshotRepository>
+      <repository>
+        <id>yahoo-local-release</id>
+        <url>scpexe://artifactory-ssh-proxy.corp.yahoo.com:4443/maven-local-release/</url>
+      </repository>
+    </distributionManagement>
+    
+    <!-- The following allow for mvn versioning and creation of javadocs at the top level -->
+    <build>
+      <extensions>
+        <extension>
+          <groupId>org.apache.maven.wagon</groupId>
+          <artifactId>wagon-ssh-external</artifactId>
+          <version>2.6</version>
+        </extension>
+      </extensions>
+    </build>
+</project>
+
