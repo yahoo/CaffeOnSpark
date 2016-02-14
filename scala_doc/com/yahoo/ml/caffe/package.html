@@ -1,0 +1,200 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>caffe - com.yahoo.ml.caffe</title>
+          <meta name="description" content="caffe - com.yahoo.ml.caffe" />
+          <meta name="keywords" content="caffe com.yahoo.ml.caffe" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'com.yahoo.ml.caffe.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.yahoo">yahoo</a>.<a href="../package.html" class="extype" name="com.yahoo.ml">ml</a></p>
+        <h1>caffe</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">caffe</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.yahoo.ml.caffe.CaffeOnSpark" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CaffeOnSparkextendsSerializable"></a>
+      <a id="CaffeOnSpark:CaffeOnSpark"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CaffeOnSpark.html"><span class="name">CaffeOnSpark</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">CaffeOnSpark is the main class for distributed deep learning.</p>
+    </li><li name="com.yahoo.ml.caffe.Config" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConfigextendsSerializable"></a>
+      <a id="Config:Config"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Config.html"><span class="name">Config</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">CaffeSpark configuration
+</p>
+    </li><li name="com.yahoo.ml.caffe.DataSource" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DataSource[T1,T2]extendsSerializable"></a>
+      <a id="DataSource[T1,T2]:DataSource[T1,T2]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DataSource.html"><span class="name">DataSource</span></a><span class="tparams">[<span name="T1">T1</span>, <span name="T2">T2</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Base class for various data sources.</p>
+    </li><li name="com.yahoo.ml.caffe.LMDB" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LMDBextendsSeqImageDataSource"></a>
+      <a id="LMDB:LMDB"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LMDB.html"><span class="name">LMDB</span></a><span class="result"> extends <a href="SeqImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">LMDB is a built-in data source class for LMDB data source.</p>
+    </li><li name="com.yahoo.ml.caffe.SeqImageDataSource" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SeqImageDataSourceextendsDataSource[(Array[Byte],Array[Byte]),com.yahoo.ml.jcaffe.MatVector]"></a>
+      <a id="SeqImageDataSource:SeqImageDataSource"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SeqImageDataSource.html"><span class="name">SeqImageDataSource</span></a><span class="result"> extends <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">SeqImageDataSource is a built-in data source class using sequence file format.</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.yahoo.ml.caffe.CaffeOnSpark" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CaffeOnSpark"></a>
+      <a id="CaffeOnSpark:CaffeOnSpark"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CaffeOnSpark$.html"><span class="name">CaffeOnSpark</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.yahoo.ml.caffe.DataSource" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DataSource"></a>
+      <a id="DataSource:DataSource"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DataSource$.html"><span class="name">DataSource</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.yahoo.ml.caffe.LMDB" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LMDB"></a>
+      <a id="LMDB:LMDB"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="LMDB$.html"><span class="name">LMDB</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../lib/template.js"></script>
+    </body>
+      </html>
