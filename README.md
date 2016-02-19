@@ -17,13 +17,13 @@ As a distributed extension of Caffe, CaffeOnSpark supports neural
 network model training, testing and feature extraction.  Caffe users
 could now perform distributed learning using their existing LMDB data
 files other format) and minorly adjusted network configuration (as
-[illustrated](../blob/master/data/lenet_memory_train_test.prototxt#L10-L12).
+[illustrated](../master/data/lenet_memory_train_test.prototxt#L10-L12).
 
 CaffeOnSpark is a Spark package for deep learning. It is complementary
 to non-deep learning libraries MLlib and and Spark SQL.
 CaffeOnSpark's Scala API provides Spark applications with an easy
 mechanism to invoke deep learning (see
-[sample](../blob/master/caffe-grid/src/main/scala/com/yahoo/ml/caffe/examples/MyMLPipeline.scala))
+[sample](../master/caffe-grid/src/main/scala/com/yahoo/ml/caffe/examples/MyMLPipeline.scala))
 over distributed datasets.
 
 CaffeOnSpark was developed by Yahoo for [large-scale distributed deep
