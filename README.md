@@ -17,7 +17,7 @@ As a distributed extension of Caffe, CaffeOnSpark supports neural
 network model training, testing and feature extraction.  Caffe users
 could now perform distributed learning using their existing LMDB data
 files other format) and minorly adjusted network configuration (as
-[illustrated](../master/data/lenet_memory_train_test.prototxt#L10-L12).
+[illustrated](../master/data/lenet_memory_train_test.prototxt#L10-L12)).
 
 CaffeOnSpark is a Spark package for deep learning. It is complementary
 to non-deep learning libraries MLlib and and Spark SQL.
