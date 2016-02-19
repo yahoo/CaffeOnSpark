@@ -47,15 +47,15 @@ CaffeOnSpark provides some important benefits over alternative deep learning sol
 
 ## Documentations
 
-CaffeOnSpark [wiki site](https://github.com/yahoo/CaffeOnSpark/wiki) for detailed documentations including:
-* [Build instruction](../wiki/build)
+CaffeOnSpark [wiki site](../../wiki) for detailed documentations including:
+* [Build instruction](../../wiki/build)
 * Get Started guides
  * [Start CaffeOnSpark on standalone cluster](../wiki/GetStarted_local)
- * [Start CaffeOnSpark on Amazon EC2](../wiki/GetStarted_EC2) using a pre-built Amazon machine image (AMI). 
+ * [Start CaffeOnSpark on Amazon EC2](../../wiki/GetStarted_EC2) using a pre-built Amazon machine image (AMI). 
 * References
  * [API Reference](http://yahoo.github.io/CaffeOnSpark/scala_doc/)
- * [CLI Reference](../wiki/CLI)
-* [Create your own CaffeOnSpark AMI](../wiki/Create_AMI)
+ * [CLI Reference](../../wiki/CLI)
+* [Create your own CaffeOnSpark AMI](../../wiki/Create_AMI)
 
 ## Remarks
 
