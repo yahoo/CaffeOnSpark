@@ -45,19 +45,14 @@ CaffeOnSpark provides some important benefits over alternative deep learning sol
 * Additional data formats and network interfaces could be easily added.
 * It's easily deployabe at public clouds (ex. AWS EC2) and private cloud.
 
-## Documentations
+## Using CaffeOnSpark
 
-CaffeOnSpark [wiki site](../../wiki) for detailed documentations including:
-* [Build instruction](../../wiki/build)
-* Get Started guides
- * [Start CaffeOnSpark on standalone cluster](../wiki/GetStarted_local)
- * [Start CaffeOnSpark on Amazon EC2](../../wiki/GetStarted_EC2) using a pre-built Amazon machine image (AMI). 
-* References
- * [API Reference](http://yahoo.github.io/CaffeOnSpark/scala_doc/)
- * [CLI Reference](../../wiki/CLI)
-* [Create your own CaffeOnSpark AMI](../../wiki/Create_AMI)
+Please check CaffeOnSpark [wiki site](../../wiki) for detailed
+documentations including [buiding instruction](../../wiki/build), and
+started guides for [standalone cluster](../../wiki/GetStarted_local)
+and [EC2 cluster](../../wiki/GetStarted_EC2).
 
-## Remarks
+Please note: 
 
 * Batch sizes specified in prototxt files are per device.
 * Memory layers should not be shared among GPUs, and thus "share_in_parallel: false" is required for layer configuration.
