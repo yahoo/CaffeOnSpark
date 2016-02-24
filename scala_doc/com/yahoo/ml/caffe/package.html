@@ -98,8 +98,21 @@
       </span>
       </h4>
       <p class="comment cmt">Base class for various data sources.</p>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ImageDataSourceextendsDataSource[(Array[Byte],Array[Byte]),com.yahoo.ml.jcaffe.MatVector]"></a>
+      <a id="ImageDataSource:ImageDataSource"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ImageDataSource.html"><span class="name">ImageDataSource</span></a><span class="result"> extends <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">abstract image data source for images.</p>
     </li><li name="com.yahoo.ml.caffe.LMDB" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="LMDBextendsSeqImageDataSource"></a>
+      <a id="LMDBextendsImageDataSource"></a>
       <a id="LMDB:LMDB"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -107,12 +120,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="LMDB.html"><span class="name">LMDB</span></a><span class="result"> extends <a href="SeqImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a></span>
+        <a href="LMDB.html"><span class="name">LMDB</span></a><span class="result"> extends <a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></span>
       </span>
       </h4>
       <p class="comment cmt">LMDB is a built-in data source class for LMDB data source.</p>
     </li><li name="com.yahoo.ml.caffe.SeqImageDataSource" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="SeqImageDataSourceextendsDataSource[(Array[Byte],Array[Byte]),com.yahoo.ml.jcaffe.MatVector]"></a>
+      <a id="SeqImageDataSourceextendsImageDataSource"></a>
       <a id="SeqImageDataSource:SeqImageDataSource"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -120,7 +133,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="SeqImageDataSource.html"><span class="name">SeqImageDataSource</span></a><span class="result"> extends <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</span>
+        <a href="SeqImageDataSource.html"><span class="name">SeqImageDataSource</span></a><span class="result"> extends <a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></span>
       </span>
       </h4>
       <p class="comment cmt">SeqImageDataSource is a built-in data source class using sequence file format.</p>

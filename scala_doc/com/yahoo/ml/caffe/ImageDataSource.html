@@ -2,9 +2,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>DataSource - com.yahoo.ml.caffe.DataSource</title>
-          <meta name="description" content="DataSource - com.yahoo.ml.caffe.DataSource" />
-          <meta name="keywords" content="DataSource com.yahoo.ml.caffe.DataSource" />
+          <title>ImageDataSource - com.yahoo.ml.caffe.ImageDataSource</title>
+          <meta name="description" content="ImageDataSource - com.yahoo.ml.caffe.ImageDataSource" />
+          <meta name="keywords" content="ImageDataSource com.yahoo.ml.caffe.ImageDataSource" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -12,7 +12,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../../index.html';
-            var hash = 'com.yahoo.ml.caffe.DataSource';
+            var hash = 'com.yahoo.ml.caffe.ImageDataSource';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -24,9 +24,9 @@
         </head>
         <body class="type">
       <div id="definition">
-        <a href="DataSource$.html" title="Go to companion"><img src="../../../../lib/class_to_object_big.png" /></a>
+        <img src="../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.yahoo">yahoo</a>.<a href="../package.html" class="extype" name="com.yahoo.ml">ml</a>.<a href="package.html" class="extype" name="com.yahoo.ml.caffe">caffe</a></p>
-        <h1><a href="DataSource$.html" title="Go to companion">DataSource</a></h1>
+        <h1>ImageDataSource</h1>
       </div>
 
       <h4 id="signature" class="signature">
@@ -35,19 +35,18 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">DataSource</span><span class="tparams">[<span name="T1">T1</span>, <span name="T2">T2</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">ImageDataSource</span><span class="result"> extends <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Base class for various data sources.</p><p>Each subclass must have a constructor with the following signature: (conf: Config, layerId: Int, isTrain: Boolean).
-This is required by CaffeOnSpark at startup.
-</p></div><dl class="paramcmts block"><dt class="tparam">T1</dt><dd class="cmt"><p>class of entries extracted from RDD</p></dd><dt class="tparam">T2</dt><dd class="cmt"><p>class of data blob in batch
-</p></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>abstract image data source for images.
+Its subclass should construct RDD of  ((id: String, label: String), value : byte[]).
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a>, <a href="LMDB.html" class="extype" name="com.yahoo.ml.caffe.LMDB">LMDB</a>, <a href="SeqImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a></div>
+          <div class="subClasses hiddenContent"><a href="LMDB.html" class="extype" name="com.yahoo.ml.caffe.LMDB">LMDB</a>, <a href="SeqImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a></div>
         </div></div>
         
 
@@ -65,7 +64,7 @@ This is required by CaffeOnSpark at startup.
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.yahoo.ml.caffe.DataSource"><span>DataSource</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.yahoo.ml.caffe.ImageDataSource"><span>ImageDataSource</span></li><li class="in" name="com.yahoo.ml.caffe.DataSource"><span>DataSource</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -85,19 +84,20 @@ This is required by CaffeOnSpark at startup.
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="com.yahoo.ml.caffe.DataSource#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(conf:com.yahoo.ml.caffe.Config,layerId:Int,isTrain:Boolean,STOP_MARK:T1):com.yahoo.ml.caffe.DataSource[T1,T2]"></a>
-      <a id="&lt;init&gt;:DataSource[T1,T2]"></a>
+              <ol><li name="com.yahoo.ml.caffe.ImageDataSource#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="&lt;init&gt;(conf:com.yahoo.ml.caffe.Config,layerId:Int,isTrain:Boolean):com.yahoo.ml.caffe.ImageDataSource"></a>
+      <a id="&lt;init&gt;:ImageDataSource"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">DataSource</span><span class="params">(<span name="conf">conf: <a href="Config.html" class="extype" name="com.yahoo.ml.caffe.Config">Config</a></span>, <span name="layerId">layerId: <span class="extype" name="scala.Int">Int</span></span>, <span name="isTrain">isTrain: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="STOP_MARK">STOP_MARK: <span class="extype" name="com.yahoo.ml.caffe.DataSource.T1">T1</span></span>)</span>
+        <span class="name">ImageDataSource</span><span class="params">(<span name="conf">conf: <a href="Config.html" class="extype" name="com.yahoo.ml.caffe.Config">Config</a></span>, <span name="layerId">layerId: <span class="extype" name="scala.Int">Int</span></span>, <span name="isTrain">isTrain: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">conf</dt><dd class="cmt"><p>CaffeSpark configuration</p></dd><dt class="param">layerId</dt><dd class="cmt"><p>the layer index in the network protocol file</p></dd><dt class="param">STOP_MARK</dt><dd class="cmt"><p>stop mark to indicate source is exhausted</p></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">conf</dt><dd class="cmt"><p>CaffeSpark configuration</p></dd><dt class="param">layerId</dt><dd class="cmt"><p>the layer index in the network protocol file</p></dd><dt class="param">isTrain</dt><dd class="cmt"><p>
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -105,63 +105,20 @@ This is required by CaffeOnSpark at startup.
 
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="com.yahoo.ml.caffe.DataSource#dummyDataBlobs" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="dummyDataBlobs():Array[com.yahoo.ml.jcaffe.FloatBlob]"></a>
-      <a id="dummyDataBlobs():Array[FloatBlob]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">dummyDataBlobs</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="com.yahoo.ml.jcaffe.FloatBlob">FloatBlob</span>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
-</p></dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#dummyDataHolder" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="dummyDataHolder():T2"></a>
-      <a id="dummyDataHolder():T2"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">dummyDataHolder</span><span class="params">()</span><span class="result">: <span class="extype" name="com.yahoo.ml.caffe.DataSource.T2">T2</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
-</p></dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#makeRDD" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+              <ol><li name="com.yahoo.ml.caffe.DataSource#makeRDD" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="makeRDD(sc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[T1]"></a>
-      <a id="makeRDD(SparkContext):RDD[T1]"></a>
+      <a id="makeRDD(SparkContext):RDD[(Array[Byte],Array[Byte])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">makeRDD</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="com.yahoo.ml.caffe.DataSource.T1">T1</span>]</span>
+        <span class="name">makeRDD</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">construct a sample RDD</p><div class="fullcomment"><div class="comment cmt"><p>construct a sample RDD</p></div><dl class="paramcmts block"><dt class="param">sc</dt><dd class="cmt"><p>spark context</p></dd><dt>returns</dt><dd class="cmt"><p>RDD created from this source
-</p></dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#nextBatch" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="nextBatch(sampleIds:Array[String],data:T2,labels:com.yahoo.ml.jcaffe.FloatBlob):Boolean"></a>
-      <a id="nextBatch(Array[String],T2,FloatBlob):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">nextBatch</span><span class="params">(<span name="sampleIds">sampleIds: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="data">data: <span class="extype" name="com.yahoo.ml.caffe.DataSource.T2">T2</span></span>, <span name="labels">labels: <span class="extype" name="com.yahoo.ml.jcaffe.FloatBlob">FloatBlob</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">create a batch of samples extracted from source queue</p><div class="fullcomment"><div class="comment cmt"><p>create a batch of samples extracted from source queue</p><p>This method is Invoked by Transformer thread.
-You should extract samples from source queue, parse it and produce a batch.</p></div><dl class="paramcmts block"><dt class="param">sampleIds</dt><dd class="cmt"><p>holder for sample Ids</p></dd><dt class="param">data</dt><dd class="cmt"><p>holder for data blob</p></dd><dt class="param">labels</dt><dd class="cmt"><p>holder for label blob</p></dd><dt>returns</dt><dd class="cmt"><p>true if successful
-</p></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -232,19 +189,19 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#STOP_MARK" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.yahoo.ml.caffe.DataSource#STOP_MARK" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="STOP_MARK:T1"></a>
-      <a id="STOP_MARK:T1"></a>
+      <a id="STOP_MARK:(Array[Byte],Array[Byte])"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">STOP_MARK</span><span class="result">: <span class="extype" name="com.yahoo.ml.caffe.DataSource.T1">T1</span></span>
+        <span class="name">STOP_MARK</span><span class="result">: (<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">stop mark to indicate source is exhausted</p>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -258,7 +215,7 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#batchSize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.yahoo.ml.caffe.DataSource#batchSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="batchSize():Int"></a>
       <a id="batchSize():Int"></a>
       <h4 class="signature">
@@ -271,7 +228,8 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <p class="shortcomment cmt">batch size
-</p>
+</p><div class="fullcomment"><div class="comment cmt"><p>batch size
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="com.yahoo.ml.caffe.DataSource#batchSize_" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="batchSize_:Int"></a>
       <a id="batchSize_:Int"></a>
@@ -284,7 +242,7 @@ You should extract samples from source queue, parse it and produce a batch.</p><
         <span class="name">batchSize_</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -304,19 +262,34 @@ You should extract samples from source queue, parse it and produce a batch.</p><
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#conf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="conf:com.yahoo.ml.caffe.Config"></a>
-      <a id="conf:Config"></a>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#dummyDataBlobs" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="dummyDataBlobs():Array[com.yahoo.ml.jcaffe.FloatBlob]"></a>
+      <a id="dummyDataBlobs():Array[FloatBlob]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">conf</span><span class="result">: <a href="Config.html" class="extype" name="com.yahoo.ml.caffe.Config">Config</a></span>
+        <span class="name">dummyDataBlobs</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="com.yahoo.ml.jcaffe.FloatBlob">FloatBlob</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">CaffeSpark configuration</p>
+      <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#dummyDataHolder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="dummyDataHolder():com.yahoo.ml.jcaffe.MatVector"></a>
+      <a id="dummyDataHolder():MatVector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">dummyDataHolder</span><span class="params">()</span><span class="result">: <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -388,7 +361,7 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="init():Boolean"></a>
       <a id="init():Boolean"></a>
       <h4 class="signature">
@@ -401,7 +374,7 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <p class="shortcomment cmt"> initialization of a Source within a process</p><div class="fullcomment"><div class="comment cmt"><p> initialization of a Source within a process</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>true if successfully initialized
-</p></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -415,32 +388,6 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#isTrain" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="isTrain:Boolean"></a>
-      <a id="isTrain:Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">isTrain</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="com.yahoo.ml.caffe.DataSource#layerId" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="layerId:Int"></a>
-      <a id="layerId:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">layerId</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the layer index in the network protocol file</p>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -454,6 +401,21 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#nextBatch" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="nextBatch(sampleIds:Array[String],mats:com.yahoo.ml.jcaffe.MatVector,labels:com.yahoo.ml.jcaffe.FloatBlob):Boolean"></a>
+      <a id="nextBatch(Array[String],MatVector,FloatBlob):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">nextBatch</span><span class="params">(<span name="sampleIds">sampleIds: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="mats">mats: <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span></span>, <span name="labels">labels: <span class="extype" name="com.yahoo.ml.jcaffe.FloatBlob">FloatBlob</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">create a batch of samples extracted from source queue</p><div class="fullcomment"><div class="comment cmt"><p>create a batch of samples extracted from source queue</p><p>This method is Invoked by Transformer thread.
+You should extract samples from source queue, parse it and produce a batch.</p></div><dl class="paramcmts block"><dt class="param">sampleIds</dt><dd class="cmt"><p>holder for sample Ids</p></dd><dt class="param">labels</dt><dd class="cmt"><p>holder for label blob</p></dd><dt>returns</dt><dd class="cmt"><p>true if successful
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -493,7 +455,7 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       </span>
       </h4>
       <p class="shortcomment cmt">adjust batch size</p><div class="fullcomment"><div class="comment cmt"><p>adjust batch size</p></div><dl class="paramcmts block"><dt class="param">size</dt><dd class="cmt"><p>the new batch size
-</p></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="com.yahoo.ml.caffe.DataSource#solverMode" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="solverMode:Int"></a>
       <a id="solverMode:Int"></a>
@@ -506,7 +468,7 @@ You should extract samples from source queue, parse it and produce a batch.</p><
         <span class="name">solverMode</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="com.yahoo.ml.caffe.DataSource#sourceFilePath" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="sourceFilePath:String"></a>
       <a id="sourceFilePath:String"></a>
@@ -519,20 +481,20 @@ You should extract samples from source queue, parse it and produce a batch.</p><
         <span class="name">sourceFilePath</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.DataSource#sourceQueue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.DataSource#sourceQueue" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="sourceQueue:java.util.concurrent.ArrayBlockingQueue[T1]"></a>
-      <a id="sourceQueue:ArrayBlockingQueue[T1]"></a>
+      <a id="sourceQueue:ArrayBlockingQueue[(Array[Byte],Array[Byte])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">sourceQueue</span><span class="result">: <span class="extype" name="java.util.concurrent.ArrayBlockingQueue">ArrayBlockingQueue</span>[<span class="extype" name="com.yahoo.ml.caffe.DataSource.T1">T1</span>]</span>
+        <span class="name">sourceQueue</span><span class="result">: <span class="extype" name="java.util.concurrent.ArrayBlockingQueue">ArrayBlockingQueue</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -625,7 +587,9 @@ You should extract samples from source queue, parse it and produce a batch.</p><
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.Serializable">
+        <div class="parent" name="com.yahoo.ml.caffe.DataSource">
+              <h3>Inherited from <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</h3>
+            </div><div class="parent" name="scala.Serializable">
               <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
             </div><div class="parent" name="java.io.Serializable">
               <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>

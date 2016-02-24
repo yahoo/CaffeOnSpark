@@ -35,7 +35,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">SeqImageDataSource</span><span class="result"> extends <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</span>
+        <span class="name">SeqImageDataSource</span><span class="result"> extends <a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></span>
       </span>
       </h4>
       
@@ -43,10 +43,7 @@
 Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
-        </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="LMDB.html" class="extype" name="com.yahoo.ml.caffe.LMDB">LMDB</a></div>
+          <div class="superTypes hiddenContent"><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a>, <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +61,7 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.yahoo.ml.caffe.SeqImageDataSource"><span>SeqImageDataSource</span></li><li class="in" name="com.yahoo.ml.caffe.DataSource"><span>DataSource</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.yahoo.ml.caffe.SeqImageDataSource"><span>SeqImageDataSource</span></li><li class="in" name="com.yahoo.ml.caffe.ImageDataSource"><span>ImageDataSource</span></li><li class="in" name="com.yahoo.ml.caffe.DataSource"><span>DataSource</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -245,7 +242,7 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.SeqImageDataSource#dummyDataBlobs" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#dummyDataBlobs" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="dummyDataBlobs():Array[com.yahoo.ml.jcaffe.FloatBlob]"></a>
       <a id="dummyDataBlobs():Array[FloatBlob]"></a>
       <h4 class="signature">
@@ -258,8 +255,8 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
       </span>
       </h4>
       <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
-</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.SeqImageDataSource#dummyDataHolder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#dummyDataHolder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="dummyDataHolder():com.yahoo.ml.jcaffe.MatVector"></a>
       <a id="dummyDataHolder():MatVector"></a>
       <h4 class="signature">
@@ -272,7 +269,7 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
       </span>
       </h4>
       <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
-</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -344,7 +341,7 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.SeqImageDataSource#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="init():Boolean"></a>
       <a id="init():Boolean"></a>
       <h4 class="signature">
@@ -357,7 +354,7 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
       </span>
       </h4>
       <p class="shortcomment cmt"> initialization of a Source within a process</p><div class="fullcomment"><div class="comment cmt"><p> initialization of a Source within a process</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>true if successfully initialized
-</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -398,7 +395,7 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.SeqImageDataSource#nextBatch" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#nextBatch" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="nextBatch(sampleIds:Array[String],mats:com.yahoo.ml.jcaffe.MatVector,labels:com.yahoo.ml.jcaffe.FloatBlob):Boolean"></a>
       <a id="nextBatch(Array[String],MatVector,FloatBlob):Boolean"></a>
       <h4 class="signature">
@@ -412,7 +409,7 @@ Each entry of sequence is a tuple ((id: String, label: String), value : byte[]).
       </h4>
       <p class="shortcomment cmt">create a batch of samples extracted from source queue</p><div class="fullcomment"><div class="comment cmt"><p>create a batch of samples extracted from source queue</p><p>This method is Invoked by Transformer thread.
 You should extract samples from source queue, parse it and produce a batch.</p></div><dl class="paramcmts block"><dt class="param">sampleIds</dt><dd class="cmt"><p>holder for sample Ids</p></dd><dt class="param">labels</dt><dd class="cmt"><p>holder for label blob</p></dd><dt>returns</dt><dd class="cmt"><p>true if successful
-</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -584,7 +581,9 @@ You should extract samples from source queue, parse it and produce a batch.</p><
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="com.yahoo.ml.caffe.DataSource">
+        <div class="parent" name="com.yahoo.ml.caffe.ImageDataSource">
+              <h3>Inherited from <a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></h3>
+            </div><div class="parent" name="com.yahoo.ml.caffe.DataSource">
               <h3>Inherited from <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</h3>
             </div><div class="parent" name="scala.Serializable">
               <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
