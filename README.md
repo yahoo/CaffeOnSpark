@@ -34,7 +34,7 @@ content classification and several other use cases.
 
 ## Why CaffeOnSpark?
 
-CaffeOnSpark provides some important benefits over alternative deep learning solutions.
+CaffeOnSpark provides some important benefits (see [our blog](http://yahoohadoop.tumblr.com/post/139916563586/caffeonspark-open-sourced-for-distributed-deep)) over alternative deep learning solutions.  
 
 * It enables model training, test and feature extraction directly on Hadoop datasets stored in HDFS on Hadoop clusters.
 * It turns your Hadoop or Spark cluster(s) into a powerful platform for deep learning, without the need to set up a new dedicated cluster for deep learning separately.
@@ -48,9 +48,11 @@ CaffeOnSpark provides some important benefits over alternative deep learning sol
 ## Using CaffeOnSpark
 
 Please check CaffeOnSpark [wiki site](../../wiki) for detailed
-documentations including [buiding instruction](../../wiki/build), and
-getting started guides for [standalone cluster](../../wiki/GetStarted_local)
-and [AWS EC2 cluster](../../wiki/GetStarted_EC2).
+documentations such as [building instruction](../../wiki/build), [API
+reference](http://yahoo.github.io/CaffeOnSpark/scala_doc/#com.yahoo.ml.caffe.package)
+and getting started guides for [standalone
+cluster](../../wiki/GetStarted_local) and [AWS EC2
+cluster](../../wiki/GetStarted_EC2).
 
 Please note: 
 
