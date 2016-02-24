@@ -43,7 +43,7 @@ CaffeOnSpark provides some important benefits over alternative deep learning sol
 * High-level API empowers Spark applications to easily conduct deep learning. 
 * Incremental learning is supported to leverage previously trained models or snapshots. 
 * Additional data formats and network interfaces could be easily added.
-* It's can be easily deployed on public cloud (ex. AWS EC2) or a private cloud.
+* It can be easily deployed on public cloud (ex. AWS EC2) or a private cloud.
 
 ## Using CaffeOnSpark
 
