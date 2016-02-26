@@ -1,0 +1,4 @@
+cat1.jpg 0
+cat2.jpg 0
+dog1.jpg 1
+dog2.jpg 1
