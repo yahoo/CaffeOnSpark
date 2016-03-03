@@ -26,13 +26,8 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     options.addOption("label", "label", true, "name of label blobs to be included in features")
     options.addOption("inputFormat", "inputFormat", true,
       "input dataframe format, currently support json and parquet, default: json")
-    options.addOption("idExpr", "idExpr", true, "SQL of ID column. default: id")
-    options.addOption("labelExpr", "labelExpr", true, "SQL of label column. default: label")
-    options.addOption("channelsExpr", "channelsExpr", true, "SQL of channels column. default: channels")
-    options.addOption("heightExpr", "heightExpr", true, "SQL of height column. default: height")
-    options.addOption("widthExpr", "widthExpr", true, "SQL of width column. default: width")
-    options.addOption("encodedExpr", "encodedExpr", true, "SQL of encoded column. default: encoded")
-    options.addOption("valueExpr", "valueExpr", true, "SQL of value column. default: value")
+    options.addOption("select", "select", true, "Dataframe SQL statements. default: none")
+    options.addOption("encoded", "encoded", false, "Dataframe's 'data' column is encoded. default: false")
     options.addOption("outputFormat", "outputFormat", true,
       "feature output format, currently support json and parquet, default: json")
     options.addOption("model", "model", true, "model path")
@@ -150,33 +145,13 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
    */
   var outputFormat : String = if (cmd.hasOption("outputFormat")) cmd.getOptionValue("outputFormat") else "json"
   /**
-   * dataframe SQL expression to select an id column
+   * dataframe SQL expression to select columns
    */
-  var idExpr : String = if (cmd.hasOption("idExpr")) cmd.getOptionValue("idExpr") else "id"
+  var select : Array[String] = if (cmd.hasOption("select")) cmd.getOptionValues("select") else null
   /**
-   * dataframe SQL expression to select an label column
+   * dataframe's data column is encoded or not
    */
-  var labelExpr : String = if (cmd.hasOption("labelExpr")) cmd.getOptionValue("labelExpr") else "label"
-  /**
-   * dataframe SQL expression to select an channels column (default: null)
-   */
-  var channelsExpr : String = if (cmd.hasOption("channelsExpr")) cmd.getOptionValue("channelsExpr") else "channels"
-  /**
-   * dataframe SQL expression to select an height column (default: null)
-   */
-  var heightExpr : String = if (cmd.hasOption("heightExpr")) cmd.getOptionValue("heightExpr") else "height"
-  /**
-   * dataframe SQL expression to select an label width (default: null)
-   */
-  var widthExpr : String = if (cmd.hasOption("widthExpr")) cmd.getOptionValue("widthExpr") else "width"
-  /**
-   * dataframe SQL expression to select an encoded width (default: null)
-   */
-  var encodedExpr : String = if (cmd.hasOption("encodedExpr")) cmd.getOptionValue("encodedExpr") else "encoded"
-  /**
-   * dataframe SQL expression to select an value column
-   */
-  var valueExpr : String = if (cmd.hasOption("valueExpr")) cmd.getOptionValue("valueExpr") else "value"
+  var encoded : Boolean = cmd.hasOption("encoded")
 
   /* tool: input path */
   var imageRoot : String = if (cmd.hasOption("imageRoot")) cmd.getOptionValue("imageRoot") else null
@@ -247,13 +222,8 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     buildr.append("features:").append(features.mkString(",")).append("\n")
     buildr.append("label:").append(label).append("\n")
     buildr.append("inputFormat:").append(inputFormat).append("\n")
-    buildr.append("idExpr:").append(idExpr).append("\n")
-    buildr.append("labelExpr:").append(labelExpr).append("\n")
-    buildr.append("channelsExpr:").append(channelsExpr).append("\n")
-    buildr.append("heightExpr:").append(heightExpr).append("\n")
-    buildr.append("widthExpr:").append(widthExpr).append("\n")
-    buildr.append("encodedExpr:").append(encodedExpr).append("\n")
-    buildr.append("valueExpr:").append(valueExpr).append("\n")
+    buildr.append("select:").append(select.mkString(",")).append("\n")
+    buildr.append("encoded:").append(encoded).append("\n")
     buildr.append("outputFormat:").append(outputFormat).append("\n")
     buildr.append("model:").append(modelPath).append("\n")
     buildr.append("output:").append(outputPath).append("\n")

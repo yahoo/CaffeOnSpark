@@ -15,7 +15,7 @@ object LMDB2DataFrame {
     StructField("height", IntegerType,  true),
     StructField("width", IntegerType,  true),
     StructField("encoded", BooleanType,  true),
-    StructField("value", BinaryType, false)))
+    StructField("data", BinaryType, false)))
 
   def main(args: Array[String]) {
     val sc_conf = new SparkConf()

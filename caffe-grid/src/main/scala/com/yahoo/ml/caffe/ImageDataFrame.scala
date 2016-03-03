@@ -5,14 +5,14 @@ package com.yahoo.ml.caffe
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.storage.StorageLevel
 import org.slf4j.{LoggerFactory, Logger}
 
 /**
  * ImageDataFrame is a built-in data source class using data frame format.
- * Each entry of sequence is a trip
- * (id: String, label: String, Int channels, Int height, Int width, data : byte[]).
+ * Each entry of sequence is a tuple:
+ * (id: String, label: String, channels :Int, height:Int, width:Int, encoded: Boolean, data : byte[]).
  *
  * @param conf CaffeSpark configuration
  * @param layerId the layer index in the network protocol file
@@ -21,56 +21,42 @@ import org.slf4j.{LoggerFactory, Logger}
 class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
   extends ImageDataSource(conf, layerId, isTrain) {
 
-  private def getValueAsBytes(value : Any) = {
-    val seq: Array[Byte] =value match {
-      case str: String => str.getBytes
-      case arr: Array[Byte@unchecked] => arr
-      case _ => {
-        log.error("Unsupport value type")
-        null
-      }
-    }
-
-    if (seq == null) null else seq.clone()
-  }
-
   /* construct a sample RDD */
   def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
-    //Data Frame
     val sqlContext = new SQLContext(sc)
-    val df: DataFrame = sqlContext.read.format(conf.inputFormat).load(sourceFilePath)
+    //load DataFrame
+    var df: DataFrame = sqlContext.read.format(conf.inputFormat).load(sourceFilePath)
 
-    val rdd: RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] =
-      if (conf.channelsExpr == null || conf.channelsExpr.isEmpty
-        || conf.heightExpr == null || conf.heightExpr.isEmpty
-        || conf.widthExpr == null || conf.widthExpr.isEmpty
-        || conf.encodedExpr == null || conf.encodedExpr.isEmpty) {
-        df.selectExpr(conf.idExpr, conf.labelExpr, conf.valueExpr)
-          .map(row => {
-          var id: String = if (row.isNullAt(0)) "" else row.getAs[String](0)
-          var label: String = row.getAs[String](1)
-          val data: Array[Byte] = getValueAsBytes(row(2))
+    //select columns if specified
+    if (conf.select != null)
+    df = df.selectExpr(conf.select:_*)
 
-          (id, label, 1, 0, 0, false, data)
-        })
-      } else {
-        df.selectExpr(conf.idExpr, conf.labelExpr,
-          conf.channelsExpr, conf.heightExpr, conf.widthExpr,
-          conf.encodedExpr, conf.valueExpr)
-          .map(row => {
-          var id: String = if (row.isNullAt(0)) "" else row.getAs[String](0)
-          var label: String = row.getAs[String](1)
-          val channels = if (row.isNullAt(2)) 1 else row.getInt(2)
-          val height = if (row.isNullAt(3)) 1 else row.getInt(3)
-          val width = if (row.isNullAt(4)) 1 else row.getInt(4)
-          val encoded = if (row.isNullAt(5)) false else row.getBoolean(5)
-          val data: Array[Byte] = getValueAsBytes(row(6))
+    //check optional columns
+    val column_names : Array[String] = df.columns
+    val has_id : Boolean = column_names.contains("id")
+    val has_channels : Boolean = column_names.contains("channels")
+    val has_height : Boolean = column_names.contains("height")
+    val has_width : Boolean = column_names.contains("width")
+    val has_encoded : Boolean = column_names.contains("encoded")
 
-          (id, label, channels, height, width, encoded, data)
-        })
-      }
-
-    rdd.persist(StorageLevel.DISK_ONLY)
+    //mapping each row to RDD tuple
+    df.map(row => {
+        var id: String = if (!has_id) "" else row.getAs[String]("id")
+        var label: String = row.getAs[String]("label")
+        val channels  : Int = if (!has_channels) 0 else row.getAs[Int]("channels")
+        val height  : Int = if (!has_height) 0 else row.getAs[Int]("height")
+        val width : Int = if (!has_width) 0 else row.getAs[Int]("width")
+        val encoded : Boolean = if (!has_encoded) conf.encoded else row.getAs[Boolean]("encoded")
+        val data : Array[Byte] = row.getAs[Any]("data") match {
+          case str: String => str.getBytes
+          case arr: Array[Byte@unchecked] => arr
+          case _ => {
+            log.error("Unsupport value type")
+            null
+          }
+        }
+        (id, label, channels, height, width, encoded, data)
+      }).persist(StorageLevel.DISK_ONLY)
   }
 }
 
