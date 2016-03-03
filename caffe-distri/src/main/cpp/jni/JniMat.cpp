@@ -11,10 +11,10 @@
 /*
  * Class:     com_yahoo_ml_jcaffe_Mat
  * Method:    allocate
- * Signature: (III[B)Z
+ * Signature: (III[)Z
  */
 JNIEXPORT jlong JNICALL Java_com_yahoo_ml_jcaffe_Mat_allocate
-  (JNIEnv *env, jobject object, jint height, jint width,  jbyteArray array, jboolean isSigned) {
+  (JNIEnv *env, jobject object, jint channels, jint height, jint width,  jbyteArray array) {
 
     jboolean isCopy = false;
     jbyte *data = env->GetByteArrayElements(array, &isCopy);
@@ -38,7 +38,7 @@ JNIEXPORT jlong JNICALL Java_com_yahoo_ml_jcaffe_Mat_allocate
     }
 
     /* create a native Mat object */
-    cv::Mat* native_ptr = new cv::Mat(height, width, (isSigned? CV_8SC1 : CV_8UC1), data);
+    cv::Mat* native_ptr = new cv::Mat(height, width, CV_8UC(channels), data);
 
     /* associate native object with JVM object */
     SetNativeAddress(env, object, native_ptr);
