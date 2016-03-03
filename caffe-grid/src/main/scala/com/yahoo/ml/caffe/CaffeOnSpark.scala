@@ -51,14 +51,7 @@ object CaffeOnSpark {
         val featureDF = caffeSpark.features(source)
         
         //save extracted features into the specified file
-        val rdf = source.conf.outputFormat match {
-          case "parquet" => {
-            featureDF.write.parquet(source.conf.outputPath)
-          }
-          case _ => {
-            featureDF.write.json(source.conf.outputPath)
-          }
-        }
+        val rdf = featureDF.write.format(source.conf.outputFormat).save(source.conf.outputPath)
       }else { //test
         val result = caffeSpark.test(source)
 
@@ -173,7 +166,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     //Phase 5: find the minimum size of partitions
     var minPartSize = 0
     if (conf.clusterSize > 1) {
-      minPartSize = trainDataRDD.mapPartitions {
+      val sizeRDD = trainDataRDD.mapPartitions {
         iter => {
           val partSize = iter.size
           // synchronize among the executors,
@@ -182,8 +175,9 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           processor.sync()
           Iterator(partSize)
         }
-      }.min
-      log.info("minPartSize = " + minPartSize)
+      }.persist()
+      minPartSize = sizeRDD.min()
+      log.info("Partition size: min=" + minPartSize + " max="+sizeRDD.max())
     }
 
     //Phase 6: feed the processor

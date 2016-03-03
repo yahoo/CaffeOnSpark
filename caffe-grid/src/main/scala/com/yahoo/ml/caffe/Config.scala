@@ -24,11 +24,22 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     options.addOption("test", "test", false, "test mode")
     options.addOption("features", "features", true, "name of output blobs")
     options.addOption("label", "label", true, "name of label blobs to be included in features")
-    options.addOption("outputFormat", "outputFormat", true, "feature output format, currently support json and parquet, default: json")
+    options.addOption("inputFormat", "inputFormat", true,
+      "input dataframe format, currently support json and parquet, default: json")
+    options.addOption("idExpr", "idExpr", true, "SQL of ID column. default: id")
+    options.addOption("labelExpr", "labelExpr", true, "SQL of label column. default: label")
+    options.addOption("channelsExpr", "channelsExpr", true, "SQL of channels column. default: channels")
+    options.addOption("heightExpr", "heightExpr", true, "SQL of height column. default: height")
+    options.addOption("widthExpr", "widthExpr", true, "SQL of width column. default: width")
+    options.addOption("encodedExpr", "encodedExpr", true, "SQL of encoded column. default: encoded")
+    options.addOption("valueExpr", "valueExpr", true, "SQL of value column. default: value")
+    options.addOption("outputFormat", "outputFormat", true,
+      "feature output format, currently support json and parquet, default: json")
     options.addOption("model", "model", true, "model path")
     options.addOption("output", "output", true, "output path")
     options.addOption("devices", "devices", true, "number of local GPUs")
-    options.addOption("persistent", "persistent", false, "should data files be persistented on local file system?")
+    options.addOption("persistent", "persistent", false,
+      "should data files be persistented on local file system?")
     options.addOption("snapshot", "snapshot", true, "snapshot state file path")
     options.addOption("weights", "weights", true, "snapshot model file path")
     options.addOption("connection", "connection", true, "ethernet or infiniband (default)")
@@ -130,7 +141,42 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
       null
   }
 
-  val outputFormat : String = if (cmd.hasOption("outputFormat")) cmd.getOptionValue("outputFormat") else "json"
+  /**
+   * Input dataframe format. json or parquet
+   */
+  var inputFormat : String = if (cmd.hasOption("inputFormat")) cmd.getOptionValue("inputFormat") else "json"
+  /**
+   * Output dataframe format. json or parquet
+   */
+  var outputFormat : String = if (cmd.hasOption("outputFormat")) cmd.getOptionValue("outputFormat") else "json"
+  /**
+   * dataframe SQL expression to select an id column
+   */
+  var idExpr : String = if (cmd.hasOption("idExpr")) cmd.getOptionValue("idExpr") else "id"
+  /**
+   * dataframe SQL expression to select an label column
+   */
+  var labelExpr : String = if (cmd.hasOption("labelExpr")) cmd.getOptionValue("labelExpr") else "label"
+  /**
+   * dataframe SQL expression to select an channels column (default: null)
+   */
+  var channelsExpr : String = if (cmd.hasOption("channelsExpr")) cmd.getOptionValue("channelsExpr") else "channels"
+  /**
+   * dataframe SQL expression to select an height column (default: null)
+   */
+  var heightExpr : String = if (cmd.hasOption("heightExpr")) cmd.getOptionValue("heightExpr") else "height"
+  /**
+   * dataframe SQL expression to select an label width (default: null)
+   */
+  var widthExpr : String = if (cmd.hasOption("widthExpr")) cmd.getOptionValue("widthExpr") else "width"
+  /**
+   * dataframe SQL expression to select an encoded width (default: null)
+   */
+  var encodedExpr : String = if (cmd.hasOption("encodedExpr")) cmd.getOptionValue("encodedExpr") else "encoded"
+  /**
+   * dataframe SQL expression to select an value column
+   */
+  var valueExpr : String = if (cmd.hasOption("valueExpr")) cmd.getOptionValue("valueExpr") else "value"
 
   /* tool: input path */
   var imageRoot : String = if (cmd.hasOption("imageRoot")) cmd.getOptionValue("imageRoot") else null
@@ -141,6 +187,10 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
   @transient
   var netParam: NetParameter = null
 
+  /**
+   * Initialization of configuration
+   * @return initialized configuration
+   */
   def init() : Config = {
     val log = LoggerFactory.getLogger(this.getClass)
 
@@ -196,6 +246,14 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     buildr.append("test:").append(isTest).append("\n")
     buildr.append("features:").append(features.mkString(",")).append("\n")
     buildr.append("label:").append(label).append("\n")
+    buildr.append("inputFormat:").append(inputFormat).append("\n")
+    buildr.append("idExpr:").append(idExpr).append("\n")
+    buildr.append("labelExpr:").append(labelExpr).append("\n")
+    buildr.append("channelsExpr:").append(channelsExpr).append("\n")
+    buildr.append("heightExpr:").append(heightExpr).append("\n")
+    buildr.append("widthExpr:").append(widthExpr).append("\n")
+    buildr.append("encodedExpr:").append(encodedExpr).append("\n")
+    buildr.append("valueExpr:").append(valueExpr).append("\n")
     buildr.append("outputFormat:").append(outputFormat).append("\n")
     buildr.append("model:").append(modelPath).append("\n")
     buildr.append("output:").append(outputPath).append("\n")
