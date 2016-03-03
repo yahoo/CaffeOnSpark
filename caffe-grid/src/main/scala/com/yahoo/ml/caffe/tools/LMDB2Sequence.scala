@@ -3,6 +3,8 @@
 // Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe.tools
 
+import java.io.{ObjectOutputStream, ByteArrayOutputStream}
+
 import com.yahoo.ml.caffe.{Config, LMDB}
 import org.apache.hadoop.io.BytesWritable
 import org.apache.spark.{SparkContext, SparkConf}
@@ -23,22 +25,20 @@ object LMDB2Sequence {
     }
 
     //produce RDD
-    val seq = LMDB.makeSequence(conf.imageRoot).map {
-      case (key, value) => (new BytesWritable(key), new BytesWritable(value))
+    val seq = LMDB.makeSequence(LMDB.toLocalFile(conf.imageRoot)).map {
+      case (id, label, channels, height, width, encoded, value) => {
+        val aout = new ByteArrayOutputStream
+        val oos = new ObjectOutputStream(aout)
+        oos.writeObject((id, label, channels, height, width))
+        val tuple = (new BytesWritable(aout.toByteArray), new BytesWritable(value))
+        aout.close()
+
+        tuple
+      }
     }
 
     //save into output file on HDFS
     sc.parallelize(seq).saveAsSequenceFile(conf.outputPath)
     sc.stop()
-  }
-}
-
-
-object LoadTest {
-  val log: Logger = LoggerFactory.getLogger(this.getClass)
-
-  def main(args: Array[String]) {
-    val seq = LMDB.makeSequence(args(0))
-    log.info("# of entries:"+seq.size)
   }
 }

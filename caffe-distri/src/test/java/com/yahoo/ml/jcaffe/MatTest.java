@@ -125,25 +125,33 @@ public class MatTest {
     }
 
     @Test
+    private void matChannelsTest() throws Exception {
+	byte[] data0 = getDataFromFile(0);
+	Mat m = new Mat(3, 9, 9, data0);
+	assertEquals(m.channels(), 3);
+	m.deallocate();
+    }
+
+    @Test
     private void basicDataTest() throws Exception {
 	MatVector matVec = new MatVector(1);
 	byte[] data0 = getDataFromFile(0);
-        Mat mat = new Mat(data0);
-        matVec.put(0, mat);
-        byte[] resultData0 = matVec.data(0);
+	Mat mat = new Mat(data0);
+	matVec.put(0, mat);
+	byte[] resultData0 = matVec.data(0);
 	//What we wrote is what we get
-	assertTrue(Arrays.equals(data0,resultData0));
+	assertTrue(Arrays.equals(data0, resultData0));
 
 	//Now replace matVec 0th mat object with a new one and make sure it is the new one
 	byte[] data1 = getDataFromFile(1);
 	mat = new Mat(data1);
 	resultData0 = matVec.data(0);
-	assertTrue(Arrays.equals(data0,resultData0));
-	Mat oldmat = matVec.put(0,mat);
+	assertTrue(Arrays.equals(data0, resultData0));
+	Mat oldmat = matVec.put(0, mat);
 	byte[] resultData1 = matVec.data(0);
-	assertTrue(Arrays.equals(data1,resultData1));
+	assertTrue(Arrays.equals(data1, resultData1));
 	matVec.deallocate();
-	assertTrue(Arrays.equals(data0,oldmat.data()));
+	assertTrue(Arrays.equals(data0, oldmat.data()));
 	oldmat.deallocate();
     }
 }
