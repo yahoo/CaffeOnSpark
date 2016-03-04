@@ -1,3 +1,7 @@
+# IDEA Project settings
+/caffe-grid.iml
+
+# Caffe
 /target/
 .DS_Store
 /src/main/jnicaffe.cpp
