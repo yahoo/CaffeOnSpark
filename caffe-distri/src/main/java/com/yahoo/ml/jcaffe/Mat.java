@@ -21,32 +21,24 @@ public class Mat extends BaseObject {
      * @param data
      */
     public Mat(byte[] data) {
-        this(data, false);
-    }
-
-    /**
-     * Constructor of a Mat without a specific dimensions
-     * @param data
-     * @param signed
-     */
-    public Mat(byte[] data,  boolean signed) {
-        this(data.length, 1, data, signed);
+        this(1, 1, data.length, data);
     }
 
     /**
      * Constructor of a Mat with a specific dimensions
+     * @param channels
      * @param height
      * @param width
      * @param data
      * @param signed
      */
-    public Mat(int height, int width, byte[] data, boolean signed) {
-        dataaddress = allocate(height, width, data, signed);
+    public Mat(int channels, int height, int width, byte[] data) {
+        dataaddress = allocate(channels, height, width, data);
         if (dataaddress == 0)
             throw new RuntimeException("Failed to create Mat object");
     }
 
-    private native long allocate(int height, int width, byte[] data, boolean signed);
+    private native long allocate(int channels, int height, int width, byte[] data);
 
     private long dataaddress = 0;
     
@@ -79,7 +71,7 @@ public class Mat extends BaseObject {
      */
     public synchronized void resize(int height, int width){
         resize(height, width, dataaddress);
-	dataaddress = 0;
+        dataaddress = 0;
     }
     private native void resize(int height, int width, long dataaddress);
 

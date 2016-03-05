@@ -25,8 +25,10 @@ import org.slf4j.{LoggerFactory, Logger}
  * @param isTrain
  */
 abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
-  extends DataSource[(Array[Byte], Array[Byte]), MatVector](conf, layerId, isTrain, (null, null)) {
-  @transient private var log: Logger = null
+  extends DataSource[(String, String, Int, Int, Int, Boolean, Array[Byte]), MatVector](conf,
+                                          layerId, isTrain, (null, null, 0, 0, 0, false, null)) {
+  @transient protected var log: Logger = null
+  @transient protected var memdatalayer_param: MemoryDataParameter = null
   @transient private var numChannels = 0
   @transient private var height = 0
   @transient private var width = 0
@@ -44,18 +46,18 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
       return false
     }
 
-    val mem_data_param: MemoryDataParameter = layerParameter.getMemoryDataParam()
-    numChannels = mem_data_param.getChannels()
-    height = mem_data_param.getHeight()
-    width = mem_data_param.getWidth()
-    batchSize_ = mem_data_param.getBatchSize()
+    memdatalayer_param = layerParameter.getMemoryDataParam()
+    numChannels = memdatalayer_param.getChannels()
+    height = memdatalayer_param.getHeight()
+    width = memdatalayer_param.getWidth()
+    batchSize_ = memdatalayer_param.getBatchSize()
     if (batchSize_ < 1) {
       log.error("Invalid batch size:" + batchSize_)
       return false
     }
     log.info("Batch size:" + batchSize_)
 
-    sourceFilePath = mem_data_param.getSource()
+    sourceFilePath = memdatalayer_param.getSource()
     if (sourceFilePath == null || sourceFilePath.isEmpty) {
       log.error("Source must be specified for layer " + layerId)
       return false
@@ -102,52 +104,49 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
         log.info("Completed all files")
         shouldContinue = false
       } else {
-        val key = sample._1
-        val value = sample._2
-        if (key != null && value != null) {
-          val bis = new ByteArrayInputStream(key)
-          val ois = new ObjectInputStream(bis)
-          val file_label: (String, String) = ois.readObject match {
-            //case 1: encoded as java Pair
-            case java_pair: com.yahoo.ml.dl.caffe.Pair[String @unchecked, String @unchecked] => (java_pair.first, java_pair.second)
-            //case 2: encoded as Scala tuple
-            case scala_pair: Tuple2[String @unchecked, String @unchecked] => scala_pair
-            //other
-            case _ => {
-              log.error("Unsupported data format for labels")
-              null
-            }
-          }
-          ois.close()
-          bis.close()
+        val sample_id = sample._1
+        val sample_label = sample._2
+        val sample_channels = sample._3
+        val sample_height = sample._4
+        val sample_width = sample._5
+        val sample_encoded = sample._6
+        val sample_data = sample._7
 
-          sampleIds(count) = file_label._1
-          labelCPU.set(count, file_label._2.toInt)
-          numChannels match {
-            case 1 => {
-              //Monochro
-              mat = new Mat(height, width, value, false)
-            }
-            case 3 => {
-              //Color
-              mat = new Mat(value, false)
-              mat.decode(Mat.CV_LOAD_IMAGE_COLOR)
-              if (mat.width() == 0)
-                log.warn("Skipped image " + file_label._1)
-              else if (conf.resize)
-                mat.resize(height, width)
-            }
-            case _ => {
-              log.error("number of channel needs to be 1 or 3")
-              mat = null
+        sampleIds(count) = sample_id
+        labelCPU.set(count, sample_label.toInt)
+        if (sample_height > 0 && sample_width > 0) {
+          mat = new Mat(sample_channels, sample_height, sample_width, sample_data)
+          if (sample_encoded)
+            mat.decode(Mat.CV_LOAD_IMAGE_UNCHANGED)
+          if (mat.width() != sample_width || mat.height() != sample_width) {
+            log.warn("Skip image " + sample_id)
+            mat = null
+          }
+          else if (conf.resize && ((sample_height!=height) || (sample_width!=width))) {
+            log.info("Resize from " + sample_height + "x"+ sample_width + " to " + height + "x" + width)
+            mat.resize(height, width)
+          }
+        } else {
+          mat = new Mat(sample_data)
+          if (sample_encoded) {
+            numChannels match {
+              case 1 => mat.decode(Mat.CV_LOAD_IMAGE_GRAYSCALE)
+              case 3 => mat.decode(Mat.CV_LOAD_IMAGE_COLOR)
+              case _ => mat.decode(Mat.CV_LOAD_IMAGE_UNCHANGED)
             }
           }
-          if (mat != null) {
-            oldmat = mats.put(count, mat)
-            if (oldmat != null)
-              oldmat.deallocate()
+          if (mat.width() == 0) {
+            log.warn("Skipped image " + sample_id)
+            mat = null
           }
+          else if (conf.resize)
+            mat.resize(height, width)
+        }
 
+        if (mat != null) {
+          oldmat = mats.put(count, mat)
+          if (oldmat != null)
+            oldmat.deallocate()
           count = count + 1
         }
       }
@@ -155,5 +154,6 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
 
     shouldContinue
   }
+
 }
 
