@@ -27,7 +27,6 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     options.addOption("inputFormat", "inputFormat", true,
       "input dataframe format, currently support json and parquet, default: json")
     options.addOption("select", "select", true, "Dataframe SQL statements. default: none")
-    options.addOption("encoded", "encoded", false, "Dataframe's 'data' column is encoded. default: false")
     options.addOption("outputFormat", "outputFormat", true,
       "feature output format, currently support json and parquet, default: json")
     options.addOption("model", "model", true, "model path")
@@ -144,14 +143,6 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
    * Output dataframe format. json or parquet
    */
   var outputFormat : String = if (cmd.hasOption("outputFormat")) cmd.getOptionValue("outputFormat") else "json"
-  /**
-   * dataframe SQL expression to select columns
-   */
-  var select : Array[String] = if (cmd.hasOption("select")) cmd.getOptionValues("select") else null
-  /**
-   * dataframe's data column is encoded or not
-   */
-  var encoded : Boolean = cmd.hasOption("encoded")
 
   /* tool: input path */
   var imageRoot : String = if (cmd.hasOption("imageRoot")) cmd.getOptionValue("imageRoot") else null
@@ -222,8 +213,6 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     buildr.append("features:").append(features.mkString(",")).append("\n")
     buildr.append("label:").append(label).append("\n")
     buildr.append("inputFormat:").append(inputFormat).append("\n")
-    buildr.append("select:").append(select.mkString(",")).append("\n")
-    buildr.append("encoded:").append(encoded).append("\n")
     buildr.append("outputFormat:").append(outputFormat).append("\n")
     buildr.append("model:").append(modelPath).append("\n")
     buildr.append("output:").append(outputPath).append("\n")

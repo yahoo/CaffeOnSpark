@@ -28,6 +28,7 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
   extends DataSource[(String, String, Int, Int, Int, Boolean, Array[Byte]), MatVector](conf,
                                           layerId, isTrain, (null, null, 0, 0, 0, false, null)) {
   @transient protected var log: Logger = null
+  @transient protected var memdatalayer_param: MemoryDataParameter = null
   @transient private var numChannels = 0
   @transient private var height = 0
   @transient private var width = 0
@@ -45,18 +46,18 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
       return false
     }
 
-    val mem_data_param: MemoryDataParameter = layerParameter.getMemoryDataParam()
-    numChannels = mem_data_param.getChannels()
-    height = mem_data_param.getHeight()
-    width = mem_data_param.getWidth()
-    batchSize_ = mem_data_param.getBatchSize()
+    memdatalayer_param = layerParameter.getMemoryDataParam()
+    numChannels = memdatalayer_param.getChannels()
+    height = memdatalayer_param.getHeight()
+    width = memdatalayer_param.getWidth()
+    batchSize_ = memdatalayer_param.getBatchSize()
     if (batchSize_ < 1) {
       log.error("Invalid batch size:" + batchSize_)
       return false
     }
     log.info("Batch size:" + batchSize_)
 
-    sourceFilePath = mem_data_param.getSource()
+    sourceFilePath = memdatalayer_param.getSource()
     if (sourceFilePath == null || sourceFilePath.isEmpty) {
       log.error("Source must be specified for layer " + layerId)
       return false
@@ -121,7 +122,7 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
             log.warn("Skip image " + sample_id)
             mat = null
           }
-          else if ((sample_height!=height) || (sample_width!=width)) {
+          else if (conf.resize && ((sample_height!=height) || (sample_width!=width))) {
             log.info("Resize from " + sample_height + "x"+ sample_width + " to " + height + "x" + width)
             mat.resize(height, width)
           }

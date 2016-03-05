@@ -51,21 +51,15 @@ object LMDB {
    * @return
    */
   private def LMDBdata2Matdata(channels: Int, dimension_size: Int, data: Array[Byte]): Array[Byte] = {
-    channels match {
-      case 1 => data
-      case 3 => {
-        val data_clone = data.clone()
-        for (i <- 0 until dimension_size) {
-          data(i * 3) = data_clone(i)
-          data(i * 3 + 1) = data_clone(i + dimension_size)
-          data(i * 3 + 2) = data_clone(i + 2 * dimension_size)
-        }
-        data
-      }
-      case _ => {
-        log.error("Unsupported # of channels")
-        null
-      }
+    if (channels == 1) data
+    else {
+      val data_clone = data.clone()
+
+      for (p <- 0 until dimension_size)
+        for (c <- 0 until channels)
+          data_clone(p * channels + c) = data(p + c * dimension_size)
+
+      data_clone
     }
   }
 

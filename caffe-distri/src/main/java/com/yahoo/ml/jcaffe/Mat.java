@@ -21,7 +21,7 @@ public class Mat extends BaseObject {
      * @param data
      */
     public Mat(byte[] data) {
-        this(1, data.length, 1, data);
+        this(1, 1, data.length, data);
     }
 
     /**
