@@ -107,13 +107,13 @@ endif
 CUDA_LIB_DIR += $(CUDA_DIR)/lib
 
 EXTRA_INCLUDE_DIRS := ../caffe-public/src
-INCLUDE_DIRS ?= ${JAVA_HOME}/include
+INCLUDE_DIRS += ${JAVA_HOME}/include
 INCLUDE_DIRS += $(BUILD_INCLUDE_DIR) ./include ../caffe-public/distribute/include $(EXTRA_INCLUDE_DIRS)
 LIBRARY_DIRS += ../caffe-public/distribute/lib
 ifneq ($(CPU_ONLY), 1)
 	INCLUDE_DIRS += $(CUDA_INCLUDE_DIR)
 	LIBRARY_DIRS += $(CUDA_LIB_DIR)
-	LIBRARIES := cudart cublas cusparse curand
+	LIBRARIES := cudart cublas curand
 endif
 
 LIBRARIES += glog gflags protobuf boost_system m caffe hdf5_hl hdf5
@@ -171,6 +171,10 @@ ifeq ($(UNAME), Linux)
 else ifeq ($(UNAME), Darwin)
 	OSX := 1
 endif
+
+# path for jni_md.h and jawt_md.h.
+uname := $(shell echo ${UNAME} | tr A-Z a-z)
+INCLUDE_DIRS += ${JAVA_HOME}/include/${uname}
 
 # Linux
 ifeq ($(LINUX), 1)

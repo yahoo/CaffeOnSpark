@@ -33,8 +33,8 @@ gh-pages: doc
 	git push origin gh-pages
 
 clean: 
-	pushd caffe-public; make clean; popd
-	pushd caffe-distri; make clean; popd
+	cd caffe-public; make clean; cd ..
+	cd caffe-distri; make clean; cd ..
 	mvn clean 
 
 ALL: build
