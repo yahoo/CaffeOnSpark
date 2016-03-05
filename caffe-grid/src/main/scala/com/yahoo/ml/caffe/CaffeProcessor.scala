@@ -173,7 +173,13 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     //stop transformers & solvers
     import scala.collection.JavaConversions._
     for (solver <- solvers) Await.result(solver, Duration.Inf)
-    for (transformer <- transformers) Await.result(transformer, Duration(1, "nanos"))
+    for (transformer <- transformers) {
+      try {
+        Await.result(transformer, Duration(1, "ms"))
+      } catch {
+        case e: Exception => log.warn("Some tranformer threads haven't been terminated yet")
+      }
+    }
     threadsStarted = false
   }
 
@@ -298,7 +304,10 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
         if (tpl == STOP_MARK)  {
           queuePair.Free.put(tpl)
         } else {
-          caffeNet.train(syncIdx, tpl._2, toDataPtr(tpl._3))
+          val rs : Boolean = caffeNet.train(syncIdx, tpl._2, toDataPtr(tpl._3))
+          if (!rs) {
+            log.warn("Failed at training at iteration "+it)
+          }
           queuePair.Free.put(tpl)
 
           if ((rank == 0) && isRootSolver && (snapshotInterval > 0) && ((it + 1) % snapshotInterval == 0)) {

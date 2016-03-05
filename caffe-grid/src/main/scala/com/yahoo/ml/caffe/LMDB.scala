@@ -3,14 +3,15 @@
 // Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe
 
-import java.io.{FilenameFilter, File, ObjectOutputStream, ByteArrayOutputStream}
+import java.io.{FilenameFilter, File}
 
 import caffe.Caffe.Datum
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.sql.Row
 import org.fusesource.lmdbjni.Env
 import org.slf4j.{LoggerFactory, Logger}
 
@@ -19,12 +20,12 @@ import scala.collection.mutable.ArrayBuffer
 
 object LMDB {
   private val log: Logger = LoggerFactory.getLogger(this.getClass)
-  private var libLoaded : Boolean = false
+  private var libLoaded: Boolean = false
 
-  def makeSequence(lmdb_path: String): Seq[(Array[Byte], Array[Byte])] = {
+  private def prepare(lmdb_path: String): Unit = {
     //force lmdbjni.so to be loaded
     if (!libLoaded) {
-      log.debug("java.library.path:"+System.getProperty("java.library.path"))
+      log.debug("java.library.path:" + System.getProperty("java.library.path"))
       System.loadLibrary("lmdbjni")
       log.debug("System load liblmdbjni.so successed")
       libLoaded = true
@@ -37,32 +38,62 @@ object LMDB {
     })
     for (db_file <- db_files)
       db_file.setWritable(true)
+  }
+
+  /**
+   * Pixel data reordered from LMDB format to cv:Mat format.
+   * LMDB format is (channel, height, width), and data are (R, R,..., G, G, ..., B, B ...)
+   * Mat format is (height, width, channel), and data are (R, G, B, R, G, B, ...)
+   *
+   * @param channels
+   * @param dimension_size
+   * @param data
+   * @return
+   */
+  private def LMDBdata2Matdata(channels: Int, dimension_size: Int, data: Array[Byte]): Array[Byte] = {
+    if (channels == 1) data
+    else {
+      val data_clone = data.clone()
+
+      for (p <- 0 until dimension_size)
+        for (c <- 0 until channels)
+          data_clone(p * channels + c) = data(p + c * dimension_size)
+
+      data_clone
+    }
+  }
+
+  def makeSequence(lmdb_path: String): Seq[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
+    //prepare LMDB
+    prepare(lmdb_path)
 
     //initialize sequence
-    val seq = ArrayBuffer[(Array[Byte], Array[Byte])]()
+    val seq = ArrayBuffer[(String, String, Int, Int, Int, Boolean, Array[Byte])]()
 
     //iterate through LMDB and append entries into our sequence
-    val env : Env = new Env(lmdb_path)
+    val env: Env = new Env(lmdb_path)
     val db = env.openDatabase(null, 0)
     val txn = env.createReadTransaction()
     try {
       val it = db.iterate(txn)
       while (it.hasNext) {
         val next = it.next()
-        val id : String = new String(next.getKey())
+        val id: String = new String(next.getKey())
 
         val datum_bdr = Datum.newBuilder()
         datum_bdr.mergeFrom(next.getValue())
         val datum = datum_bdr.build()
 
-        val aout = new ByteArrayOutputStream
-        val oos = new ObjectOutputStream(aout)
-        val label : String = datum.getLabel().toString()
-        oos.writeObject((id, label))
-        //log.info("ID:" + key + " label:" + label)
+        val label: String = datum.getLabel().toString()
+        //log.info("ID:" + id + " label:" + label)
 
-        seq.append((aout.toByteArray(), datum.getData().toByteArray()))
-        aout.close()
+        val channels: Int = datum.getChannels()
+        val height: Int = datum.getHeight()
+        val width: Int = datum.getWidth()
+        val encoded: Boolean = datum.getEncoded()
+        val matData = if (encoded) datum.getData().toByteArray()
+                      else LMDBdata2Matdata(channels, height * width, datum.getData().toByteArray())
+        seq.append((id, label, channels, height, width, encoded, matData))
       }
     } catch {
       case e: Exception =>
@@ -74,6 +105,71 @@ object LMDB {
 
     //return the sequence
     seq
+  }
+
+  def makeRowSeq(lmdb_path: String): Seq[Row] = {
+    //prepare LMDB
+    prepare(lmdb_path)
+
+    //initialize sequence
+    val list = ArrayBuffer[Row]()
+
+    //iterate through LMDB and append entries into our sequence
+    val env: Env = new Env(lmdb_path)
+    val db = env.openDatabase(null, 0)
+    val txn = env.createReadTransaction()
+    try {
+      val it = db.iterate(txn)
+      while (it.hasNext) {
+        val next = it.next()
+        val id: String = new String(next.getKey())
+
+        val datum_bdr = Datum.newBuilder()
+        datum_bdr.mergeFrom(next.getValue())
+        val datum = datum_bdr.build()
+
+        val label: String = datum.getLabel().toString()
+        //log.info("ID:" + id + " label:" + label)
+
+        val channels: Int = datum.getChannels()
+        val height: Int = datum.getHeight()
+        val width: Int = datum.getWidth()
+        val encoded: Boolean = datum.getEncoded()
+        val matData = if (encoded) datum.getData().toByteArray()
+                      else LMDBdata2Matdata(channels, height * width, datum.getData().toByteArray())
+        list.append(Row(id, label, channels, height, width, encoded, matData))
+      }
+    } catch {
+      case e: Exception =>
+        log.warn(e.toString)
+    } finally {
+      txn.commit()
+      db.close()
+    }
+
+    //return the list
+    list
+  }
+
+  def toLocalFile(sourceFilePath: String): String = {
+    if (sourceFilePath.startsWith(FSUtils.localfsPrefix)) {
+      sourceFilePath.substring("file://".length)
+    } else {
+      //copy .mdb files onto pwd
+      val folder: Path = new Path(sourceFilePath)
+      val fs: FileSystem = folder.getFileSystem(new Configuration())
+      val pwd = System.getProperty("user.dir")
+      val files_status_iterator = fs.listFiles(folder, false)
+      while (files_status_iterator.hasNext) {
+        val file_status = files_status_iterator.next()
+        val src_path: Path = file_status.getPath()
+        val src_fname = src_path.getName
+        if (src_fname.endsWith(".mdb"))
+          fs.copyToLocalFile(false, src_path, new Path("file://" + pwd + "/" + src_fname), true)
+      }
+
+      pwd
+    }
   }
 }
 
@@ -89,28 +185,10 @@ class LMDB(conf: Config, layerId: Int, isTrain: Boolean) extends ImageDataSource
   /*
   TODO: We should revise the implementation to perform lazy fetching, instead of reads all LMDB entries into memory.
    */
-  override def makeRDD(sc: SparkContext): RDD[(Array[Byte], Array[Byte])] = {
-    val seq = if (sourceFilePath.startsWith(FSUtils.localfsPrefix)) {
-      LMDB.makeSequence(sourceFilePath.substring("file://".length))
-    } else {
-      //copy .mdb files onto pwd
-      val folder: Path = new Path(sourceFilePath)
-      val fs: FileSystem = folder.getFileSystem(new Configuration())
-      val pwd = System.getProperty("user.dir")
-      val files_status_iterator  = fs.listFiles(folder, false)
-      while (files_status_iterator.hasNext) {
-        val file_status = files_status_iterator.next()
-        val src_path: Path = file_status.getPath()
-        val src_fname = src_path.getName
-        if (src_fname.endsWith(".mdb"))
-          fs.copyToLocalFile(false, src_path, new Path("file://" + pwd + "/" + src_fname), true)
-      }
-
-      LMDB.makeSequence(pwd)
-    }
-
+  override def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
+    val seq = LMDB.makeSequence(LMDB.toLocalFile(sourceFilePath))
     if (seq.size == 0) {
-      sc.emptyRDD[(Array[Byte], Array[Byte])]
+      sc.emptyRDD[(String, String, Int, Int, Int, Boolean, Array[Byte])]
     } else {
       sc.parallelize(seq, conf.clusterSize).persist(StorageLevel.DISK_ONLY)
     }
