@@ -266,16 +266,29 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.LMDB#makeSequence" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="makeSequence(lmdb_path:String):Seq[(Array[Byte],Array[Byte])]"></a>
-      <a id="makeSequence(String):Seq[(Array[Byte],Array[Byte])]"></a>
+    </li><li name="com.yahoo.ml.caffe.LMDB#makeRowSeq" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="makeRowSeq(lmdb_path:String):Seq[org.apache.spark.sql.Row]"></a>
+      <a id="makeRowSeq(String):Seq[Row]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">makeSequence</span><span class="params">(<span name="lmdb_path">lmdb_path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
+        <span class="name">makeRowSeq</span><span class="params">(<span name="lmdb_path">lmdb_path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="org.apache.spark.sql.Row">Row</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.yahoo.ml.caffe.LMDB#makeSequence" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="makeSequence(lmdb_path:String):Seq[(String,String,Int,Int,Int,Boolean,Array[Byte])]"></a>
+      <a id="makeSequence(String):Seq[(String,String,Int,Int,Int,Boolean,Array[Byte])]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">makeSequence</span><span class="params">(<span name="lmdb_path">lmdb_path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
       </span>
       </h4>
       
@@ -331,6 +344,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.LMDB#toLocalFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toLocalFile(sourceFilePath:String):String"></a>
+      <a id="toLocalFile(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toLocalFile</span><span class="params">(<span name="sourceFilePath">sourceFilePath: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>

@@ -35,7 +35,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">ImageDataSource</span><span class="result"> extends <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</span>
+        <span class="name">ImageDataSource</span><span class="result"> extends <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</span>
       </span>
       </h4>
       
@@ -43,10 +43,10 @@
 Its subclass should construct RDD of  ((id: String, label: String), value : byte[]).
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="LMDB.html" class="extype" name="com.yahoo.ml.caffe.LMDB">LMDB</a>, <a href="SeqImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a></div>
+          <div class="subClasses hiddenContent"><a href="ImageDataFrame.html" class="extype" name="com.yahoo.ml.caffe.ImageDataFrame">ImageDataFrame</a>, <a href="ImageDataFrameJson.html" class="extype" name="com.yahoo.ml.caffe.ImageDataFrameJson">ImageDataFrameJson</a>, <a href="ImageDataFrameParquet.html" class="extype" name="com.yahoo.ml.caffe.ImageDataFrameParquet">ImageDataFrameParquet</a>, <a href="LMDB.html" class="extype" name="com.yahoo.ml.caffe.LMDB">LMDB</a>, <a href="SeqImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.SeqImageDataSource">SeqImageDataSource</a></div>
         </div></div>
         
 
@@ -107,14 +107,14 @@ Its subclass should construct RDD of  ((id: String, label: String), value : byte
               <h3>Abstract Value Members</h3>
               <ol><li name="com.yahoo.ml.caffe.DataSource#makeRDD" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="makeRDD(sc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[T1]"></a>
-      <a id="makeRDD(SparkContext):RDD[(Array[Byte],Array[Byte])]"></a>
+      <a id="makeRDD(SparkContext):RDD[(String,String,Int,Int,Int,Boolean,Array[Byte])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">makeRDD</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
+        <span class="name">makeRDD</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">construct a sample RDD</p><div class="fullcomment"><div class="comment cmt"><p>construct a sample RDD</p></div><dl class="paramcmts block"><dt class="param">sc</dt><dd class="cmt"><p>spark context</p></dd><dt>returns</dt><dd class="cmt"><p>RDD created from this source
@@ -191,14 +191,14 @@ Its subclass should construct RDD of  ((id: String, label: String), value : byte
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="com.yahoo.ml.caffe.DataSource#STOP_MARK" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="STOP_MARK:T1"></a>
-      <a id="STOP_MARK:(Array[Byte],Array[Byte])"></a>
+      <a id="STOP_MARK:(String,String,Int,Int,Int,Boolean,Array[Byte])"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">STOP_MARK</span><span class="result">: (<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])</span>
+        <span class="name">STOP_MARK</span><span class="result">: (<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
@@ -388,6 +388,32 @@ Its subclass should construct RDD of  ((id: String, label: String), value : byte
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log:org.slf4j.Logger"></a>
+      <a id="log:Logger"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="result">: <span class="extype" name="org.slf4j.Logger">Logger</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#memdatalayer_param" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="memdatalayer_param:caffe.Caffe.MemoryDataParameter"></a>
+      <a id="memdatalayer_param:MemoryDataParameter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">memdatalayer_param</span><span class="result">: <span class="extype" name="caffe.Caffe.MemoryDataParameter">MemoryDataParameter</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -484,14 +510,14 @@ You should extract samples from source queue, parse it and produce a batch.</p><
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="com.yahoo.ml.caffe.DataSource#sourceQueue" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="sourceQueue:java.util.concurrent.ArrayBlockingQueue[T1]"></a>
-      <a id="sourceQueue:ArrayBlockingQueue[(Array[Byte],Array[Byte])]"></a>
+      <a id="sourceQueue:ArrayBlockingQueue[(String,String,Int,Int,Int,Boolean,Array[Byte])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">sourceQueue</span><span class="result">: <span class="extype" name="java.util.concurrent.ArrayBlockingQueue">ArrayBlockingQueue</span>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
+        <span class="name">sourceQueue</span><span class="result">: <span class="extype" name="java.util.concurrent.ArrayBlockingQueue">ArrayBlockingQueue</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
@@ -588,7 +614,7 @@ You should extract samples from source queue, parse it and produce a batch.</p><
 
         <div id="inheritedMembers">
         <div class="parent" name="com.yahoo.ml.caffe.DataSource">
-              <h3>Inherited from <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>], <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</h3>
+              <h3>Inherited from <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</h3>
             </div><div class="parent" name="scala.Serializable">
               <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
             </div><div class="parent" name="java.io.Serializable">

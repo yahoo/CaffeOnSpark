@@ -2,9 +2,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>Config - com.yahoo.ml.caffe.Config</title>
-          <meta name="description" content="Config - com.yahoo.ml.caffe.Config" />
-          <meta name="keywords" content="Config com.yahoo.ml.caffe.Config" />
+          <title>ImageDataFrame - com.yahoo.ml.caffe.ImageDataFrame</title>
+          <meta name="description" content="ImageDataFrame - com.yahoo.ml.caffe.ImageDataFrame" />
+          <meta name="keywords" content="ImageDataFrame com.yahoo.ml.caffe.ImageDataFrame" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -12,7 +12,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../../index.html';
-            var hash = 'com.yahoo.ml.caffe.Config';
+            var hash = 'com.yahoo.ml.caffe.ImageDataFrame';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -26,7 +26,7 @@
       <div id="definition">
         <img src="../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.yahoo">yahoo</a>.<a href="../package.html" class="extype" name="com.yahoo.ml">ml</a>.<a href="package.html" class="extype" name="com.yahoo.ml.caffe">caffe</a></p>
-        <h1>Config</h1>
+        <h1>ImageDataFrame</h1>
       </div>
 
       <h4 id="signature" class="signature">
@@ -35,14 +35,21 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">Config</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">ImageDataFrame</span><span class="result"> extends <a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>CaffeSpark configuration
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>ImageDataFrame is a built-in data source class using Spark dataframe format.</p><p>ImageDataFrame expects dataframe with 2 required columns (lable:String, data:byte[]),
+and 5 optional columns (id: String, channels :Int, height:Int, width:Int, encoded: Boolean).</p><p>ImageDataFrame could be configured via 2 MemoryDataLayer parameter:
+(1) dataframe_column_select ... a collection of dataframe SQL selection statements
+(ex. &quot;sampleId as id&quot;, &quot;abs(height) as height&quot;)
+(2) image_ecnoded ... indicate whether image data are encoded or not. (default: false)
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a>, <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div><div class="toggleContainer block">
+          <span class="toggle">Known Subclasses</span>
+          <div class="subClasses hiddenContent"><a href="ImageDataFrameJson.html" class="extype" name="com.yahoo.ml.caffe.ImageDataFrameJson">ImageDataFrameJson</a>, <a href="ImageDataFrameParquet.html" class="extype" name="com.yahoo.ml.caffe.ImageDataFrameParquet">ImageDataFrameParquet</a></div>
         </div></div>
         
 
@@ -60,7 +67,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.yahoo.ml.caffe.Config"><span>Config</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.yahoo.ml.caffe.ImageDataFrame"><span>ImageDataFrame</span></li><li class="in" name="com.yahoo.ml.caffe.ImageDataSource"><span>ImageDataSource</span></li><li class="in" name="com.yahoo.ml.caffe.DataSource"><span>DataSource</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -80,19 +87,20 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="com.yahoo.ml.caffe.Config#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(sc:org.apache.spark.SparkContext,args:Array[String]):com.yahoo.ml.caffe.Config"></a>
-      <a id="&lt;init&gt;:Config"></a>
+              <ol><li name="com.yahoo.ml.caffe.ImageDataFrame#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="&lt;init&gt;(conf:com.yahoo.ml.caffe.Config,layerId:Int,isTrain:Boolean):com.yahoo.ml.caffe.ImageDataFrame"></a>
+      <a id="&lt;init&gt;:ImageDataFrame"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Config</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>, <span name="args">args: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span>
+        <span class="name">ImageDataFrame</span><span class="params">(<span name="conf">conf: <a href="Config.html" class="extype" name="com.yahoo.ml.caffe.Config">Config</a></span>, <span name="layerId">layerId: <span class="extype" name="scala.Int">Int</span></span>, <span name="isTrain">isTrain: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">conf</dt><dd class="cmt"><p>CaffeSpark configuration</p></dd><dt class="param">layerId</dt><dd class="cmt"><p>the layer index in the network protocol file</p></dd><dt class="param">isTrain</dt><dd class="cmt"><p>
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -167,6 +175,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.DataSource#STOP_MARK" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="STOP_MARK:T1"></a>
+      <a id="STOP_MARK:(String,String,Int,Int,Int,Boolean,Array[Byte])"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">STOP_MARK</span><span class="result">: (<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -180,6 +201,34 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.DataSource#batchSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="batchSize():Int"></a>
+      <a id="batchSize():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">batchSize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">batch size
+</p><div class="fullcomment"><div class="comment cmt"><p>batch size
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.DataSource#batchSize_" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="batchSize_:Int"></a>
+      <a id="batchSize_:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">batchSize_</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -199,48 +248,34 @@
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#clusterSize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="clusterSize:Int"></a>
-      <a id="clusterSize:Int"></a>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#dummyDataBlobs" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="dummyDataBlobs():Array[com.yahoo.ml.jcaffe.FloatBlob]"></a>
+      <a id="dummyDataBlobs():Array[FloatBlob]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clusterSize</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">dummyDataBlobs</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="com.yahoo.ml.jcaffe.FloatBlob">FloatBlob</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"># of executors in the cluster
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#connection" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="connection:Int"></a>
-      <a id="connection:Int"></a>
+      <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#dummyDataHolder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="dummyDataHolder():com.yahoo.ml.jcaffe.MatVector"></a>
+      <a id="dummyDataHolder():MatVector"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">connection</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">dummyDataHolder</span><span class="params">()</span><span class="result">: <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">network interface for connection among Spark executors
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#devices" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="devices:Int"></a>
-      <a id="devices:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">devices</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt"># of GPUs per executor
-</p>
+      <p class="shortcomment cmt">make a dummy data blob to be used by Solver threads</p><div class="fullcomment"><div class="comment cmt"><p>make a dummy data blob to be used by Solver threads</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a dummy data blob
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -267,19 +302,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#features" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="features:Array[String]"></a>
-      <a id="features:Array[String]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">var</span>
-      </span>
-      <span class="symbol">
-        <span class="name">features</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -325,61 +347,20 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#imageRoot" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="imageRoot:String"></a>
-      <a id="imageRoot:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">var</span>
-      </span>
-      <span class="symbol">
-        <span class="name">imageRoot</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="com.yahoo.ml.caffe.Config#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="init():com.yahoo.ml.caffe.Config"></a>
-      <a id="init():Config"></a>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="init():Boolean"></a>
+      <a id="init():Boolean"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">init</span><span class="params">()</span><span class="result">: <a href="" class="extype" name="com.yahoo.ml.caffe.Config">Config</a></span>
+        <span class="name">init</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Initialization of configuration</p><div class="fullcomment"><div class="comment cmt"><p>Initialization of configuration</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>initialized configuration
-</p></dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#inputFormat" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="inputFormat:String"></a>
-      <a id="inputFormat:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">var</span>
-      </span>
-      <span class="symbol">
-        <span class="name">inputFormat</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Input dataframe format.</p><div class="fullcomment"><div class="comment cmt"><p>Input dataframe format. json or parquet
-</p></div></div>
-    </li><li name="com.yahoo.ml.caffe.Config#isFeature" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="isFeature:Boolean"></a>
-      <a id="isFeature:Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">isFeature</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">flag indicate whether we want to perform model training or not
-</p>
+      <p class="shortcomment cmt"> initialization of a Source within a process</p><div class="fullcomment"><div class="comment cmt"><p> initialization of a Source within a process</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>true if successfully initialized
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -393,89 +374,46 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#isRddPersistent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="isRddPersistent:Boolean"></a>
-      <a id="isRddPersistent:Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">isRddPersistent</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">flag indicate whether training RDD should be persistent or not
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#isTest" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="isTest:Boolean"></a>
-      <a id="isTest:Boolean"></a>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log:org.slf4j.Logger"></a>
+      <a id="log:Logger"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">isTest</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">log</span><span class="result">: <span class="extype" name="org.slf4j.Logger">Logger</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">flag indicate whether we want to perform model test or not
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#isTraining" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="isTraining:Boolean"></a>
-      <a id="isTraining:Boolean"></a>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataFrame#makeRDD" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="makeRDD(sc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[(String,String,Int,Int,Int,Boolean,Array[Byte])]"></a>
+      <a id="makeRDD(SparkContext):RDD[(String,String,Int,Int,Int,Boolean,Array[Byte])]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isTraining</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">makeRDD</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">flag indicate whether we want to perform model training or not
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#label" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="label:String"></a>
-      <a id="label:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">label</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">label blob name
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#labelFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="labelFile:String"></a>
-      <a id="labelFile:String"></a>
+      <p class="shortcomment cmt">construct a sample RDD</p><div class="fullcomment"><div class="comment cmt"><p>construct a sample RDD</p></div><dl class="paramcmts block"><dt class="param">sc</dt><dd class="cmt"><p>spark context</p></dd><dt>returns</dt><dd class="cmt"><p>RDD created from this source
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.ImageDataFrame">ImageDataFrame</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#memdatalayer_param" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="memdatalayer_param:caffe.Caffe.MemoryDataParameter"></a>
+      <a id="memdatalayer_param:MemoryDataParameter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">labelFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">memdatalayer_param</span><span class="result">: <span class="extype" name="caffe.Caffe.MemoryDataParameter">MemoryDataParameter</span></span>
       </span>
       </h4>
-      
-    </li><li name="com.yahoo.ml.caffe.Config#modelPath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="modelPath:String"></a>
-      <a id="modelPath:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">modelPath</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">HDFS path for model file
-</p>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -489,19 +427,21 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#netParam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="netParam:caffe.Caffe.NetParameter"></a>
-      <a id="netParam:NetParameter"></a>
+    </li><li name="com.yahoo.ml.caffe.ImageDataSource#nextBatch" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="nextBatch(sampleIds:Array[String],mats:com.yahoo.ml.jcaffe.MatVector,labels:com.yahoo.ml.jcaffe.FloatBlob):Boolean"></a>
+      <a id="nextBatch(Array[String],MatVector,FloatBlob):Boolean"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">netParam</span><span class="result">: <span class="extype" name="caffe.Caffe.NetParameter">NetParameter</span></span>
+        <span class="name">nextBatch</span><span class="params">(<span name="sampleIds">sampleIds: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="mats">mats: <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span></span>, <span name="labels">labels: <span class="extype" name="com.yahoo.ml.jcaffe.FloatBlob">FloatBlob</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">create a batch of samples extracted from source queue</p><div class="fullcomment"><div class="comment cmt"><p>create a batch of samples extracted from source queue</p><p>This method is Invoked by Transformer thread.
+You should extract samples from source queue, parse it and produce a batch.</p></div><dl class="paramcmts block"><dt class="param">sampleIds</dt><dd class="cmt"><p>holder for sample Ids</p></dd><dt class="param">labels</dt><dd class="cmt"><p>holder for label blob</p></dd><dt>returns</dt><dd class="cmt"><p>true if successful
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a> → <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -528,103 +468,59 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#outputFormat" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="outputFormat:String"></a>
-      <a id="outputFormat:String"></a>
+    </li><li name="com.yahoo.ml.caffe.DataSource#setBatchSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setBatchSize(size:Int):Unit"></a>
+      <a id="setBatchSize(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setBatchSize</span><span class="params">(<span name="size">size: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">adjust batch size</p><div class="fullcomment"><div class="comment cmt"><p>adjust batch size</p></div><dl class="paramcmts block"><dt class="param">size</dt><dd class="cmt"><p>the new batch size
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.DataSource#solverMode" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="solverMode:Int"></a>
+      <a id="solverMode:Int"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">outputFormat</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">solverMode</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Output dataframe format.</p><div class="fullcomment"><div class="comment cmt"><p>Output dataframe format. json or parquet
-</p></div></div>
-    </li><li name="com.yahoo.ml.caffe.Config#outputPath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="outputPath:String"></a>
-      <a id="outputPath:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">outputPath</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">HDFS path for test results
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#protoFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="protoFile:String"></a>
-      <a id="protoFile:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">protoFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">file location of solver protocol file
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#resize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="resize:Boolean"></a>
-      <a id="resize:Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">resize</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">flag for resizing input image
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#snapshotModelFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="snapshotModelFile:String"></a>
-      <a id="snapshotModelFile:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">snapshotModelFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">HDFS path for snapshot models
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#snapshotStateFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="snapshotStateFile:String"></a>
-      <a id="snapshotStateFile:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">snapshotStateFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">HDFS path for snapshot states
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#solverParameter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="solverParameter:caffe.Caffe.SolverParameter"></a>
-      <a id="solverParameter:SolverParameter"></a>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.DataSource#sourceFilePath" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sourceFilePath:String"></a>
+      <a id="sourceFilePath:String"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">solverParameter</span><span class="result">: <span class="extype" name="caffe.Caffe.SolverParameter">SolverParameter</span></span>
+        <span class="name">sourceFilePath</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
+    </li><li name="com.yahoo.ml.caffe.DataSource#sourceQueue" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sourceQueue:java.util.concurrent.ArrayBlockingQueue[T1]"></a>
+      <a id="sourceQueue:ArrayBlockingQueue[(String,String,Int,Int,Int,Boolean,Array[Byte])]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sourceQueue</span><span class="result">: <span class="extype" name="java.util.concurrent.ArrayBlockingQueue">ArrayBlockingQueue</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>])]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -638,21 +534,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#test_data_layer_id" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="test_data_layer_id:Int"></a>
-      <a id="test_data_layer_id:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">var</span>
-      </span>
-      <span class="symbol">
-        <span class="name">test_data_layer_id</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">layer ID of training data source
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -661,38 +543,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.yahoo.ml.caffe.Config">Config</a> → AnyRef → Any</dd></dl></div>
-    </li><li name="com.yahoo.ml.caffe.Config#train_data_layer_id" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="train_data_layer_id:Int"></a>
-      <a id="train_data_layer_id:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">var</span>
-      </span>
-      <span class="symbol">
-        <span class="name">train_data_layer_id</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">layer ID of training data source
-</p>
-    </li><li name="com.yahoo.ml.caffe.Config#transform_thread_per_device" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="transform_thread_per_device:Int"></a>
-      <a id="transform_thread_per_device:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">transform_thread_per_device</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt"># of transformer threads per device
-</p>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -759,7 +613,11 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.Serializable">
+        <div class="parent" name="com.yahoo.ml.caffe.ImageDataSource">
+              <h3>Inherited from <a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a></h3>
+            </div><div class="parent" name="com.yahoo.ml.caffe.DataSource">
+              <h3>Inherited from <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>]</h3>
+            </div><div class="parent" name="scala.Serializable">
               <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
             </div><div class="parent" name="java.io.Serializable">
               <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
