@@ -40,16 +40,14 @@
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>ImageDataFrame is a built-in data source class using Spark dataframe format.</p><p>ImageDataFrame expects dataframe with 2 required columns (lable:String, data:byte[]),
-and 5 optional columns (id: String, channels :Int, height:Int, width:Int, encoded: Boolean).</p><p>ImageDataFrame could be configured via 2 MemoryDataLayer parameter:
+and 5 optional columns (id: String, channels :Int, height:Int, width:Int, encoded: Boolean).</p><p>ImageDataFrame could be configured via the following MemoryDataLayer parameter:
 (1) dataframe_column_select ... a collection of dataframe SQL selection statements
 (ex. &quot;sampleId as id&quot;, &quot;abs(height) as height&quot;)
-(2) image_ecnoded ... indicate whether image data are encoded or not. (default: false)
+(2) image_encoded ... indicate whether image data are encoded or not. (default: false)
+(3) dataframe_format ... Dataframe Format. (default: parquet)
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="ImageDataSource.html" class="extype" name="com.yahoo.ml.caffe.ImageDataSource">ImageDataSource</a>, <a href="DataSource.html" class="extype" name="com.yahoo.ml.caffe.DataSource">DataSource</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Boolean">Boolean</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Byte">Byte</span>]), <span class="extype" name="com.yahoo.ml.jcaffe.MatVector">MatVector</span>], <span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
-        </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="ImageDataFrameJson.html" class="extype" name="com.yahoo.ml.caffe.ImageDataFrameJson">ImageDataFrameJson</a>, <a href="ImageDataFrameParquet.html" class="extype" name="com.yahoo.ml.caffe.ImageDataFrameParquet">ImageDataFrameParquet</a></div>
         </div></div>
         
 
