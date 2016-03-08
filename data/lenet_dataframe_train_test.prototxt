@@ -7,7 +7,7 @@ layer {
   include {
     phase: TRAIN
   }
-  source_class: "com.yahoo.ml.caffe.ImageDataFrameParquet"
+  source_class: "com.yahoo.ml.caffe.ImageDataFrame"
   memory_data_param {
     source: "hdfs:///projects/machine_learning/image_dataset/mnist_train_dataframe/"
     batch_size: 64
@@ -28,7 +28,7 @@ layer {
   include {
     phase: TEST
   }
-  source_class: "com.yahoo.ml.caffe.ImageDataFrameParquet"
+  source_class: "com.yahoo.ml.caffe.ImageDataFrame"
   memory_data_param {
     source: "hdfs:///projects/machine_learning/image_dataset/mnist_test_dataframe/"
     batch_size: 100

@@ -24,9 +24,6 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     options.addOption("test", "test", false, "test mode")
     options.addOption("features", "features", true, "name of output blobs")
     options.addOption("label", "label", true, "name of label blobs to be included in features")
-    options.addOption("inputFormat", "inputFormat", true,
-      "input dataframe format, currently support json and parquet, default: json")
-    options.addOption("select", "select", true, "Dataframe SQL statements. default: none")
     options.addOption("outputFormat", "outputFormat", true,
       "feature output format, currently support json and parquet, default: json")
     options.addOption("model", "model", true, "model path")
@@ -136,11 +133,7 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
   }
 
   /**
-   * Input dataframe format. json or parquet
-   */
-  var inputFormat : String = if (cmd.hasOption("inputFormat")) cmd.getOptionValue("inputFormat") else "json"
-  /**
-   * Output dataframe format. json or parquet
+   * Output dataframe format.
    */
   var outputFormat : String = if (cmd.hasOption("outputFormat")) cmd.getOptionValue("outputFormat") else "json"
 
@@ -212,7 +205,6 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     buildr.append("test:").append(isTest).append("\n")
     buildr.append("features:").append(features.mkString(",")).append("\n")
     buildr.append("label:").append(label).append("\n")
-    buildr.append("inputFormat:").append(inputFormat).append("\n")
     buildr.append("outputFormat:").append(outputFormat).append("\n")
     buildr.append("model:").append(modelPath).append("\n")
     buildr.append("output:").append(outputPath).append("\n")
