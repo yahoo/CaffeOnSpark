@@ -14,10 +14,11 @@ import org.apache.spark.storage.StorageLevel
  * ImageDataFrame expects dataframe with 2 required columns (lable:String, data:byte[]),
  * and 5 optional columns (id: String, channels :Int, height:Int, width:Int, encoded: Boolean).
  *
- * ImageDataFrame could be configured via 2 MemoryDataLayer parameter:
+ * ImageDataFrame could be configured via the following MemoryDataLayer parameter:
  * (1) dataframe_column_select ... a collection of dataframe SQL selection statements
  * (ex. "sampleId as id", "abs(height) as height")
- * (2) image_ecnoded ... indicate whether image data are encoded or not. (default: false)
+ * (2) image_encoded ... indicate whether image data are encoded or not. (default: false)
+ * (3) dataframe_format ... Dataframe Format. (default: parquet)
  *
  * @param conf CaffeSpark configuration
  * @param layerId the layer index in the network protocol file
@@ -30,7 +31,10 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
   def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
     val sqlContext = new SQLContext(sc)
     //load DataFrame
-    var df: DataFrame = sqlContext.read.format(conf.inputFormat).load(sourceFilePath)
+    var reader = sqlContext.read
+    if (memdatalayer_param.hasDataframeFormat())
+      reader = reader.format(memdatalayer_param.getDataframeFormat())
+    var df: DataFrame = reader.load(sourceFilePath)
 
     //select columns if specified
     if (memdatalayer_param.getDataframeColumnSelectCount() > 0) {
@@ -67,28 +71,4 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
         (id, label, channels, height, width, encoded, data)
       }).persist(StorageLevel.DISK_ONLY)
   }
-}
-
-/**
- * ImageDataFrame using Parquet data frame format
- *
- * @param conf CaffeSpark configuration
- * @param layerId the layer index in the network protocol file
- * @param isTrain
- */
-class ImageDataFrameParquet(conf: Config, layerId: Int, isTrain: Boolean)
-  extends ImageDataFrame(conf, layerId, isTrain) {
-  conf.inputFormat = "parquet"
-}
-
-/**
- * ImageDataFrame using Json data frame format
- *
- * @param conf CaffeSpark configuration
- * @param layerId the layer index in the network protocol file
- * @param isTrain
- */
-class ImageDataFrameJson(conf: Config, layerId: Int, isTrain: Boolean)
-  extends ImageDataFrame(conf, layerId, isTrain) {
-  conf.inputFormat = "json"
 }
