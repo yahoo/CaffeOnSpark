@@ -1,11 +1,11 @@
 package com.yahoo.ml.caffe.tools
 
-import com.yahoo.ml.caffe.{LMDB, Config}
+import com.yahoo.ml.caffe.{LmdbRDD, LMDB, Config}
 import org.apache.spark.{SparkContext, SparkConf}
 import org.slf4j.{LoggerFactory, Logger}
 import org.apache.spark.sql.{SQLContext, DataFrame}
-import org.apache.spark.sql.types.{StructField, StructType, ArrayType, IntegerType, StringType, BooleanType, BinaryType}
-import scala.collection.JavaConversions
+import org.apache.spark.sql.types.{StructField, StructType, IntegerType, StringType, BooleanType, BinaryType}
+import org.apache.spark.sql.Row
 
 object LMDB2DataFrame {
   val log: Logger = LoggerFactory.getLogger(this.getClass)
@@ -28,12 +28,16 @@ object LMDB2DataFrame {
       return
     }
 
-    //produce data frame
-    val list = JavaConversions.seqAsJavaList(LMDB.makeRowSeq(LMDB.toLocalFile(conf.imageRoot)))
-    log.info("List size:"+list.size())
+    //make an RDD[Row]
+    val rdd = new LmdbRDD(sc, conf.imageRoot, conf.lmdb_partitions).flatMap{
+      case (id, label, channels, height, width, encoded, matData) =>
+        if (matData == null) None
+        else Some(Row(id, label, channels, height, width, encoded, matData))
+    }
 
+    //produce data frame
     val sqlContext = new SQLContext(sc)
-    val df : DataFrame = sqlContext.createDataFrame(list, schema)
+    val df : DataFrame = sqlContext.createDataFrame(rdd, schema)
 
     //save into output file on HDFS
     log.info("Saving DF at "+conf.outputPath)

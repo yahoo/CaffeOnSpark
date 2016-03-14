@@ -5,7 +5,7 @@ package com.yahoo.ml.caffe.tools
 
 import java.io.{ObjectOutputStream, ByteArrayOutputStream}
 
-import com.yahoo.ml.caffe.{Config, LMDB}
+import com.yahoo.ml.caffe.{LmdbRDD, Config, LMDB}
 import org.apache.hadoop.io.BytesWritable
 import org.apache.spark.{SparkContext, SparkConf}
 import org.slf4j.{LoggerFactory, Logger}
@@ -25,20 +25,23 @@ object LMDB2Sequence {
     }
 
     //produce RDD
-    val seq = LMDB.makeSequence(LMDB.toLocalFile(conf.imageRoot)).map {
+    val rdd = new LmdbRDD(sc, conf.imageRoot, conf.lmdb_partitions).flatMap{
       case (id, label, channels, height, width, encoded, value) => {
-        val aout = new ByteArrayOutputStream
-        val oos = new ObjectOutputStream(aout)
-        oos.writeObject((id, label, channels, height, width))
-        val tuple = (new BytesWritable(aout.toByteArray), new BytesWritable(value))
-        aout.close()
+        if (value == null) None
+        else {
+          val aout = new ByteArrayOutputStream
+          val oos = new ObjectOutputStream(aout)
+          oos.writeObject((id, label, channels, height, width, encoded))
+          val tuple = (new BytesWritable(aout.toByteArray), new BytesWritable(value))
+          aout.close()
 
-        tuple
+          Some(tuple)
+        }
       }
     }
 
     //save into output file on HDFS
-    sc.parallelize(seq).saveAsSequenceFile(conf.outputPath)
+    rdd.saveAsSequenceFile(conf.outputPath)
     sc.stop()
   }
 }

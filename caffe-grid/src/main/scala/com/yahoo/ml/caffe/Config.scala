@@ -35,8 +35,9 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     options.addOption("weights", "weights", true, "snapshot model file path")
     options.addOption("connection", "connection", true, "ethernet or infiniband (default)")
     options.addOption("resize", "resize", false, "resize input image")
-    //used for dev purpose only
     options.addOption("clusterSize", "clusterSize", true, "size of the cluster")
+    options.addOption("lmdb_partitions", "lmdb_partitions", true, "the # of LMDB RDD partitions. Default: cluster size")
+    //used for dev purpose only
     options.addOption("imageRoot", "imageRoot", true, "image files' root")
     options.addOption("labelFile", "labelFile", true, "label file")
     new BasicParser().parse(options, args)
@@ -105,9 +106,19 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
    */
   var clusterSize : Int = {
     val sparkMaster = if (sc == null) "" else sc.getConf.get("spark.master")
-    if (sparkMaster.startsWith("yarn")) sc.getConf.getInt("spark.executor.instances", 1)
-    else if (cmd.hasOption("clusterSize")) Integer.parseInt(cmd.getOptionValue("clusterSize"))
-    else 1
+    if (sc.getConf.getBoolean("spark.dynamicAllocation.enabled", false)) {
+      val maxExecutors = sc.getConf.getInt("spark.dynamicAllocation.maxExecutors", 1)
+      val minExecutors = sc.getConf.getInt("spark.dynamicAllocation.minExecutors", 1)
+      if (isTraining)
+        assert(maxExecutors==minExecutors,
+          "spark.dynamicAllocation.maxExecutors and spark.dynamicAllocation.minExecutors must be identical")
+      minExecutors
+    } else {
+      if (sparkMaster.startsWith("yarn"))
+        sc.getConf.getInt("spark.executor.instances", 1)
+      else if (cmd.hasOption("clusterSize")) Integer.parseInt(cmd.getOptionValue("clusterSize"))
+      else 1
+    }
   }
 
   /**
@@ -123,7 +134,7 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
    */
   val transform_thread_per_device = 1
 
-  /* blob names of feature output blobs */
+  /** blob names of feature output blobs */
   var features : Array[String] =
     if (cmd.hasOption("features")){
       val features_str = cmd.getOptionValue("features")
@@ -137,9 +148,13 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
    */
   var outputFormat : String = if (cmd.hasOption("outputFormat")) cmd.getOptionValue("outputFormat") else "json"
 
-  /* tool: input path */
+  /** tool: input path */
   var imageRoot : String = if (cmd.hasOption("imageRoot")) cmd.getOptionValue("imageRoot") else null
   var labelFile : String = if (cmd.hasOption("labelFile")) cmd.getOptionValue("labelFile") else null
+
+  /** number of LMDB partitions */
+  var lmdb_partitions : Int = if (!cmd.hasOption("lmdb_partitions")) clusterSize
+    else Integer.parseInt(cmd.getOptionValue("lmdb_partitions"))
 
   @transient
   var solverParameter: SolverParameter = null
@@ -203,7 +218,8 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     buildr.append("protoFile:").append(protoFile).append("\n")
     buildr.append("train:").append(isTraining).append("\n")
     buildr.append("test:").append(isTest).append("\n")
-    buildr.append("features:").append(features.mkString(",")).append("\n")
+    if (features != null)
+      buildr.append("features:").append(features.mkString(",")).append("\n")
     buildr.append("label:").append(label).append("\n")
     buildr.append("outputFormat:").append(outputFormat).append("\n")
     buildr.append("model:").append(modelPath).append("\n")
@@ -213,6 +229,7 @@ class Config(sc: SparkContext, args: Array[String]) extends Serializable {
     buildr.append("snapshot:").append(snapshotStateFile).append("\n")
     buildr.append("weights:").append(snapshotModelFile).append("\n")
     buildr.append("clusterSize:").append(clusterSize).append("\n")
+    buildr.append("lmdb_partitions:").append(lmdb_partitions).append("\n")
     buildr.append("train_data_layer_id:").append(train_data_layer_id).append("\n")
     buildr.append("test_data_layer_id:").append(test_data_layer_id).append("\n")
     buildr.append("transform_thread_per_device:").append(transform_thread_per_device).append("\n")
