@@ -46,7 +46,6 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
    *  @return true if successfully initialized
    */
   def init() : Boolean = {
-    conf.init()
 
     //solver parameter
     solverParameter = conf.solverParameter

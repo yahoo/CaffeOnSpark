@@ -34,7 +34,6 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
       "-labelFile", "file:"+ROOT_PATH+"data/images/labels.txt"
     )
     conf = new Config(sc, args)
-    conf.init()
 
     val seq_file_path = "file:"+ROOT_PATH+"caffe-grid/target/seq_image_files"
     val path = new Path(seq_file_path)
