@@ -39,7 +39,7 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>CaffeSpark configuration
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>CaffeOnSpark configuration
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
@@ -90,6 +90,19 @@
       </span>
       <span class="symbol">
         <span class="name">Config</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>, <span name="args">args: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.yahoo.ml.caffe.Config#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(sc:org.apache.spark.SparkContext):com.yahoo.ml.caffe.Config"></a>
+      <a id="&lt;init&gt;:Config"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">Config</span><span class="params">(<span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span>
       </span>
       </h4>
       
@@ -205,41 +218,85 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">clusterSize</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt"># of executors in the cluster
+      <p class="shortcomment cmt">Get # of executors in the cluster
 </p>
-    </li><li name="com.yahoo.ml.caffe.Config#connection" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.yahoo.ml.caffe.Config#clusterSize_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="clusterSize_=(value:Int):Unit"></a>
+      <a id="clusterSize_=(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: clusterSize_$eq" class="name">clusterSize_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set # of executors in the cluster
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#connection" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="connection:Int"></a>
       <a id="connection:Int"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">connection</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">network interface for connection among Spark executors
-</p>
+      <p class="shortcomment cmt">Get network interface for connection among Spark executors.</p><div class="fullcomment"><div class="comment cmt"><p>Get network interface for connection among Spark executors.
+0 : NONE, 1: RDMA, 2: SOCKET
+</p></div></div>
+    </li><li name="com.yahoo.ml.caffe.Config#connection_=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="connection_=(value:Int):Unit"></a>
+      <a id="connection_=(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: connection_$eq" class="name">connection_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set network interface for connection among Spark executors.</p><div class="fullcomment"><div class="comment cmt"><p>Set network interface for connection among Spark executors.
+0 : NONE, 1: RDMA, 2: SOCKET
+</p></div></div>
     </li><li name="com.yahoo.ml.caffe.Config#devices" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="devices:Int"></a>
       <a id="devices:Int"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">devices</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt"># of GPUs per executor
+      <p class="shortcomment cmt">Get # of GPUs/CPUs per Spark executor
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#devices_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="devices_=(value:Int):Unit"></a>
+      <a id="devices_=(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: devices_$eq" class="name">devices_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set # of GPUs/CPUs per Spark executor
 </p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
@@ -273,13 +330,28 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">features</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">blob names of feature output blobs</p>
+      <p class="shortcomment cmt">Get blob names of feature output blobs
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#features_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="features_=(value:Array[String]):Unit"></a>
+      <a id="features_=(Array[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: features_$eq" class="name">features_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set blob names of feature output blobs
+</p>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -331,40 +403,55 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">imageRoot</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">imageRoot</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">tool: input path</p>
-    </li><li name="com.yahoo.ml.caffe.Config#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="init():com.yahoo.ml.caffe.Config"></a>
-      <a id="init():Config"></a>
+      <p class="shortcomment cmt">Get the path of input image folder
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#imageRoot_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="imageRoot_=(value:String):Unit"></a>
+      <a id="imageRoot_=(String):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">init</span><span class="params">()</span><span class="result">: <a href="" class="extype" name="com.yahoo.ml.caffe.Config">Config</a></span>
+        <span title="gt4s: imageRoot_$eq" class="name">imageRoot_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Initialization of configuration</p><div class="fullcomment"><div class="comment cmt"><p>Initialization of configuration</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>initialized configuration
-</p></dd></dl></div>
+      <p class="shortcomment cmt">Set the path of input image folder
+</p>
     </li><li name="com.yahoo.ml.caffe.Config#isFeature" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="isFeature:Boolean"></a>
       <a id="isFeature:Boolean"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">isFeature</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">flag indicate whether we want to perform model training or not
+      <p class="shortcomment cmt">true if we perform feature extraction
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#isFeature_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isFeature_=(value:Boolean):Unit"></a>
+      <a id="isFeature_=(Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: isFeature_$eq" class="name">isFeature_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">flag indicate whether we want to perform feature extraction or not
 </p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -385,13 +472,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">isRddPersistent</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">flag indicate whether training RDD should be persistent or not
+      <p class="shortcomment cmt">True if training RDD should be persistent
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#isRddPersistent_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isRddPersistent_=(value:Boolean):Unit"></a>
+      <a id="isRddPersistent_=(Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: isRddPersistent_$eq" class="name">isRddPersistent_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set flag indicate whether training RDD should be persistent or not
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#isTest" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="isTest:Boolean"></a>
@@ -399,13 +500,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">isTest</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">flag indicate whether we want to perform model test or not
+      <p class="shortcomment cmt">true if we perform model test
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#isTest_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isTest_=(value:Boolean):Unit"></a>
+      <a id="isTest_=(Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: isTest_$eq" class="name">isTest_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set flag indicate whether we want to perform model test or not
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#isTraining" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="isTraining:Boolean"></a>
@@ -413,13 +528,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">isTraining</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">flag indicate whether we want to perform model training or not
+      <p class="shortcomment cmt">true if we perform model training
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#isTraining_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isTraining_=(value:Boolean):Unit"></a>
+      <a id="isTraining_=(Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: isTraining_$eq" class="name">isTraining_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set flag indicate whether we want to perform model training or not
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#label" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="label:String"></a>
@@ -427,13 +556,13 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">label</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">label</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">label blob name
+      <p class="shortcomment cmt">Get label blob name
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#labelFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="labelFile:String"></a>
@@ -441,39 +570,110 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">labelFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">labelFile</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Get the input label file
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#labelFile_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="labelFile_=(value:String):Unit"></a>
+      <a id="labelFile_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: labelFile_$eq" class="name">labelFile_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set the input label file
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#label_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="label_=(value:String):Unit"></a>
+      <a id="label_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: label_$eq" class="name">label_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set label blob name
+</p>
     </li><li name="com.yahoo.ml.caffe.Config#lmdb_partitions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="lmdb_partitions:Int"></a>
       <a id="lmdb_partitions:Int"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">lmdb_partitions</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">number of LMDB partitions</p>
+      <p class="shortcomment cmt">Get number of LMDB partitions
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#lmdb_partitions_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="lmdb_partitions_=(value:Int):Unit"></a>
+      <a id="lmdb_partitions_=(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: lmdb_partitions_$eq" class="name">lmdb_partitions_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set number of LMDB partitions
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#log" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="log:org.slf4j.Logger"></a>
+      <a id="log:Logger"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="result">: <span class="extype" name="org.slf4j.Logger">Logger</span></span>
+      </span>
+      </h4>
+      
     </li><li name="com.yahoo.ml.caffe.Config#modelPath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="modelPath:String"></a>
       <a id="modelPath:String"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">modelPath</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">modelPath</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">HDFS path for model file
+      <p class="shortcomment cmt">Get HDFS path for model file
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#modelPath_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="modelPath_=(value:String):Unit"></a>
+      <a id="modelPath_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: modelPath_$eq" class="name">modelPath_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set HDFS path for model file
 </p>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
@@ -494,13 +694,14 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">netParam</span><span class="result">: <span class="extype" name="caffe.Caffe.NetParameter">NetParameter</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Network parameter
+</p>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -533,26 +734,53 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">outputFormat</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">outputFormat</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Output dataframe format.</p>
+      <p class="shortcomment cmt">Get output dataframe format.</p>
+    </li><li name="com.yahoo.ml.caffe.Config#outputFormat_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="outputFormat_=(value:String):Unit"></a>
+      <a id="outputFormat_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: outputFormat_$eq" class="name">outputFormat_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set output dataframe format.</p>
     </li><li name="com.yahoo.ml.caffe.Config#outputPath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="outputPath:String"></a>
       <a id="outputPath:String"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">outputPath</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">outputPath</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">HDFS path for test results
+      <p class="shortcomment cmt">Get HDFS path for output file for test results etc
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#outputPath_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="outputPath_=(value:String):Unit"></a>
+      <a id="outputPath_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: outputPath_$eq" class="name">outputPath_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set HDFS path for output file for test results etc
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#protoFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="protoFile:String"></a>
@@ -560,13 +788,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">protoFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">protoFile</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">file location of solver protocol file
+      <p class="shortcomment cmt">Get file location of solver protocol file
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#protoFile_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="protoFile_=(value:String):Unit"></a>
+      <a id="protoFile_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: protoFile_$eq" class="name">protoFile_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set file location of solver protocol file
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#resize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="resize:Boolean"></a>
@@ -574,13 +816,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">resize</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">flag for resizing input image
+      <p class="shortcomment cmt">true if input image will be resized
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#resize_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="resize_=(value:Boolean):Unit"></a>
+      <a id="resize_=(Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: resize_$eq" class="name">resize_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set flag for resizing input image
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#snapshotModelFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="snapshotModelFile:String"></a>
@@ -588,13 +844,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">snapshotModelFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">snapshotModelFile</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">HDFS path for snapshot models
+      <p class="shortcomment cmt">Get HDFS path for snapshot models
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#snapshotModelFile_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="snapshotModelFile_=(value:String):Unit"></a>
+      <a id="snapshotModelFile_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: snapshotModelFile_$eq" class="name">snapshotModelFile_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set HDFS path for snapshot models
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#snapshotStateFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="snapshotStateFile:String"></a>
@@ -602,13 +872,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">snapshotStateFile</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">snapshotStateFile</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">HDFS path for snapshot states
+      <p class="shortcomment cmt">Get HDFS path for snapshot states
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#snapshotStateFile_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="snapshotStateFile_=(value:String):Unit"></a>
+      <a id="snapshotStateFile_=(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: snapshotStateFile_$eq" class="name">snapshotStateFile_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set HDFS path for snapshot states
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#solverParameter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="solverParameter:caffe.Caffe.SolverParameter"></a>
@@ -616,13 +900,14 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">solverParameter</span><span class="result">: <span class="extype" name="caffe.Caffe.SolverParameter">SolverParameter</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Solver parameter
+</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -642,13 +927,13 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">test_data_layer_id</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">layer ID of training data source
+      <p class="shortcomment cmt">Set layer ID of training data source
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
@@ -669,13 +954,13 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">var</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">train_data_layer_id</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">layer ID of training data source
+      <p class="shortcomment cmt">Get layer ID of training data source
 </p>
     </li><li name="com.yahoo.ml.caffe.Config#transform_thread_per_device" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="transform_thread_per_device:Int"></a>
@@ -683,13 +968,27 @@
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">transform_thread_per_device</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt"># of transformer threads per device
+      <p class="shortcomment cmt">Get # of transformer threads per device
+</p>
+    </li><li name="com.yahoo.ml.caffe.Config#transform_thread_per_device_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="transform_thread_per_device_=(value:Int):Unit"></a>
+      <a id="transform_thread_per_device_=(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: transform_thread_per_device_$eq" class="name">transform_thread_per_device_=</span><span class="params">(<span name="value">value: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Set # of transformer threads per device
 </p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
