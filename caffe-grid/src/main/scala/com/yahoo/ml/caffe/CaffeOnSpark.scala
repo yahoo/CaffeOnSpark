@@ -32,11 +32,7 @@ object CaffeOnSpark {
 
     //Caffe-on-Spark configuration
     var conf = new Config(sc, args)
-    if (conf.init() == null) {
-      log.error("Invalid CaffeOnSpark configuration")
-      System.exit(1)
-    }
-
+    
     //training if specified
     val caffeSpark = new CaffeOnSpark(sc)
     if (conf.isTraining) {
@@ -111,6 +107,11 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
 
     //Phase 1: Gather RDMA addresses from executors
     val conf = source.conf
+    if (!conf.snapshotStateFile.isEmpty && conf.snapshotModelFile.isEmpty) {
+      log.error("to resume training, please provide input model file")
+      return
+    }
+
     var rank_2_addresses_n_host = sc.parallelize(0 until conf.clusterSize, conf.clusterSize).map {
       case rank: Int => {
         val processor = CaffeProcessor.instance[T1, T2](source, rank)

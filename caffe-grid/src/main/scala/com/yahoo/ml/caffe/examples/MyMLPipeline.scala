@@ -17,7 +17,7 @@ object MyMLPipeline {
     //CaffeOnSpark initialization
     val ctx = new SparkContext(new SparkConf())
     val cos = new CaffeOnSpark(ctx)
-    var conf = new Config(ctx, args).init()
+    var conf = new Config(ctx, args)
 
     //perform DL training using the TRAINING source specified in Net prototxt
     val dl_train_source = DataSource.getSource(conf, true)
