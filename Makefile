@@ -7,13 +7,13 @@ DYLD_LIBRARY_PATH2=${DYLD_LIBRARY_PATH}:${CAFFE_ON_SPARK}/caffe-public/distribut
 
 build: 
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
-	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; mvn package
+	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; mvn -B package
 	jar -xvf caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar META-INF/native/linux64/liblmdbjni.so
 	mv META-INF/native/linux64/liblmdbjni.so ${CAFFE_ON_SPARK}/caffe-distri/distribute/lib
 
 buildosx: 
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
-	export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; mvn package
+	export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; mvn -B package
 	jar -xvf caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar META-INF/native/osx64/liblmdbjni.jnilib
 	mv META-INF/native/osx64/liblmdbjni.jnilib ${CAFFE_ON_SPARK}/caffe-distri/distribute/lib
 
