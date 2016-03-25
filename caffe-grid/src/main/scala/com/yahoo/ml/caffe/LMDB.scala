@@ -26,6 +26,12 @@ import scala.collection.mutable.ArrayBuffer
 class LMDB(conf: Config, layerId: Int, isTrain: Boolean) extends ImageDataSource(conf, layerId, isTrain) {
   override def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
     //create a RDD
-    new LmdbRDD(sc, sourceFilePath, conf.lmdb_partitions).persist(StorageLevel.DISK_ONLY)
+    new LmdbRDD(sc, sourceFilePath, conf.lmdb_partitions)
+      .filter(isNotDummy)
+      .persist(StorageLevel.DISK_ONLY)
+  }
+
+  private def isNotDummy(item : (String, String, Int, Int, Int, Boolean, Array[Byte])): Boolean = {
+    item._7 != null
   }
 }
