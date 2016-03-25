@@ -9,8 +9,8 @@ import caffe.Caffe.Datum
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
-import org.fusesource.lmdbjni.{Transaction, Database, Env}
+import org.apache.spark.{Logging, Partition, SparkContext, SparkFiles, TaskContext}
+import org.fusesource.lmdbjni.{Transaction, Database, Entry, Env}
 import org.slf4j.{LoggerFactory, Logger}
 
 import scala.collection.mutable
@@ -35,62 +35,74 @@ private[caffe] class LmdbPartition(idx: Int, val startKey: Array[Byte], val size
 
 class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPartitions: Int)
   extends RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])](sc, Nil) with Logging {
+  @transient var env: Env = null
+  @transient var db: Database = null
 
   override def getPartitions: Array[Partition] = {
-    //load lmdbjni
-    LmdbRDD.loadLibrary()
+    //make sourceFilePath downloaded to all nodes
+    sc.addFile(lmdb_path, true)
 
     var part_index: Int = 0
     var pos: Int = 0
-    val env: Env = new Env(LmdbRDD.toLocalFile(lmdb_path))
-    val db: Database = env.openDatabase(null, 0)
+
+    openDB()
     val size: Long = db.stat().ms_entries
     val part_size: Int = Math.ceil(size.toDouble / numPartitions.toDouble).toInt
 
+    var failed = false
+    var next: Entry = null
+    var start_key: Array[Byte] = null
     val partitions = new Array[Partition](numPartitions)
-    val txn = env.createReadTransaction()
-    try {
-      val it = db.iterate(txn)
-      while (it.hasNext && part_index < numPartitions) {
-        val next = it.next()
-        val key: Array[Byte] = next.getKey()
+    while (failed == false && part_index < numPartitions) {
+      val txn = env.createReadTransaction()
 
-        if (pos % part_size == 0) {
-          partitions(part_index) = new LmdbPartition(part_index, key, part_size)
-          part_index = part_index + 1
+      try {
+        val it = if (part_index == 0) db.iterate(txn)
+        else db.seek(txn, start_key)
+
+        while (it.hasNext && (pos - 1) % part_size != 0) {
+          next = it.next()
+          pos = pos + 1
         }
 
-        pos = pos + 1
-      }
-    } catch {
-      case e: Exception =>
-        logWarning(e.toString)
-    } finally {
-      doCommit(txn)
-      doClose(db)
-    }
+        if ((pos - 1) % part_size == 0) {
+          start_key = next.getKey()
+          partitions(part_index) = new LmdbPartition(part_index, start_key, part_size)
+        }
 
-    logInfo(partitions.length + " LMDB RDD partitions")
-    partitions
+        part_index = part_index + 1
+      } catch {
+        case e: Exception => {
+          logWarning(e.toString, e)
+          failed = true
+        }
+      } finally {
+        commit(txn)
+      }
+    }
+    closeDB()
+
+    if (failed) {
+      null
+    } else {
+      logInfo(partitions.length + " LMDB RDD partitions")
+      partitions
+    }
   }
 
   override def compute(thePart: Partition, context: TaskContext):
-  Iterator[(String, String, Int, Int, Int, Boolean, Array[Byte])] =
+  Iterator[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
     new Iterator[(String, String, Int, Int, Int, Boolean, Array[Byte])] {
       logInfo("Processing partition " + thePart.index)
-      //load lmdbjni
-      LmdbRDD.loadLibrary()
+      openDB()
 
-      //create an iterator
-      val env: Env = new Env(LmdbRDD.toLocalFile(lmdb_path))
-      val db: Database = env.openDatabase(null, 0)
       val part = thePart.asInstanceOf[LmdbPartition]
       val txn: Transaction = env.createReadTransaction()
       var pos_in_partition: Int = 0
       var it = if (txn != null)
         db.seek(txn, part.startKey)
       else {
-        doClose(db)
+        closeDB()
         null
       }
 
@@ -99,8 +111,8 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 
         val res = it.hasNext
         if (!res || (pos_in_partition == part.size)) {
-          doCommit(txn)
-          doClose(db)
+          commit(txn)
+          closeDB()
           it = null
           logInfo("Completed partition " + thePart.index)
         }
@@ -135,32 +147,84 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
         }
       }
     }
+  }
 
-  private def doCommit(txn: Transaction): Unit = {
+  private def commit(txn: Transaction): Unit = {
     try {
-      if (txn != null) {
+      if (txn != null)
         txn.commit()
-      }
     } catch {
       case e: Exception => logWarning("Exception commit transaction", e)
     }
   }
 
-  private def doClose(db: Database): Unit = {
+  private def localLMDBFile(): String = {
+    /*
+    synchronization to avoid potential file corruption
+     */
+    synchronized {
+      //local file name
+      val folder: Path = new Path(lmdb_path)
+      val local_lmdb_folder = SparkFiles.get(folder.getName)
+
+      //make sure that all mdb files are writable
+      val db_files = new File(local_lmdb_folder).listFiles(new FilenameFilter {
+        override def accept(dir: File, name: String): Boolean =
+          name.toLowerCase().endsWith(".mdb")
+      })
+      for (db_file <- db_files)
+        db_file.setWritable(true)
+
+      //return
+      log.info("local LMDB path:"+local_lmdb_folder)
+      local_lmdb_folder
+    }
+  }
+
+  /*
+  open Database if needed
+ */
+  private def openDB() : Unit = {
+    //load lmdbjni
+    LmdbRDD.loadLibrary()
+
+    if (env == null)
+      env = new Env(localLMDBFile())
+
+    if (db == null)
+      db = env.openDatabase(null, 0)
+  }
+
+  /*
+  close Database
+   */
+  private def closeDB(): Unit = {
     try {
       if (db != null) {
         db.close()
+        db = null
+      }
+
+      if (env != null) {
+        env.close()
+        env = null
       }
     } catch {
       case e: Exception => logWarning("Exception closing database", e)
     }
+  }
+
+  /*
+   * Database will be closed by GC.
+   */
+  override protected def finalize() : Unit = {
+    closeDB()
   }
 }
 
 private[caffe] object LmdbRDD {
   private val log: Logger = LoggerFactory.getLogger(this.getClass)
   private var libLoaded: Boolean = false
-  private var fileMap: mutable.HashMap[String, String] = mutable.HashMap[String, String]()
 
   //load lmdbjni
   private def loadLibrary(): Unit = {
@@ -172,52 +236,6 @@ private[caffe] object LmdbRDD {
         libLoaded = true
       }
     }
-  }
-
-  private def toLocalFile(sourceFilePath: String): String = {
-    synchronized {
-      if (fileMap.contains(sourceFilePath)) {
-        fileMap.get(sourceFilePath).get
-      } else {
-        //download files if needed
-        val local_lmdb_path =
-          if (sourceFilePath.startsWith(FSUtils.localfsPrefix)) {
-            sourceFilePath.substring("file://".length)
-          } else {
-            //copy .mdb files onto pwd
-            val folder: Path = new Path(sourceFilePath)
-            val fs: FileSystem = folder.getFileSystem(new Configuration())
-            val pwd = System.getProperty("user.dir")
-            val files_status_iterator = fs.listFiles(folder, false)
-            while (files_status_iterator.hasNext) {
-              val file_status = files_status_iterator.next()
-              val src_path: Path = file_status.getPath()
-              val src_fname = src_path.getName
-              if (src_fname.endsWith(".mdb"))
-                fs.copyToLocalFile(false, src_path, new Path("file://" + pwd + "/" + src_fname), true)
-            }
-
-            pwd
-          }
-
-        //make lmdb files wriatble
-        mkWritable(local_lmdb_path)
-        fileMap.put(sourceFilePath, local_lmdb_path)
-
-        //return
-        local_lmdb_path
-      }
-    }
-  }
-
-  private def mkWritable(lmdb_path: String): Unit = {
-    //make sure that all mdb files are writable
-    val db_files = new File(lmdb_path).listFiles(new FilenameFilter {
-      override def accept(dir: File, name: String): Boolean =
-        name.toLowerCase().endsWith(".mdb")
-    })
-    for (db_file <- db_files)
-      db_file.setWritable(true)
   }
 
   /**

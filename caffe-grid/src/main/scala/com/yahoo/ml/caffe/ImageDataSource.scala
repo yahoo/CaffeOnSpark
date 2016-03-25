@@ -26,7 +26,7 @@ import org.slf4j.{LoggerFactory, Logger}
  */
 abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
   extends DataSource[(String, String, Int, Int, Int, Boolean, Array[Byte]), MatVector](conf,
-                                          layerId, isTrain, (null, null, 0, 0, 0, false, null)) {
+    layerId, isTrain, (null, null, 0, 0, 0, false, null)) {
   @transient protected var log: Logger = null
   @transient protected var memdatalayer_param: MemoryDataParameter = null
   @transient private var numChannels = 0
@@ -122,8 +122,8 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
             log.warn("Skip image " + sample_id)
             mat = null
           }
-          else if (conf.resize && ((sample_height!=height) || (sample_width!=width))) {
-            log.info("Resize from " + sample_height + "x"+ sample_width + " to " + height + "x" + width)
+          else if (conf.resize && ((sample_height != height) || (sample_width != width))) {
+            log.info("Resize from " + sample_height + "x" + sample_width + " to " + height + "x" + width)
             mat.resize(height, width)
           }
         } else {
