@@ -40,7 +40,8 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
-    sc.addFile(lmdb_path, true)
+    if (!lmdb_path.startsWith(FSUtils.localfsPrefix))
+      sc.addFile(lmdb_path, true)
 
     var part_index: Int = 0
     var pos: Int = 0
@@ -165,7 +166,11 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
     synchronized {
       //local file name
       val folder: Path = new Path(lmdb_path)
-      val local_lmdb_folder = SparkFiles.get(folder.getName)
+      val local_lmdb_folder =
+        if (folder.toString.startsWith(FSUtils.localfsPrefix))
+          folder.toString.substring(FSUtils.localfsPrefix.length)
+        else
+          SparkFiles.get(folder.getName)
 
       //make sure that all mdb files are writable
       val db_files = new File(local_lmdb_folder).listFiles(new FilenameFilter {
@@ -176,7 +181,7 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
         db_file.setWritable(true)
 
       //return
-      log.info("local LMDB path:"+local_lmdb_folder)
+      log.info("local LMDB path:" + local_lmdb_folder)
       local_lmdb_folder
     }
   }
@@ -184,7 +189,7 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
   /*
   open Database if needed
  */
-  private def openDB() : Unit = {
+  private def openDB(): Unit = {
     //load lmdbjni
     LmdbRDD.loadLibrary()
 
@@ -217,7 +222,7 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
   /*
    * Database will be closed by GC.
    */
-  override protected def finalize() : Unit = {
+  override protected def finalize(): Unit = {
     closeDB()
   }
 }
