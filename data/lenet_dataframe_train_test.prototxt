@@ -9,7 +9,7 @@ layer {
   }
   source_class: "com.yahoo.ml.caffe.ImageDataFrame"
   memory_data_param {
-    source: "/Users/mridul/bigml/mnist_train_dataframe/"
+    source: "hdfs:///projects/machine_learning/image_dataset/mnist_train_dataframe/"
     batch_size: 64
     channels: 1
     height: 28
@@ -30,7 +30,7 @@ layer {
   }
   source_class: "com.yahoo.ml.caffe.ImageDataFrame"
   memory_data_param {
-    source: "/Users/mridul/bigml/mnist_test_dataframe"
+    source: "hdfs:///projects/machine_learning/image_dataset/mnist_test_dataframe/"
     batch_size: 100
     channels: 1
     height: 28
