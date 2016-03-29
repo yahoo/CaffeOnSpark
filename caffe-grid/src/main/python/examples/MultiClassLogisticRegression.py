@@ -4,9 +4,9 @@ Licensed under the terms of the Apache 2.0 license.
 Please see LICENSE file in the project root for terms.
 '''
 
-from CaffeOnSpark import *
-from Config import *
-from DataSource import *
+from com.yahoo.ml.caffe.CaffeOnSpark import *
+from com.yahoo.ml.caffe.Config import *
+from com.yahoo.ml.caffe.DataSource import *
 from pyspark.sql import DataFrame
 from pyspark.mllib.linalg import Vectors
 from pyspark.sql import Row
