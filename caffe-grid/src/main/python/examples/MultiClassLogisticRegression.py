@@ -21,7 +21,7 @@ def grouper(iterable, n, fillvalue=None):
     return izip_longest(fillvalue=fillvalue, *args)
 
 conf = SparkConf()
-sc = SparkContext(conf)
+sc = SparkContext(conf=conf)
 sqlContext = SQLContext(sc)
 #Initialize all objects
 cos=CaffeOnSpark(sc,sqlContext)
