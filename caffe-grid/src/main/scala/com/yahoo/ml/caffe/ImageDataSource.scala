@@ -66,7 +66,7 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
       val path = new URI(sourceFilePath).toString().substring(FSUtils.localfsPrefix.length)
       if (!path.startsWith("/")) {
         val f = new File(path)
-        sourceFilePath = f.getAbsolutePath()
+        sourceFilePath = FSUtils.localfsPrefix+f.getAbsolutePath()
       }
     }
 

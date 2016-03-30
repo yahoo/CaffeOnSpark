@@ -50,19 +50,18 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   return true;
 }
 
-message_header receive_message_header(int sockfd) {
-  message_header mh;
-  int n = read(sockfd, &mh, sizeof(mh));
+void receive_message_header(int sockfd,message_header * mh) {
+  
+  int n = read(sockfd, mh, sizeof(*mh));
   if (n < 0) {
     LOG(ERROR) << "ERROR: Reading message header!";
     pthread_exit(NULL);
   }
-  else if (n < sizeof(mh)) {
+  else if (n < sizeof(*mh)) {
     LOG(ERROR) << "ERROR: Read partial messageheader ["
-               << n <<" of " << sizeof(mh) << "]";
+               << n <<" of " << sizeof(*mh) << "]";
     pthread_exit(NULL);
   }
-  return mh;
 }
 
 struct connection_details {
@@ -79,8 +78,9 @@ QueuedMessage::QueuedMessage(message_type type, int size, uint8_t* buffer) {
 // Handle each peer connection in their own handlers
 void *client_connection_handler(void *metadata) {
   struct connection_details * cd = (struct connection_details*) metadata;
+  struct message_header mh;
   while (1) {
-    struct message_header mh = receive_message_header(cd->serving_fd);
+    receive_message_header(cd->serving_fd, &mh);
     // FIXME: The condition where socket server gets a connection
     // from the peer but the user didn't allocate a SocketChannel
     // for the peer.This can even happen if adapter is instantiated
@@ -178,16 +178,16 @@ void *sockt_srvr(void *metadata) {
                               &client_addr, &client_addr_len))) {
     char client_hostname[256];
     gethostnamebysinaddr(client_addr, client_hostname, 256);
-    struct connection_details cd;
-    cd.serving_fd = serving_fd;
-    cd.sa = sa;
+    struct connection_details* cd = new struct connection_details;
+    cd->serving_fd = serving_fd;
+    cd->sa = sa;
     LOG(INFO) << "Accepted the connection from client ["
               << client_hostname << "]";
     // Create a thread per peer connection to handle
     // their communication
     if (pthread_create(&thread_id, NULL,
                        client_connection_handler,
-                       reinterpret_cast<void*>(&cd)) < 0) {
+                       reinterpret_cast<void*>(cd)) < 0) {
       LOG(ERROR) << "ERROR: Could not create thread for the "
                  << "incoming client connection ["
                  << client_hostname << "]";
