@@ -18,7 +18,9 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../caffe-grid/src/main/python/'))
+sys.path.insert(0, os.path.abspath('../caffe-grid/src/main/python/com/yahoo/ml/caffe'))
+sys.path.insert(1, os.path.abspath('../data'))
+sys.path.insert(2, os.path.abspath('../data/caffe'))
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

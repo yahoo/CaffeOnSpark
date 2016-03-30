@@ -14,6 +14,7 @@ Contents:
    CaffeOnSpark
    DataSource
    Config
+   DisplayUtils
 
 Indices and tables
 ==================
