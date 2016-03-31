@@ -1,5 +1,5 @@
 # The train/test net protocol buffer definition
-net: "lenet_dataframe_train_test.prototxt"
+net: "/Users/mridul/bigml/CaffeOnSpark/data/lenet_dataframe_train_test.prototxt"
 # test_iter specifies how many forward passes the test should carry out.
 test_iter: 1
 # Carry out testing every 500 training iterations.
@@ -20,4 +20,4 @@ max_iter: 10000
 snapshot: 5000
 snapshot_prefix: "mnist_lenet"
 # solver mode: CPU or GPU
-solver_mode: GPU
+solver_mode: CPU
