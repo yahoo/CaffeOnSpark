@@ -9,7 +9,7 @@ layer {
   }
   source_class: "com.yahoo.ml.caffe.LMDB"
   memory_data_param {
-    source: "hdfs:///projects/machine_learning/image_dataset/mnist_train_lmdb/"
+    source: "file:/Users/mridul/bigml/demodl/mnist_train_lmdb"
     batch_size: 64
     channels: 1
     height: 28
@@ -30,7 +30,7 @@ layer {
   }
   source_class: "com.yahoo.ml.caffe.LMDB"
   memory_data_param {
-    source: "hdfs:///projects/machine_learning/image_dataset/mnist_test_lmdb/"
+    source: "file:/Users/mridul/bigml/demodl/mnist_test_lmdb/"
     batch_size: 100
     channels: 1
     height: 28

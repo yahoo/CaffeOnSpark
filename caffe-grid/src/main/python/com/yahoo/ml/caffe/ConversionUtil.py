@@ -65,7 +65,7 @@ import traceback
 #The maximum time to wait for Scala Futures to complete.
 awaitSeconds=600
 
-_DEBUG=True
+_DEBUG=False
 
 #Basically forward declarations.
 _typeToCommonClass = None
