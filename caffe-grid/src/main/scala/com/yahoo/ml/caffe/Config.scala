@@ -19,7 +19,7 @@ class Config(sc: SparkContext) extends Serializable {
   private var _isTraining = false
   private var _isTest = false
   private var _isFeature = false
-  private var _label = ""
+  private var _label = "label"
   private var _modelPath = ""
   private var _outputPath = ""
   private var _devices = 0
@@ -33,7 +33,7 @@ class Config(sc: SparkContext) extends Serializable {
   private var _test_data_layer_id = -1
   private var _transform_thread_per_device = 1
   private var _features = Array[String]()
-  private var _outputFormat = ""
+  private var _outputFormat = "json"
   private var _imageRoot = ""
   private var _labelFile = ""
   private var _lmdb_partitions = 0
