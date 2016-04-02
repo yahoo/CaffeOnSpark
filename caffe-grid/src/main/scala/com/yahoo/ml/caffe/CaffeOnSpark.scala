@@ -227,6 +227,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * @return key/value map for mean values of output layers
    */
   def test[T1,T2](source:DataSource[T1,T2]) : Map[String, Seq[Double]] = {
+    source.conf.isTest = true
     val testDF = features2(source)
 
     var result = new mutable.HashMap[String, Seq[Double]]
@@ -256,6 +257,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * @return Feature data frame
    */
   def features[T1,T2](source:DataSource[T1,T2]) : DataFrame = {
+    source.conf.isTest = false
     var featureDF = features2(source)
 
     //take action to force featureDF persisted
