@@ -5,6 +5,6 @@
 #
 # This script install Hadoop locally
 
-wget http://apache.arvixe.com/hadoop/common/hadoop-2.6.4/hadoop-2.6.4.tar.gz
+wget http://apache.mirrors.tds.net/hadoop/common/hadoop-2.6.4/hadoop-2.6.4.tar.gz
 gunzip hadoop-2.6.4.tar.gz 
 tar -xvf hadoop-2.6.4.tar 
