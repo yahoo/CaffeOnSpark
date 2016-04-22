@@ -32,7 +32,7 @@ object CaffeOnSpark {
 
     //Caffe-on-Spark configuration
     var conf = new Config(sc, args)
-    
+
     //training if specified
     val caffeSpark = new CaffeOnSpark(sc)
     if (conf.isTraining) {
@@ -43,12 +43,14 @@ object CaffeOnSpark {
     //feature extraction
     if (conf.isFeature || conf.isTest) {
       val source = DataSource.getSource(conf, false)
-      if (conf.isFeature) { //feature extraction
+      if (conf.isFeature) {
+        //feature extraction
         val featureDF = caffeSpark.features(source)
-        
+
         //save extracted features into the specified file
         val rdf = featureDF.write.format(source.conf.outputFormat).save(source.conf.outputPath)
-      }else { //test
+      } else {
+        //test
         val result = caffeSpark.test(source)
 
         //save test results into a local file
@@ -59,9 +61,9 @@ object CaffeOnSpark {
         else
           localFilePath = System.getProperty("user.dir") + "/test_result.tmp"
         val out: PrintWriter = new PrintWriter(localFilePath)
-        result.map{
+        result.map {
           case (name, r) => {
-            out.println(name + ": "+r.mkString(","))
+            out.println(name + ": " + r.mkString(","))
           }
         }
         out.close
@@ -74,7 +76,6 @@ object CaffeOnSpark {
     }
   }
 }
-
 
 
 /**
@@ -98,8 +99,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * Training with a specific data source
    * @param source input data source
    */
-  def train[T1,T2](source:DataSource[T1,T2]): Unit = {
-    var trainDataRDD : RDD[T1] = source.makeRDD(sc)
+  def train[T1, T2](source: DataSource[T1, T2]): Unit = {
+    var trainDataRDD: RDD[T1] = source.makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data is given")
       return
@@ -126,19 +127,19 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     }.collect()
 
     for (i <- rank_2_addresses_n_host)
-      log.info("rank = " + i._1 + ", RDMAaddress = " + i._2.mkString(",") + ", hostname = " + i._3)
+      log.info("rank = " + i._1 + ", address = " + i._2.mkString(",") + ", hostname = " + i._3)
     var numExecutors: Int = sc.getExecutorMemoryStatus.size
     val numDriver: Int = if (sc.isLocal) 0 else 1
     if (conf.clusterSize + numDriver != numExecutors) {
       log.error("Requested # of executors: " + conf.clusterSize + " actual # of executors:" + (numExecutors - numDriver) +
-      ". Please try to set --conf spark.scheduler.maxRegisteredResourcesWaitingTime with a large value (default 30s)")
+        ". Please try to set --conf spark.scheduler.maxRegisteredResourcesWaitingTime with a large value (default 30s)")
       throw new IllegalStateException("actual number of executors is not as expected")
     }
 
     //Phase 2: bcast RDMA addresses
     val rank_2_addresses = rank_2_addresses_n_host.map {
       case (rank, rdma_addr, host) => {
-        if (rank==0) log.info("rank 0:"+host)
+        if (rank == 0) log.info("rank 0:" + host)
         (rank, rdma_addr)
       }
     }
@@ -147,7 +148,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     //Phase 3: set up the processors
     sc.parallelize(0 until conf.clusterSize, conf.clusterSize).map {
       case rank: Int => {
-        val processor = CaffeProcessor.instance[T1,T2]()
+        val processor = CaffeProcessor.instance[T1, T2]()
         //start processor w/ the given addresses
         processor.start(bcast_addresses.value)
       }
@@ -158,7 +159,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val desired_part_count = (origin_part_count / conf.clusterSize) * conf.clusterSize
     if (origin_part_count != desired_part_count) {
       trainDataRDD = trainDataRDD.coalesce(desired_part_count, true)
-      log.info("Training dataset partition count: "+origin_part_count+" -> "+desired_part_count)
+      log.info("Training dataset partition count: " + origin_part_count + " -> " + desired_part_count)
     }
     if (conf.isRddPersistent) {
       trainDataRDD = trainDataRDD.persist(StorageLevel.DISK_ONLY)
@@ -170,26 +171,27 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       val sizeRDD = trainDataRDD.mapPartitions {
         iter => {
           val partSize = iter.size
+          // Spark decides how data partitions are distributed among executors in this step.
           // synchronize among the executors,
           // to achieve same number of partitions.
-          val processor = CaffeProcessor.instance[T1,T2]()
+          val processor = CaffeProcessor.instance[T1, T2]()
           processor.sync()
           Iterator(partSize)
         }
       }.persist()
       minPartSize = sizeRDD.min()
-      log.info("Partition size: min=" + minPartSize + " max="+sizeRDD.max())
+      log.info("Partition size: min=" + minPartSize + " max=" + sizeRDD.max())
     }
 
     //Phase 6: feed the processor
     var continue: Boolean = true
     while (continue) {
       //conduct training with dataRDD
-      continue = trainDataRDD.mapPartitions{
+      continue = trainDataRDD.mapPartitions {
         iter => {
           var res = false
           //feed training data from iterator
-          val processor = CaffeProcessor.instance[T1,T2]()
+          val processor = CaffeProcessor.instance[T1, T2]()
           if (!processor.solversFinished) {
             if (minPartSize > 0) {
               res = iter.take(minPartSize).map { sample => processor.feedQueue(sample) }.reduce(_ && _)
@@ -210,7 +212,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
   /**
    * a utility function for shutting processor thread pool
    */
-  private def shutdownProcessors[T1,T2](conf: Config): Unit = {
+  private def shutdownProcessors[T1, T2](conf: Config): Unit = {
     sc.parallelize(0 until conf.clusterSize, conf.clusterSize).map {
       _ => {
         val processor = CaffeProcessor.instance[T1, T2]()
@@ -226,7 +228,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * @param source input data source
    * @return key/value map for mean values of output layers
    */
-  def test[T1,T2](source:DataSource[T1,T2]) : Map[String, Seq[Double]] = {
+  def test[T1, T2](source: DataSource[T1, T2]): Map[String, Seq[Double]] = {
     source.conf.isTest = true
     val testDF = features2(source)
 
@@ -234,7 +236,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     // compute the mean of the columns
     testDF.columns.zipWithIndex.map {
       case (name, index) => {
-        if (index > 0) { // first column is SampleId, ignored.
+        if (index > 0) {
+          // first column is SampleId, ignored.
           val n: Int = testDF.take(1)(0).getSeq[Double](index).size
           val ndf = testDF.agg(new VectorMean(n)(testDF(name)))
           val r: Seq[Double] = ndf.take(1)(0).getSeq[Double](0)
@@ -256,7 +259,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * @param source input data source
    * @return Feature data frame
    */
-  def features[T1,T2](source:DataSource[T1,T2]) : DataFrame = {
+  def features[T1, T2](source: DataSource[T1, T2]): DataFrame = {
     source.conf.isTest = false
     var featureDF = features2(source)
 
@@ -274,7 +277,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * @param source input data source
    * @return a data frame
    */
-  private def features2[T1,T2](source:DataSource[T1,T2]) : DataFrame = {
+  private def features2[T1, T2](source: DataSource[T1, T2]): DataFrame = {
     val srcDataRDD = source.makeRDD(sc)
     val conf = source.conf
     val clusterSize: Int = conf.clusterSize
@@ -283,11 +286,11 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val size = sc.parallelize(0 until clusterSize, clusterSize).map {
       case rank: Int => {
         // each processor has clusterSize 1 and rank 0
-        val processor = CaffeProcessor.instance[T1,T2](source, rank)
+        val processor = CaffeProcessor.instance[T1, T2](source, rank)
       }
     }.count()
     if (size < clusterSize) {
-      log.error((clusterSize-size) + "executors have failed. Please check Spark executor logs")
+      log.error((clusterSize - size) + "executors have failed. Please check Spark executor logs")
       throw new IllegalStateException("Executor failed at CaffeProcessor startup for test/feature extraction")
     }
 
@@ -295,7 +298,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val numExecutors: Int = sc.getExecutorMemoryStatus.size
     val numDriver: Int = if (sc.isLocal) 0 else 1
     if ((size + numDriver) != sc.getExecutorMemoryStatus.size) {
-      log.error("Requested # of executors: " + clusterSize + " actual # of executors:" + (numExecutors-numDriver) +
+      log.error("Requested # of executors: " + clusterSize + " actual # of executors:" + (numExecutors - numDriver) +
         ". Please try to set --conf spark.scheduler.maxRegisteredResourcesWaitingTime with a large value (default 30s)")
       throw new IllegalStateException("actual number of executors is not as expected")
     }
@@ -314,17 +317,22 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     //Phase 3: feed the processors
     val featureRDD = srcDataRDD.mapPartitions {
       iter => {
-        val processor = CaffeProcessor.instance[T1,T2]()
-        if (!processor.solversFinished) {
-          processor.start(null)
-          val res = iter.map { sample => processor.feedQueue(sample) }.reduce(_ && _)
-          processor.solversFinished = !res
-          processor.stopThreads()
-          import scala.collection.JavaConversions._
-          processor.results.iterator
-        } else {
-          Iterator()
-        }
+        val processor: CaffeProcessor[T1, T2] = CaffeProcessor.instance[T1, T2]()
+        val feature_iter: Iterator[Row] =
+          if (processor.solversFinished)
+            Iterator()
+          else {
+            processor.synchronized {
+              processor.start(null)
+              val res = iter.map { sample => processor.feedQueue(sample) }.reduce(_ && _)
+              processor.solversFinished = !res
+              processor.stopThreads()
+
+              import scala.collection.JavaConversions._
+              processor.results.iterator
+            }
+          }
+        feature_iter
       }
     }
 
