@@ -58,7 +58,7 @@ class Config(sc: SparkContext) extends Serializable {
   def protoFile_=(value: String): Unit = {
     _protoFile = value
     if (value == null || value.length() == 0) {
-      log.error("Error: need protofile path")
+      log.warn("solver protofile isn't given")
     } else {
       //solver parameter
       _solverParameter = Utils.GetSolverParam(value)
@@ -152,7 +152,7 @@ class Config(sc: SparkContext) extends Serializable {
    */
   def modelPath_=(value: String): Unit = {
     if (value == null || value.length() == 0) {
-      log.error("modelPath is required")
+      log.warn("modelPath is not specified")
     }
     _modelPath = value
   }

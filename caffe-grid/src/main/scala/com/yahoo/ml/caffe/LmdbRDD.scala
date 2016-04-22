@@ -43,39 +43,47 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
     if (!lmdb_path.startsWith(FSUtils.localfsPrefix))
       sc.addFile(lmdb_path, true)
 
-    var part_index: Int = 0
-    var pos: Int = 0
-
     openDB()
+
+    //part_size: # of keys to be included in each partitions
     val size: Long = db.stat().ms_entries
     val part_size: Int = Math.ceil(size.toDouble / numPartitions.toDouble).toInt
 
-    var failed = false
+    var is_done = false
     var next: Entry = null
-    var start_key: Array[Byte] = null
     val partitions = new Array[Partition](numPartitions)
-    while (failed == false && part_index < numPartitions) {
+    //last key in previous partition
+    var start_key: Array[Byte] = null
+
+    var part_index: Int = 0
+    partitions(part_index) = new LmdbPartition(part_index, null, part_size)
+
+    while (is_done == false && (part_index+1) < numPartitions) {
       val txn = env.createReadTransaction()
 
       try {
         val it = if (part_index == 0) db.iterate(txn)
         else db.seek(txn, start_key)
 
-        while (it.hasNext && (pos - 1) % part_size != 0) {
+        //skip (part_size) entries
+        var pos_in_partition: Int = 0
+        while (it.hasNext && (pos_in_partition < part_size)) {
           next = it.next()
-          pos = pos + 1
+          pos_in_partition = pos_in_partition + 1
         }
 
-        if ((pos - 1) % part_size == 0) {
-          start_key = next.getKey()
+        //start key for next partition
+        if (it.hasNext) {
+          start_key = it.next().getKey()
+          part_index = part_index + 1
           partitions(part_index) = new LmdbPartition(part_index, start_key, part_size)
+        } else {
+          is_done = true
         }
-
-        part_index = part_index + 1
       } catch {
         case e: Exception => {
           logWarning(e.toString, e)
-          failed = true
+          is_done = true
         }
       } finally {
         commit(txn)
@@ -83,12 +91,8 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
     }
     closeDB()
 
-    if (failed) {
-      null
-    } else {
-      logInfo(partitions.length + " LMDB RDD partitions")
-      partitions
-    }
+    logInfo((part_index+1) + " LMDB RDD partitions")
+    partitions
   }
 
   override def compute(thePart: Partition, context: TaskContext):
@@ -100,8 +104,9 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
       val part = thePart.asInstanceOf[LmdbPartition]
       val txn: Transaction = env.createReadTransaction()
       var pos_in_partition: Int = 0
-      var it = if (txn != null)
-        db.seek(txn, part.startKey)
+      var it = if (part != null && txn != null) {
+        if (part.startKey == null) db.iterate(txn) else db.seek(txn, part.startKey)
+      }
       else {
         closeDB()
         null

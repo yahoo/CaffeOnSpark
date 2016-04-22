@@ -152,8 +152,14 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
 
   // sync the executors
   def sync(): Unit = {
-    if (source.isTrain)
-      caffeNetList(0).sync
+    /**
+     * Multiple tasks may invoke sync() concurrently.
+     * To sure that all executors are synchronized, we will execute those invocation in sequence.
+     */
+    synchronized {
+      if (source.isTrain)
+        caffeNetList(0).sync
+    }
   }
 
   //feed data to train queue
