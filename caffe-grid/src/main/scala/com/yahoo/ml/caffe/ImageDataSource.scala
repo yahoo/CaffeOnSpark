@@ -118,7 +118,7 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
           mat = new Mat(sample_channels, sample_height, sample_width, sample_data)
           if (sample_encoded)
             mat.decode(Mat.CV_LOAD_IMAGE_UNCHANGED)
-          if (mat.width() != sample_width || mat.height() != sample_width) {
+          if (mat.width() != sample_width || mat.height() != sample_height) {
             log.warn("Skip image " + sample_id)
             mat = null
           }
