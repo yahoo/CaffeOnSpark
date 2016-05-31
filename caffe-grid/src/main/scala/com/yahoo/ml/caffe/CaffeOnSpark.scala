@@ -194,7 +194,12 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           val processor = CaffeProcessor.instance[T1, T2]()
           if (!processor.solversFinished) {
             if (minPartSize > 0) {
-              res = iter.take(minPartSize).map { sample => processor.feedQueue(sample) }.reduce(_ && _)
+              var idx = 0
+              //the entire iterator needs to be consumed, otherwise GC won't be triggered
+              res = iter.map { sample => {
+                idx += 1
+                if (idx <= minPartSize) processor.feedQueue(sample) else true
+              }}.reduce(_ && _)
             } else {
               res = iter.map { sample => processor.feedQueue(sample) }.reduce(_ && _)
             }

@@ -194,7 +194,7 @@ JNIEXPORT jlong JNICALL Java_com_yahoo_ml_jcaffe_FloatBlob_set_1gpu_1data(JNIEnv
         //set new data
         data = new_data;
     }
-    native_ptr->set_cpu_data(data);
+    native_ptr->set_gpu_data(data);
 
     if(dataaddress)
         delete (jbyte*) dataaddress;

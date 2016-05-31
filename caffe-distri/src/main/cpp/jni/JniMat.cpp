@@ -56,7 +56,7 @@ JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_Mat_deallocate
 
     //Mat object is only one responsible for cleaning itself and it's data 
     if(dataaddress){
-        delete (jbyte*)dataaddress;
+        delete[] (jbyte*)dataaddress;
     }
     delete (cv::Mat*) native_ptr;
 }
