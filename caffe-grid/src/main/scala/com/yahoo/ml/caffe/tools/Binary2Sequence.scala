@@ -9,34 +9,43 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataInputStream, Path}
 import org.apache.hadoop.io.{SequenceFile, BytesWritable}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkContext, SparkConf}
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import com.yahoo.ml.caffe.Config
+import com.yahoo.ml.caffe.{CaffeOnSpark, Config}
 
 object Binary2Sequence {
   val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   def main(args: Array[String]) {
-    val sc_conf = new SparkConf()
-    val sc = new SparkContext(sc_conf)
-    val conf = new Config(sc, args)
+    val ss = SparkSession.builder().getOrCreate()
+    val cos = new CaffeOnSpark(ss)
+    var conf = new Config(ss, args)
 
     if (conf.imageRoot.length==0 || conf.labelFile.length==0) {
       log.error("Both -imageRoot and -labelFile must be defined")
       return
     }
 
-    new Binary2Sequence(sc, conf).makeRDD().saveAsSequenceFile(conf.outputPath)
+    new Binary2Sequence(ss, conf).makeRDD().saveAsSequenceFile(conf.outputPath)
 
-    sc.stop()
+    ss.stop()
   }
 }
 
-class Binary2Sequence(@transient sc: SparkContext, conf: Config) extends Serializable {
+class Binary2Sequence(@transient val sc: SparkContext, conf: Config) extends Serializable {
+
+  /**
+   * Create a Binary2Sequence using the Spark 2.X interface
+   * @param ss  Spark session
+   * @param conf Caffe on Spark config
+   */
+  def this(ss: SparkSession, conf: Config) = this(ss.sparkContext, conf)
+
   def makeRDD() : RDD[(BytesWritable, BytesWritable)] = {
-    sc.textFile(conf.labelFile).mapPartitions{ iter => {
+      sc.textFile(conf.labelFile).mapPartitions{ iter => {
       val log: Logger = LoggerFactory.getLogger(this.getClass)
 
       val train_fs = new Path(conf.imageRoot).getFileSystem(new Configuration)

@@ -13,7 +13,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.sql
 import org.apache.spark.sql.types.{FloatType, StructField, StructType, ArrayType, StringType}
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{SparkSession, DataFrame, Row, SQLContext}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.functions.udf
 
@@ -28,13 +28,13 @@ object CaffeOnSpark {
     val sc_conf = new SparkConf()
     sc_conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.scheduler.minRegisteredResourcesRatio", "1.0")
-    val sc: SparkContext = new SparkContext(sc_conf)
+    val ss: SparkSession = SparkSession.builder().config(sc_conf).getOrCreate()
 
     //Caffe-on-Spark configuration
-    var conf = new Config(sc, args)
+    var conf = new Config(ss, args)
 
     //training if specified
-    val caffeSpark = new CaffeOnSpark(sc)
+    val caffeSpark = new CaffeOnSpark(ss)
     if (conf.isTraining) {
       val source = DataSource.getSource(conf, true)
       caffeSpark.train(source)
@@ -82,7 +82,7 @@ object CaffeOnSpark {
  * CaffeOnSpark is the main class for distributed deep learning.
  * It will launch multiple Caffe cores within Spark executors, and conduct coordinated learning from HDFS datasets.
  *
- * @param sc Spark Context
+ * @param sc Spark context
  */
 class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
   @transient private val log: Logger = LoggerFactory.getLogger(this.getClass)
@@ -94,6 +94,13 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     for (i <- 0 until float_features.length) double_features(i) = float_features(i)
     Vectors.dense(double_features)
   })
+
+  /**
+   * Create CaffeOnSpark using the Spark 2.X interface
+   * @param ss Spark session
+   * @return
+   */
+  def this(ss: SparkSession) = this(ss.sparkContext)
 
   /**
    * Training with a specific data source

@@ -5,7 +5,7 @@ package com.yahoo.ml.caffe
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{SparkSession, DataFrame, SQLContext}
 import org.apache.spark.storage.StorageLevel
 
 /**
@@ -26,6 +26,13 @@ import org.apache.spark.storage.StorageLevel
  */
 class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
   extends ImageDataSource(conf, layerId, isTrain) {
+
+  /**
+   * Create an RDD using the Spark 2.X interface
+   */
+  def makeRDD(ss: SparkSession):  RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
+    makeRDD(ss.sparkContext)
+  }
 
   /* construct a sample RDD */
   def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
@@ -53,7 +60,7 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
     val has_encoded : Boolean = column_names.contains("encoded")
 
     //mapping each row to RDD tuple
-    df.map(row => {
+    df.rdd.map(row => {
         var id: String = if (!has_id) "" else row.getAs[String]("id")
         var label: String = row.getAs[String]("label")
         val channels  : Int = if (!has_channels) 0 else row.getAs[Int]("channels")
