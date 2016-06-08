@@ -7,6 +7,7 @@ import java.io.File
 import com.yahoo.ml.caffe.tools.Binary2Sequence
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.slf4j.LoggerFactory
@@ -17,11 +18,11 @@ import com.yahoo.ml.jcaffe._
 
 class SourceTest extends FunSuite with BeforeAndAfterAll {
   val log = LoggerFactory.getLogger(this.getClass)
-  var sc : SparkContext = null
+  var ss : SparkSession = null
   var conf : Config = null
 
   override def beforeAll() = {
-    sc = new SparkContext(new SparkConf().setAppName("caffe-on-spark").setMaster("local"))
+    ss = SparkSession.builder().appName("caffe-on-spark").master("local").getOrCreate()
 
     val ROOT_PATH = {
       val fullPath = getClass.getClassLoader.getResource("log4j.properties").getPath
@@ -33,20 +34,20 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
       "-imageRoot", "file:"+ROOT_PATH+"data/images",
       "-labelFile", "file:"+ROOT_PATH+"data/images/labels.txt"
     )
-    conf = new Config(sc, args)
+    conf = new Config(ss, args)
 
     val seq_file_path = "file:"+ROOT_PATH+"caffe-grid/target/seq_image_files"
     val path = new Path(seq_file_path)
     val fs = path.getFileSystem(new Configuration)
     if (fs.exists(path)) fs.delete(path, true)
 
-    val b2s = new Binary2Sequence(sc, conf)
+    val b2s = new Binary2Sequence(ss, conf)
     assertNotNull(b2s)
     b2s.makeRDD().saveAsSequenceFile(seq_file_path)
   }
 
   override def afterAll() = {
-    sc.stop()
+    ss.stop()
   }
 
   test("Config test") {
@@ -69,7 +70,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     assertTrue(source.isTrain)
 
     //RDD
-    val rdd = source.makeRDD(sc).persist()
+    val rdd = source.makeRDD(ss).persist()
     assertNotNull(rdd)
 
     //dummy objects
@@ -129,7 +130,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     assertTrue(!source.isTrain)
 
     //RDD
-    val rdd = source.makeRDD(sc)
+    val rdd = source.makeRDD(ss)
     assertNotNull(rdd)
 
 

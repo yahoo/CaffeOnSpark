@@ -4,6 +4,7 @@
 package com.yahoo.ml.caffe.examples
 
 import com.yahoo.ml.caffe.{Config, CaffeOnSpark, DataSource}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.ml.classification.LogisticRegression
 
@@ -15,9 +16,9 @@ import org.apache.spark.ml.classification.LogisticRegression
 object MyMLPipeline {
   def main(args: Array[String]): Unit = {
     //CaffeOnSpark initialization
-    val ctx = new SparkContext(new SparkConf())
-    val cos = new CaffeOnSpark(ctx)
-    var conf = new Config(ctx, args)
+    val ss = SparkSession.builder().getOrCreate()
+    val cos = new CaffeOnSpark(ss)
+    var conf = new Config(ss, args)
 
     //perform DL training using the TRAINING source specified in Net prototxt
     val dl_train_source = DataSource.getSource(conf, true)

@@ -9,6 +9,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
 import org.fusesource.lmdbjni.Env
 import org.slf4j.{LoggerFactory, Logger}
@@ -24,9 +25,9 @@ import scala.collection.mutable.ArrayBuffer
  * @param isTrain
  */
 class LMDB(conf: Config, layerId: Int, isTrain: Boolean) extends ImageDataSource(conf, layerId, isTrain) {
-  override def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
+  override def makeRDD(ss: SparkSession): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
     //create a RDD
-    new LmdbRDD(sc, sourceFilePath, conf.lmdb_partitions)
+    new LmdbRDD(ss, sourceFilePath, conf.lmdb_partitions)
       .filter(isNotDummy)
       .persist(StorageLevel.DISK_ONLY)
   }

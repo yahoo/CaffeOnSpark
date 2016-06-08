@@ -8,12 +8,13 @@ import com.yahoo.ml.jcaffe.{CaffeNet, Utils}
 
 import org.apache.commons.cli.{BasicParser, CommandLine, Options}
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
 /**
  * CaffeOnSpark configuration
  */
-class Config(sc: SparkContext) extends Serializable {
+class Config(ss: SparkSession) extends Serializable {
   @transient private var _log = LoggerFactory.getLogger(this.getClass)
   private var _protoFile = ""
   private var _isTraining = false
@@ -333,9 +334,9 @@ class Config(sc: SparkContext) extends Serializable {
     _netParam
   }
 
-  def this(sc: SparkContext, args: Array[String]) {
+  def this(ss: SparkSession, args: Array[String]) {
 
-    this(sc)
+    this(ss)
     //parse CLI arguments
     val cmd: CommandLine = {
       val options: Options = new Options
@@ -384,17 +385,17 @@ class Config(sc: SparkContext) extends Serializable {
     }
 
     clusterSize = {
-      val sparkMaster = if (sc == null) "" else sc.getConf.get("spark.master")
-      if (sc.getConf.getBoolean("spark.dynamicAllocation.enabled", false)) {
-        val maxExecutors = sc.getConf.getInt("spark.dynamicAllocation.maxExecutors", 1)
-        val minExecutors = sc.getConf.getInt("spark.dynamicAllocation.minExecutors", 1)
+      val sparkMaster = if (ss == null) "" else ss.sparkContext.getConf.get("spark.master")
+      if (ss.sparkContext.getConf.getBoolean("spark.dynamicAllocation.enabled", false)) {
+        val maxExecutors = ss.sparkContext.getConf.getInt("spark.dynamicAllocation.maxExecutors", 1)
+        val minExecutors = ss.sparkContext.getConf.getInt("spark.dynamicAllocation.minExecutors", 1)
         if (isTraining)
           assert(maxExecutors == minExecutors,
             "spark.dynamicAllocation.maxExecutors and spark.dynamicAllocation.minExecutors must be identical")
         minExecutors
       } else {
         if (sparkMaster.startsWith("yarn"))
-          sc.getConf.getInt("spark.executor.instances", 1)
+          ss.sparkContext.getConf.getInt("spark.executor.instances", 1)
         else if (cmd.hasOption("clusterSize")) Integer.parseInt(cmd.getOptionValue("clusterSize"))
         else 1
       }

@@ -5,8 +5,9 @@ package com.yahoo.ml.caffe.tools
 
 import java.io.{ObjectOutputStream, ByteArrayOutputStream}
 
-import com.yahoo.ml.caffe.{LmdbRDD, Config, LMDB}
+import com.yahoo.ml.caffe.{CaffeOnSpark, LmdbRDD, Config, LMDB}
 import org.apache.hadoop.io.BytesWritable
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkContext, SparkConf}
 import org.slf4j.{LoggerFactory, Logger}
 
@@ -14,18 +15,16 @@ object LMDB2Sequence {
   val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   def main(args: Array[String]) {
-    val sc_conf = new SparkConf()
-    val sc = new SparkContext(sc_conf)
-
-    //configure
-    val conf = new Config(sc, args)
+    val ss = SparkSession.builder().getOrCreate()
+    val cos = new CaffeOnSpark(ss)
+    var conf = new Config(ss, args)
     if (conf.imageRoot.length == 0 || conf.outputPath.length == 0) {
       log.error("-imageRoot <LMDB directory> and -output <SequenceFile> must be defined")
       return
     }
 
     //produce RDD
-    val rdd = new LmdbRDD(sc, conf.imageRoot, conf.lmdb_partitions).flatMap{
+    val rdd = new LmdbRDD(ss, conf.imageRoot, conf.lmdb_partitions).flatMap{
       case (id, label, channels, height, width, encoded, value) => {
         if (value == null) None
         else {
@@ -42,6 +41,6 @@ object LMDB2Sequence {
 
     //save into output file on HDFS
     rdd.saveAsSequenceFile(conf.outputPath)
-    sc.stop()
+    ss.stop()
   }
 }

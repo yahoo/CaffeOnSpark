@@ -3,9 +3,11 @@
 // Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe
 
+import org.apache.spark
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql._
 import org.apache.spark.storage.StorageLevel
 
 /**
@@ -28,10 +30,11 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
   extends ImageDataSource(conf, layerId, isTrain) {
 
   /* construct a sample RDD */
-  def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
-    val sqlContext = new SQLContext(sc)
+  def makeRDD(ss: SparkSession):  RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
+      val spark = SparkSession.builder().getOrCreate()
+      import spark.implicits._
     //load DataFrame
-    var reader = sqlContext.read
+    var reader = ss.read
     if (memdatalayer_param.hasDataframeFormat())
       reader = reader.format(memdatalayer_param.getDataframeFormat())
     var df: DataFrame = reader.load(sourceFilePath)
@@ -53,7 +56,7 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
     val has_encoded : Boolean = column_names.contains("encoded")
 
     //mapping each row to RDD tuple
-    df.map(row => {
+    val outDf = df.rdd.map(row => {
         var id: String = if (!has_id) "" else row.getAs[String]("id")
         var label: String = row.getAs[String]("label")
         val channels  : Int = if (!has_channels) 0 else row.getAs[Int]("channels")
@@ -69,6 +72,12 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
           }
         }
         (id, label, channels, height, width, encoded, data)
-      }).persist(StorageLevel.DISK_ONLY)
+      }/*, new Encoder[Row]() {
+      override def schema: StructType = ???
+
+      override def clsTag: ClassManifest[T] = ???
+    }*/)/*.as[Product6[String,String,Int,Int,Int,Boolean]]*/
+      // .persist(StorageLevel.DISK_ONLY)
+    outDf
   }
 }

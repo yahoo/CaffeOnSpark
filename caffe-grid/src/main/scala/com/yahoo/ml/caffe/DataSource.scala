@@ -10,6 +10,7 @@ import org.apache.spark.rdd.RDD
 
 import caffe.Caffe._
 import com.yahoo.ml.jcaffe._
+import org.apache.spark.sql.SparkSession
 import org.slf4j.{LoggerFactory, Logger}
 
 /**
@@ -36,10 +37,10 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
 
   /**
    * construct a sample RDD
-   * @param sc spark context
+   * @param ss spark session
    * @return RDD created from this source
    */
-  def makeRDD(sc: SparkContext) : RDD[T1]
+  def makeRDD(ss: SparkSession) : RDD[T1]
 
   /**
    *  initialization of a Source within a process
