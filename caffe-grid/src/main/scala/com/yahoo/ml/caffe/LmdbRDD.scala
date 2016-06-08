@@ -9,9 +9,10 @@ import caffe.Caffe.Datum
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Logging, Partition, SparkContext, SparkFiles, TaskContext}
+import org.apache.spark.{Partition, SparkContext, SparkFiles, TaskContext}
 import org.fusesource.lmdbjni.{Transaction, Database, Entry, Env}
 import org.slf4j.{LoggerFactory, Logger}
+import Logging._
 
 import scala.collection.mutable
 
@@ -34,7 +35,7 @@ private[caffe] class LmdbPartition(idx: Int, val startKey: Array[Byte], val size
  */
 
 class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPartitions: Int)
-  extends RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])](sc, Nil) with Logging {
+  extends RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])](sc, Nil) {
   @transient var env: Env = null
   @transient var db: Database = null
 

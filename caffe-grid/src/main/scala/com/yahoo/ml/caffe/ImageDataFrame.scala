@@ -53,7 +53,7 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
     val has_encoded : Boolean = column_names.contains("encoded")
 
     //mapping each row to RDD tuple
-    df.map(row => {
+    df.rdd.map(row => {
         var id: String = if (!has_id) "" else row.getAs[String]("id")
         var label: String = row.getAs[String]("label")
         val channels  : Int = if (!has_channels) 0 else row.getAs[Int]("channels")
