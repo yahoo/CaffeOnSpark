@@ -36,11 +36,20 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
   @transient protected var solverMode: Int = -1
 
   /**
-   * construct a sample RDD
+   * Construct a sample RDD using the Spark 2.X interface
    * @param ss spark session
    * @return RDD created from this source
    */
   def makeRDD(ss: SparkSession) : RDD[T1]
+
+  /**
+   * construct a sample RDD
+   * @param sc spark context
+   * @return RDD created from this source
+   */
+  @deprecated("Use makeRDD(ss: SparkSession)")
+  def makeRDD(sc: SparkContext) : RDD[T1]
+
 
   /**
    *  initialization of a Source within a process

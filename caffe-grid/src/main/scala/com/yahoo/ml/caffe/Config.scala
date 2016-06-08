@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory
 /**
  * CaffeOnSpark configuration
  */
-class Config(ss: SparkSession) extends Serializable {
+class Config(sc: SparkContext) extends Serializable {
+
   @transient private var _log = LoggerFactory.getLogger(this.getClass)
   private var _protoFile = ""
   private var _isTraining = false
@@ -40,6 +41,9 @@ class Config(ss: SparkSession) extends Serializable {
   private var _lmdb_partitions = 0
   @transient private var _solverParameter: SolverParameter = null
   @transient private var _netParam: NetParameter = null
+
+  /** Create a Config using the Spark 2.X interface */
+  def this(ss: SparkSession) = this(ss.sparkContext)
 
   def log = {
     if (_log == null) {

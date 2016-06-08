@@ -35,9 +35,17 @@ object Binary2Sequence {
   }
 }
 
-class Binary2Sequence(@transient val ss: SparkSession, conf: Config) extends Serializable {
+class Binary2Sequence(@transient val sc: SparkContext, conf: Config) extends Serializable {
+
+  /**
+   * Create a Binary2Sequence using the Spark 2.X interface
+   * @param ss  Spark session
+   * @param conf Caffe on Spark config
+   */
+  def this(ss: SparkSession, conf: Config) = this(ss.sparkContext, conf)
+
   def makeRDD() : RDD[(BytesWritable, BytesWritable)] = {
-    ss.sparkContext.textFile(conf.labelFile).mapPartitions{ iter => {
+      sc.textFile(conf.labelFile).mapPartitions{ iter => {
       val log: Logger = LoggerFactory.getLogger(this.getClass)
 
       val train_fs = new Path(conf.imageRoot).getFileSystem(new Configuration)

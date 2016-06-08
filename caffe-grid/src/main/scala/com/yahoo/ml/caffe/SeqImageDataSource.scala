@@ -21,10 +21,15 @@ import org.apache.spark.sql.SparkSession
 class SeqImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
   extends ImageDataSource(conf, layerId, isTrain) {
 
-  /* construct a sample RDD */
-  def makeRDD(ss: SparkSession): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
+  /**
+   * Create an RDD using the Spark 2.x interface
+   */
+  def makeRDD(ss: SparkSession): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = makeRDD(ss.sparkContext)
+
+  /* construct a sample RDD using the Spark 1.x interface */
+  def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
     //we need to copy key/value since Hadoop reader reuses its object
-    ss.sparkContext.sequenceFile(sourceFilePath, classOf[BytesWritable], classOf[BytesWritable], conf.clusterSize)
+    sc.sequenceFile(sourceFilePath, classOf[BytesWritable], classOf[BytesWritable], conf.clusterSize)
       .map { case (key, value) => {
       var id: String = null
       var label: String = null

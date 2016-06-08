@@ -82,9 +82,9 @@ object CaffeOnSpark {
  * CaffeOnSpark is the main class for distributed deep learning.
  * It will launch multiple Caffe cores within Spark executors, and conduct coordinated learning from HDFS datasets.
  *
- * @param ss Spark Session
+ * @param sc Spark context
  */
-class CaffeOnSpark(@transient val ss: SparkSession) extends Serializable {
+class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
   @transient private val log: Logger = LoggerFactory.getLogger(this.getClass)
   @transient val floatarray2doubleUDF = udf((float_features: Seq[Float]) => {
     float_features(0).toDouble
@@ -94,14 +94,20 @@ class CaffeOnSpark(@transient val ss: SparkSession) extends Serializable {
     for (i <- 0 until float_features.length) double_features(i) = float_features(i)
     Vectors.dense(double_features)
   })
-  @transient val sc = ss.sparkContext
+
+  /**
+   * Create CaffeOnSpark using the Spark 2.X interface
+   * @param ss Spark session
+   * @return
+   */
+  def this(ss: SparkSession) = this(ss.sparkContext)
 
   /**
    * Training with a specific data source
    * @param source input data source
    */
   def train[T1, T2](source: DataSource[T1, T2]): Unit = {
-    var trainDataRDD: RDD[T1] = source.makeRDD(ss)
+    var trainDataRDD: RDD[T1] = source.makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data is given")
       return
@@ -284,7 +290,7 @@ class CaffeOnSpark(@transient val ss: SparkSession) extends Serializable {
    * @return a data frame
    */
   private def features2[T1, T2](source: DataSource[T1, T2]): DataFrame = {
-    val srcDataRDD = source.makeRDD(ss)
+    val srcDataRDD = source.makeRDD(sc)
     val conf = source.conf
     val clusterSize: Int = conf.clusterSize
 

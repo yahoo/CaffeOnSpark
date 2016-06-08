@@ -3,11 +3,9 @@
 // Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe
 
-import org.apache.spark
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql._
+import org.apache.spark.sql.{SparkSession, DataFrame, SQLContext}
 import org.apache.spark.storage.StorageLevel
 
 /**
@@ -29,12 +27,18 @@ import org.apache.spark.storage.StorageLevel
 class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
   extends ImageDataSource(conf, layerId, isTrain) {
 
-  /* construct a sample RDD */
+  /**
+   * Create an RDD using the Spark 2.X interface
+   */
   def makeRDD(ss: SparkSession):  RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
-      val spark = SparkSession.builder().getOrCreate()
-      import spark.implicits._
+    makeRDD(ss.sparkContext)
+  }
+
+  /* construct a sample RDD */
+  def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
+    val sqlContext = new SQLContext(sc)
     //load DataFrame
-    var reader = ss.read
+    var reader = sqlContext.read
     if (memdatalayer_param.hasDataframeFormat())
       reader = reader.format(memdatalayer_param.getDataframeFormat())
     var df: DataFrame = reader.load(sourceFilePath)
@@ -56,7 +60,7 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
     val has_encoded : Boolean = column_names.contains("encoded")
 
     //mapping each row to RDD tuple
-    val outDf = df.rdd.map(row => {
+    df.rdd.map(row => {
         var id: String = if (!has_id) "" else row.getAs[String]("id")
         var label: String = row.getAs[String]("label")
         val channels  : Int = if (!has_channels) 0 else row.getAs[Int]("channels")
@@ -72,12 +76,6 @@ class ImageDataFrame(conf: Config, layerId: Int, isTrain: Boolean)
           }
         }
         (id, label, channels, height, width, encoded, data)
-      }/*, new Encoder[Row]() {
-      override def schema: StructType = ???
-
-      override def clsTag: ClassManifest[T] = ???
-    }*/)/*.as[Product6[String,String,Int,Int,Int,Boolean]]*/
-      // .persist(StorageLevel.DISK_ONLY)
-    outDf
+      }).persist(StorageLevel.DISK_ONLY)
   }
 }

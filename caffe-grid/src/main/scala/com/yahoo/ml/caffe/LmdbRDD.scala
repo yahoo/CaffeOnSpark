@@ -9,7 +9,7 @@ import caffe.Caffe.Datum
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{Partition, SparkFiles, TaskContext}
+import org.apache.spark.{SparkContext, Partition, SparkFiles, TaskContext}
 import org.fusesource.lmdbjni.{Database, Entry, Env, Transaction}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -26,20 +26,28 @@ private[caffe] class LmdbPartition(idx: Int, val startKey: Array[Byte], val size
 /**
  * LmdbRDD is a custom RDD for accessing LMDB databases using a specified # of partitions.
  *
- * @param ss spark session
+ * @param sc spark context
  * @param lmdb_path URI of LMDB databases
  * @param numPartitions # of the desired partitions.
  */
 
-class LmdbRDD(@transient val ss: SparkSession, val lmdb_path: String, val numPartitions: Int)
-  extends RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])](ss.sparkContext, Nil) /* with com.yahoo.ml.caffe.Logging */ {
+class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPartitions: Int)
+  extends RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])](sc, Nil) /* with com.yahoo.ml.caffe.Logging */ {
   @transient var env: Env = null
   @transient var db: Database = null
+
+  /**
+   * Constructor using the Spark 2.X interface
+   * @param ss  Spark Session
+   * @param lmdb_path URI of LMDB databases
+   * @param numPartitions # of the desired partitions.
+   */
+  def this(ss: SparkSession, lmdb_path: String, numPartitions: Int) = this(ss.sparkContext, lmdb_path, numPartitions)
 
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
     if (!lmdb_path.startsWith(FSUtils.localfsPrefix))
-      ss.sparkContext.addFile(lmdb_path, true)
+      sc.addFile(lmdb_path, true)
 
     openDB()
 
