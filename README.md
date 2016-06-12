@@ -59,6 +59,14 @@ Please note:
 * Batch sizes specified in prototxt files are per device.
 * Memory layers should not be shared among GPUs, and thus "share_in_parallel: false" is required for layer configuration.
 
+## Building for Spark 2.X
+To Build for Spark 2.X  please include  
+
+* mvn -Dspark2
+
+ 
+in the build line.
+
 ## Mailing List
 
 Please join [CaffeOnSpark user
