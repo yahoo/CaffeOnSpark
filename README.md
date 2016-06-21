@@ -7,6 +7,8 @@ Please see LICENSE file in the project root for terms.
 
 ## What's CaffeOnSpark?
 
+Pull test edit dummy.
+
 CaffeOnSpark brings deep learning to Hadoop and Spark clusters.  By
 combining salient features from deep learning framework
 [Caffe](https://github.com/BVLC/caffe) and big-data frameworks [Apache
