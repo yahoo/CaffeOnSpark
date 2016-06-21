@@ -54,38 +54,35 @@ and getting started guides for [standalone
 cluster](../../wiki/GetStarted_local) and [AWS EC2
 cluster](../../wiki/GetStarted_EC2).
 
-Please note: 
 
 * Batch sizes specified in prototxt files are per device.
 * Memory layers should not be shared among GPUs, and thus "share_in_parallel: false" is required for layer configuration.
 
 ## Building for Spark 2.X
-To Build for Spark 2.X do one of the following:
 
-1)  Accept the "default" spark2.X settings which are:
+If you were building off of a local version - e.g. any **SNAPSHOT** then you first need to do **mvn install** of your local version to your local maven repository as follows:
+
+   cd $SPARK_HOME
+   mvn <spark options\> install
+
+Next: configure the **CaffeOnSpark/caffe-grid** maven build to use the correct versions of Spark for your environment.
+
+You may either :
+
+1)  Accept the "default" Spark2.X settings by using
+
+     mvn -Dspark2 clean package
+
+The default settings are:
 
   - spark-2.0.0-SNAPSHOT
   - hadoop-2.7.1
   - scala-2.11.7
 
-You can do this as follows:
+2) You can manually specify particular values yourself. For example for the 2.0.0-preview with hadoop 2.7.2 and scala 2.11.8:
 
-     mvn -Dspark2 <other maven options>
-     
-2) OR you can manually specify particular values yourself. For example for the 2.0.0-preview with hadoop 2.7.2 and scala 2.11.8:
-I
-    mvn -Dspark.version=2.0.0-preview -Dhadoop.version=2.7.2 -Dscala.major.version=2.11 -Dscala.version=2.11.8 
+    mvn -Dspark.version=2.0.0-preview -Dhadoop.version=2.7.2 -Dscala.major.version=2.11 -Dscala.version=2.11.8 clean package
 
-
-**Spark 2.0.0-SNAPSHOT note**  You will first need to do the following:
-- in the Spark git clone :
-
--      mvn **install** \<other spark options\>
-
-Then:  update the CaffeOnSpark caffe-grid/pom.xml in the "spark2" profile section:  set the correct spark (e.g. **2.0.0-SNAPSHOT**),scala (e.g. **2.11.7**)), and hadoop (e.g. **2.7.1**)) versions:
-
- make sure that the Spark version matches the value in the $SPARK_HOME that you published (```mvn install``` from)
- 
  
 ## Mailing List
 
