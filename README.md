@@ -64,9 +64,35 @@ To Build for Spark 2.X  please include
 
 * mvn -Dspark2
 
- 
-in the build line.
+**Spark2 Pre-release note**  You will need to do the following:
+- in the Spark git clone :
 
+-      mvn **install** \<other spark options\>
+
+Then:  update the CaffeOnSpark caffe-grid/pom.xml in the "spark2" profile section:  set the correct spark (e.g. **2.0.0-SNAPSHOT**),scala (e.g. **2.11.7**)), and hadoop (e.g. **2.7.1**)) versions:
+
+```
+  <profiles>
+    <profile>
+      <activation>
+        <property>
+          <name>spark2</name>
+        </property>
+      </activation>
+      <properties>
+        <hadoop.version>2.7.1</hadoop.version>
+        <scala.version>2.11.7</scala.version>
+        <scala.major.version>2.11</scala.major.version>
+        <slf4j.version>1.6.6</slf4j.version>
+        <spark.version>2.0.0-SNAPSHOT</spark.version>
+      </properties>
+    </profile>
+  </profiles>
+```
+
+ make sure that the Spark version matches the value in the $SPARK_HOME that you published (```mvn install``` from)
+ 
+ 
 ## Mailing List
 
 Please join [CaffeOnSpark user
