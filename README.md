@@ -60,10 +60,12 @@ cluster](../../wiki/GetStarted_EC2).
 
 ## Building for Spark 2.X
 
-If you were building off of a local version - e.g. any **SNAPSHOT** then you first need to do **mvn install** of your local version to your local maven repository as follows:
+Optional: To use a local **SNAPSHOT** version of Spark: first perform a  **mvn install** from your local Spark to your local maven repository as follows:
 
+<pre>
    cd $SPARK_HOME
    mvn <spark options\> install
+</pre>
 
 Next: configure the **CaffeOnSpark/caffe-grid** maven build to use the correct versions of Spark for your environment.
 
