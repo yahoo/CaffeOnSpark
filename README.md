@@ -60,35 +60,29 @@ Please note:
 * Memory layers should not be shared among GPUs, and thus "share_in_parallel: false" is required for layer configuration.
 
 ## Building for Spark 2.X
-To Build for Spark 2.X  please include  
+To Build for Spark 2.X do one of the following:
 
-* mvn -Dspark2
+1)  Accept the "default" spark2.X settings which are:
 
-**Spark2 Pre-release note**  You will need to do the following:
+  - spark-2.0.0-SNAPSHOT
+  - hadoop-2.7.1
+  - scala-2.11.7
+
+You can do this as follows:
+
+     mvn -Dspark2 <other maven options>
+     
+2) OR you can manually specify particular values yourself. For example for the 2.0.0-preview with hadoop 2.7.2 and scala 2.11.8:
+I
+    mvn -Dspark.version=2.0.0-preview -Dhadoop.version=2.7.2 -Dscala.major.version=2.11 -Dscala.version=2.11.8 
+
+
+**Spark 2.0.0-SNAPSHOT note**  You will first need to do the following:
 - in the Spark git clone :
 
 -      mvn **install** \<other spark options\>
 
 Then:  update the CaffeOnSpark caffe-grid/pom.xml in the "spark2" profile section:  set the correct spark (e.g. **2.0.0-SNAPSHOT**),scala (e.g. **2.11.7**)), and hadoop (e.g. **2.7.1**)) versions:
-
-```
-  <profiles>
-    <profile>
-      <activation>
-        <property>
-          <name>spark2</name>
-        </property>
-      </activation>
-      <properties>
-        <hadoop.version>2.7.1</hadoop.version>
-        <scala.version>2.11.7</scala.version>
-        <scala.major.version>2.11</scala.major.version>
-        <slf4j.version>1.6.6</slf4j.version>
-        <spark.version>2.0.0-SNAPSHOT</spark.version>
-      </properties>
-    </profile>
-  </profiles>
-```
 
  make sure that the Spark version matches the value in the $SPARK_HOME that you published (```mvn install``` from)
  
