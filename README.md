@@ -54,11 +54,38 @@ and getting started guides for [standalone
 cluster](../../wiki/GetStarted_local) and [AWS EC2
 cluster](../../wiki/GetStarted_EC2).
 
-Please note: 
 
 * Batch sizes specified in prototxt files are per device.
 * Memory layers should not be shared among GPUs, and thus "share_in_parallel: false" is required for layer configuration.
 
+## Building for Spark 2.X
+
+Optional: To use a local **SNAPSHOT** version of Spark: first perform a  **mvn install** from your local Spark to your local maven repository as follows:
+
+<pre>
+   cd $SPARK_HOME
+   mvn <spark options\> install
+</pre>
+
+Next: configure the **CaffeOnSpark/caffe-grid** maven build to use the correct versions of Spark for your environment.
+
+You may either :
+
+1)  Accept the "default" Spark2.X settings by using
+
+     mvn -Dspark2 clean package
+
+The default settings are:
+
+  - spark-2.0.0-SNAPSHOT
+  - hadoop-2.7.1
+  - scala-2.11.7
+
+2) You can manually specify particular values yourself. For example for the 2.0.0-preview with hadoop 2.7.2 and scala 2.11.8:
+
+    mvn -Dspark.version=2.0.0-preview -Dhadoop.version=2.7.2 -Dscala.major.version=2.11 -Dscala.version=2.11.8 clean package
+
+ 
 ## Mailing List
 
 Please join [CaffeOnSpark user

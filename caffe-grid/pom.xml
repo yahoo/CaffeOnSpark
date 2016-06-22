@@ -18,11 +18,28 @@
     <maven.compiler.target>1.7</maven.compiler.target>
     <hadoop.version>2.5.0</hadoop.version>
     <scala.version>2.10.4</scala.version>
+    <scala.major.version>2.10</scala.major.version>
     <slf4j.version>1.6.6</slf4j.version>
     <spark.version>1.6.0</spark.version>
     <lmdbjni.version>0.4.6</lmdbjni.version>
   </properties>
 
+  <profiles>
+    <profile>
+      <activation>
+        <property>
+          <name>spark2</name>
+        </property>
+      </activation>
+      <properties>
+        <hadoop.version>2.7.1</hadoop.version>
+        <scala.version>2.11.7</scala.version>
+        <scala.major.version>2.11</scala.major.version>
+        <slf4j.version>1.6.6</slf4j.version>
+        <spark.version>2.0.0-SNAPSHOT</spark.version>
+      </properties>
+    </profile>
+  </profiles>
   <dependencies>
     <dependency>
       <groupId>com.yahoo.ml</groupId>
@@ -31,19 +48,19 @@
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_2.10</artifactId>
+      <artifactId>spark-core_${scala.major.version}</artifactId>
       <version>${spark.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_2.10</artifactId>
+      <artifactId>spark-sql_${scala.major.version}</artifactId>
       <version>${spark.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-mllib_2.10</artifactId>
+      <artifactId>spark-mllib_${scala.major.version}</artifactId>
       <version>${spark.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -107,8 +124,8 @@
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.10</artifactId>
-      <version>2.0</version>
+      <artifactId>scalatest_${scala.major.version}</artifactId>
+      <version>2.2.6</version>
       <scope>test</scope>
     </dependency>
     <dependency>
