@@ -40,27 +40,33 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   mh.rank = rank;
   mh.type = mt;
   mh.size = ms;
-  int n = write(sockfd, &mh, sizeof(mh));
-  if (n < 0) {
-    LOG(ERROR) << "ERROR: Sending message header!";    return false;
-  } else if (n < sizeof(mh)) {
-    LOG(ERROR) << "ERROR: Sending partial message header!";
-    return false;
+  uint8_t* buffer = reinterpret_cast<uint8_t*>(&mh);
+  int nsent = 0;
+  int len = sizeof(mh);
+  while (len > 0) {
+    nsent = write(sockfd, buffer, len);
+    if (nsent == -1) {
+      LOG(ERROR) << "ERROR: Sending message header!";
+	  return false;
+	}
+    buffer += nsent;
+    len -= nsent;
   }
   return true;
 }
 
-void receive_message_header(int sockfd,message_header * mh) {
-  
-  int n = read(sockfd, mh, sizeof(*mh));
-  if (n < 0) {
-    LOG(ERROR) << "ERROR: Reading message header!";
-    pthread_exit(NULL);
-  }
-  else if (n < sizeof(*mh)) {
-    LOG(ERROR) << "ERROR: Read partial messageheader ["
-               << n <<" of " << sizeof(*mh) << "]";
-    pthread_exit(NULL);
+void receive_message_header(int sockfd, message_header * mh) {
+  uint8_t* buffer = reinterpret_cast<uint8_t*>(mh);
+  int nread = 0;
+  int len = sizeof(*mh);
+  while(len > 0) {
+	nread = read(sockfd, buffer, len);
+    if (nread == -1) {
+      LOG(ERROR) << "ERROR: Reading message header!";
+      exit(1);
+    }
+    buffer += nread;
+    len -= nread;
   }
 }
 
