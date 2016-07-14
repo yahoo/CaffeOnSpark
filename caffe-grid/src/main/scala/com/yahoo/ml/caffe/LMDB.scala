@@ -13,6 +13,7 @@ import org.apache.spark.storage.StorageLevel
 import org.fusesource.lmdbjni.Env
 import org.slf4j.{LoggerFactory, Logger}
 
+import scala.collection.mutable.Map
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -24,11 +25,17 @@ import scala.collection.mutable.ArrayBuffer
  * @param isTrain
  */
 class LMDB(conf: Config, layerId: Int, isTrain: Boolean) extends ImageDataSource(conf, layerId, isTrain) {
+  
+  var lmdbRDDRecords = Map[String, RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])]]()
+  
   override def makeRDD(sc: SparkContext): RDD[(String, String, Int, Int, Int, Boolean, Array[Byte])] = {
-    //create a RDD
-    new LmdbRDD(sc, sourceFilePath, conf.lmdb_partitions)
-      .filter(isNotDummy)
-      .persist(StorageLevel.DISK_ONLY)
+    //get a RDD
+    return lmdbRDDRecords.getOrElseUpdate(
+      sourceFilePath,
+      new LmdbRDD(sc, sourceFilePath, conf.lmdb_partitions)
+        .filter(isNotDummy)
+        .persist(StorageLevel.DISK_ONLY)
+    )
   }
 
   private def isNotDummy(item : (String, String, Int, Int, Int, Boolean, Array[Byte])): Boolean = {
