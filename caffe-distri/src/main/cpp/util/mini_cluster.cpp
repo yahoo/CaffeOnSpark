@@ -140,7 +140,7 @@ void MiniCluster<Dtype>::run(shared_ptr<Solver<Dtype> > root_solver,
 #endif
 
 #ifndef CPU_ONLY
-  syncs[0]->prepare(gpus, &syncs);
+  syncs[0]->Prepare(gpus, &syncs);
   LOG(INFO)<< "Starting Optimization";
 
   // Switch to total number of GPUs once the datareaders are ready

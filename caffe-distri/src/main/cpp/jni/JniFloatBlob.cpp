@@ -2,7 +2,6 @@
 // Licensed under the terms of the Apache 2.0 license.
 // Please see LICENSE file in the project root for terms.
 #include <glog/logging.h>
-
 #include "caffe/caffe.hpp"
 #include "common.hpp"
 #include "jni/com_yahoo_ml_jcaffe_FloatBlob.h"
@@ -166,38 +165,4 @@ JNIEXPORT jobject JNICALL Java_com_yahoo_ml_jcaffe_FloatBlob_gpu_1data(JNIEnv *e
     jobject objectFloatArray = env->NewObject(claz,constructorId,(long)gpu_data);
 
     return objectFloatArray;
-}
-
-/*
- * Class:     com_yahoo_ml_jcaffe_FloatBlob
- * Method:    set_gpu_data
- * Signature: ([F)V
- */
-JNIEXPORT jlong JNICALL Java_com_yahoo_ml_jcaffe_FloatBlob_set_1gpu_1data(JNIEnv *env, jobject object, jfloatArray array, jlong dataaddress) {
-    Blob<float>* native_ptr = (Blob<float>*) GetNativeAddress(env, object);
-
-    jboolean copied = false;
-    float* data = env->GetFloatArrayElements(array, &copied);
-    if (data == NULL) {
-        LOG(ERROR) << "GetFloatArrayElements() == NULL";
-        return 0;
-    }
-    if (!copied) {
-        size_t len = native_ptr->count();
-        float* new_data = new float[len];
-        if (new_data == NULL) {
-            LOG(ERROR) << "fail to float[] for new data";
-            return 0;
-        }
-
-        memcpy(new_data, data, len * sizeof(float));
-        //set new data
-        data = new_data;
-    }
-    native_ptr->set_gpu_data(data);
-
-    if(dataaddress)
-        delete (jbyte*) dataaddress;
-
-    return (long) data;
 }

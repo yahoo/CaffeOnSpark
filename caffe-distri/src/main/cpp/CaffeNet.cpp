@@ -63,7 +63,7 @@ CaffeNet<Dtype>::CaffeNet(const string& solver_conf_file, const string& model_fi
         if (solver_mode_ != Caffe::GPU)
             d++;
         else {
-            d = Caffe::GrabDevice(d + 1);
+            d = Caffe::FindDevice(d + 1);
             CHECK_GE(d, 0) << "cannot grab GPU device";
         }
         local_devices_[i] = d;
@@ -340,7 +340,7 @@ bool LocalCaffeNet<Dtype>::connect(vector<const char*>& addresses) {
         this->syncs_[0].reset(new P2PSync<Dtype>(this->root_solver_,
                                                             NULL, this->root_solver_->param()));
         // Pair devices for map-reduce synchronization
-        this->syncs_[0]->prepare(this->local_devices_,
+        this->syncs_[0]->Prepare(this->local_devices_,
                                 &this->syncs_);
     }
 #else
@@ -391,7 +391,7 @@ bool SocketCaffeNet<Dtype>::connect(vector<const char*>& peer_addresses) {
                                                 sockt_channels_,
                                                 this->node_rank_));
     // Pair devices for map-reduce synchronization
-    this->syncs_[0]->prepare(this->local_devices_,
+    this->syncs_[0]->Prepare(this->local_devices_,
                              &this->syncs_);
 
 #else
