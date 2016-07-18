@@ -63,7 +63,6 @@ public class FloatBlob extends BaseObject {
 	return false;
     }
 	
-
     protected native long set_cpu_data(float[] data, long dataaddress);
 
     public native FloatArray gpu_data();
