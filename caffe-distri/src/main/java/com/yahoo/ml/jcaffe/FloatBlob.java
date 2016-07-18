@@ -63,18 +63,9 @@ public class FloatBlob extends BaseObject {
 	return false;
     }
 	
-
     protected native long set_cpu_data(float[] data, long dataaddress);
 
     public native FloatArray gpu_data();
-
-    public boolean set_gpu_data(float[] data){
-	dataaddress = set_gpu_data(data, dataaddress);
-	if(dataaddress != 0)
-	    return true;
-	return false;
-    }
-    protected native long set_gpu_data(float[] data, long dataaddress);
 
     /* the # of floats in this FloatBlob */
     public native int count();
