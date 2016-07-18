@@ -2,7 +2,6 @@
 // Licensed under the terms of the Apache 2.0 license.
 // Please see LICENSE file in the project root for terms.
 #include <glog/logging.h>
-
 #include "caffe/caffe.hpp"
 #include "common.hpp"
 #include "jni/com_yahoo_ml_jcaffe_FloatBlob.h"
