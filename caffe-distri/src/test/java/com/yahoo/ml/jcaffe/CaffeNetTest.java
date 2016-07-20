@@ -78,6 +78,8 @@ public class CaffeNetTest {
     @AfterMethod
     public void tearDown() throws Exception {
         net.deallocate();
+	socket_net.deallocate();
+	test_net.deallocate();
     }
 
     @Test
