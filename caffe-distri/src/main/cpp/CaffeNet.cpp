@@ -368,7 +368,7 @@ bool RDMACaffeNet<Dtype>::connect(vector<const char*>& peer_addresses) {
                                               rdma_channels_,
                                               this->node_rank_));
     // Pair devices for map-reduce synchronization
-    this->syncs_[0]->prepare(this->local_devices_,
+    this->syncs_[0]->Prepare(this->local_devices_,
                             &this->syncs_);
 
     return true;
@@ -382,7 +382,8 @@ bool SocketCaffeNet<Dtype>::connect(vector<const char*>& peer_addresses) {
         if (i != this->node_rank_) {
             const char* addr = peer_addresses[i];
             string addr_str(addr, strlen(addr));
-            sockt_channels_[i]->Connect(addr_str);
+            if(!sockt_channels_[i]->Connect(addr_str))
+              return false;
         }
 
 #ifndef CPU_ONLY
@@ -559,9 +560,8 @@ void CaffeNet<Dtype>::predict(int solver_index,
     input_adapter_[solver_index]->feed(input_data, input_labels);
 
     //invoke network's Forward operation
-    const vector<Blob<Dtype>*> dummy_bottom_vec;
     CHECK(nets_[solver_index]);
-    nets_[solver_index]->Forward(dummy_bottom_vec);
+    nets_[solver_index]->Forward();
 
     //grab the output blobs via names
     int num_features = output_blob_names.size();

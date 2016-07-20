@@ -20,7 +20,7 @@ import static org.testng.Assert.*;
 
 public class CaffeNetTest {
     String rootPath, solver_config_path, imagePath;
-    CaffeNet net, test_net;
+    CaffeNet net, test_net, socket_net;
     SolverParameter solver_param;
     int index = 0;
     List<String> file_list;
@@ -58,6 +58,16 @@ public class CaffeNetTest {
                 -1);
         assertTrue(test_net != null);
 
+	socket_net = new CaffeNet(solver_config_path,
+				  "",
+				  "",
+				  1, //num_local_devices,
+				  2, //cluster_size,
+				  0, //node_rank,
+				  false, //isTraining,
+				  CaffeNet.SOCKET, //NONE
+				  -1);
+	assertTrue(socket_net != null);
         solver_param = Utils.GetSolverParam(solver_config_path);
         assertEquals(solver_param.getSolverMode(), SolverParameter.SolverMode.CPU);
 
@@ -70,6 +80,49 @@ public class CaffeNetTest {
         net.deallocate();
     }
 
+    @Test
+    public void initinvalid() {
+	assertFalse(net.init(-1));
+    }
+
+    @Test
+    public void deviceIDinvalid() {
+      assertEquals(net.deviceID(-1), -1);
+    }
+
+    @Test 
+    public void inititerinvalid() {
+      assertEquals(net.getInitIter(-1), -1);
+    }
+  
+    @Test
+    public void maxiterinvalid() {
+      assertEquals(net.getMaxIter(-1), -1);
+    }
+
+    @Test
+    public void snapshotfilenameinvalid() {
+      assertNull(net.snapshotFilename(-1,false));
+    }
+
+    @Test
+    public void connectnull(){
+      String[] addrs = null;
+      assertTrue(net.connect(addrs));
+    }
+
+    @Test
+    public void connectbogus(){
+      String[] addrs = {"0x222", "0x333"};
+      boolean pass = true;
+      try {
+	  pass = socket_net.connect(addrs);
+      } catch(Exception e) {
+	  pass = false;
+      }
+      assertFalse(pass);
+    }
+  
     @Test
     public void testBasic() {
         String[] addrs = net.localAddresses();
@@ -136,6 +189,79 @@ public class CaffeNetTest {
 
             out.close();
         }
+    }
+
+    @Test
+    public void trainnull() throws Exception {
+      SolverParameter solver_param = Utils.GetSolverParam(rootPath + "caffe-distri/src/test/resources/caffenet_solver.prototxt");
+    
+      String net_proto_file = solver_param.getNet();
+      NetParameter net_param = Utils.GetNetParam(rootPath + "caffe-distri/" + net_proto_file);
+    
+      //blob
+      MatVector matVec = new MatVector(batch_size);
+      FloatBlob[] dataBlobs = new FloatBlob[1];
+      FloatBlob data_blob = new FloatBlob();
+      data_blob.reshape(batch_size, channels, height, width);
+      dataBlobs[0] = data_blob;
+    
+      FloatBlob labelblob = new FloatBlob();
+      labelblob.reshape(batch_size, 1, 1, 1);
+    
+      //transformer
+      LayerParameter train_layer_param = net_param.getLayer(0);
+      TransformationParameter param = train_layer_param.getTransformParam();
+      FloatDataTransformer xform = new FloatDataTransformer(param, true);
+    
+      nextBatch(matVec, labelblob);
+      xform.transform(matVec, data_blob);
+      boolean fail = false;
+      try {
+	  net.train(0, null, labelblob.cpu_data());
+      } catch(Exception e) {
+	  fail = true;
+      }
+      assertTrue(fail);
+      xform.deallocate();
+      data_blob.deallocate();
+      matVec.deallocate();
+  }
+  
+    @Test
+    public void predictnull() throws Exception {
+      SolverParameter solver_param = Utils.GetSolverParam(rootPath + "caffe-distri/src/test/resources/caffenet_solver.prototxt");
+    
+      String net_proto_file = solver_param.getNet();
+      NetParameter net_param = Utils.GetNetParam(rootPath + "caffe-distri/" + net_proto_file);
+    
+      //blob
+      MatVector matVec = new MatVector(batch_size);
+      FloatBlob[] dataBlobs = new FloatBlob[1];
+      FloatBlob data_blob = new FloatBlob();
+      data_blob.reshape(batch_size, channels, height, width);
+      dataBlobs[0] = data_blob;
+    
+      FloatBlob labelblob = new FloatBlob();
+      labelblob.reshape(batch_size, 1, 1, 1);
+    
+      //transformer
+      LayerParameter train_layer_param = net_param.getLayer(0);
+      TransformationParameter param = train_layer_param.getTransformParam();
+      FloatDataTransformer xform = new FloatDataTransformer(param, true);
+    
+      nextBatch(matVec, labelblob);
+      xform.transform(matVec, data_blob);
+      boolean fail = false;
+      String[] test_features = {"loss"};
+      try {
+	  FloatBlob[] top_blobs_vec = net.predict(0, null, labelblob.cpu_data(), test_features);
+      } catch(Exception e) {
+	  fail = true;
+      }
+      assertTrue(fail);
+      xform.deallocate();
+      data_blob.deallocate();
+      matVec.deallocate();
     }
 
     @Test

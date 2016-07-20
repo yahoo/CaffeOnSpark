@@ -238,20 +238,26 @@ void SocketAdapter::start_sockt_srvr() {
 }
 
 // Connect called by client with inbuilt support for retries
-void SocketChannel::Connect(string peer) {
+bool SocketChannel::Connect(string peer) {
   bool retry = true;
   int attempts = 0;
   int client_fd = 0;
   vector<string> name_port;
   boost::split(name_port, peer, boost::is_any_of(":"));
-  while (retry && (attempts < 2)) {
+  int backoff = 1;
+  while (retry && (attempts < 5)) {
     retry = false;
     if (client_fd == 0) {
+      string peername = name_port.at(0).c_str();;
+      string portnumber;
+      if (name_port.size() > 1) 
+	portnumber = name_port.at(1).c_str();
+      
       LOG(INFO) << "Trying to connect with ...["
-                << name_port.at(0).c_str() <<":"
-                << name_port.at(1).c_str()<< "]";
-      client_fd = connect_to_peer(name_port.at(0),
-                                  name_port.at(1));
+		<< peername <<":"
+		<< portnumber << "]";
+      client_fd = connect_to_peer(peername,
+                                  portnumber);
       if (!client_fd) {
         retry = true;
       } else {
@@ -264,8 +270,13 @@ void SocketChannel::Connect(string peer) {
     }
     attempts++;
     // Retry after 10 secs
-    usleep(10000000);
+    usleep(backoff*1000000);
+    backoff = backoff * 2;
   }
+  if (retry)
+    return false;
+  
+  return true;
 }
 
 // Real connect call without retries (called by connect above)

@@ -15,11 +15,27 @@
 JNIEXPORT jboolean JNICALL Java_com_yahoo_ml_jcaffe_MatVector_allocate
   (JNIEnv *env, jobject object, jint size) {
 
-    /* create a native vector<cv::Mat*> object */
-    vector<cv::Mat>* native_ptr = new  vector<cv::Mat>(size);
+  /* create a native vector<cv::Mat*> object */
+  vector<cv::Mat>* native_ptr = NULL;
+  if (size < 0) {
+    LOG(ERROR) << "Negative MatVector size specified";
+    ThrowCosJavaException((char*)"Negative MatVector size specified", env);
+    return false;
+  }
+    
+  try {
+    native_ptr = new  vector<cv::Mat>(size);
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return false;
+  }
 
-    /* associate native object with JVM object */
-    return SetNativeAddress(env, object, native_ptr);
+  if (native_ptr == NULL) {
+    LOG(ERROR) << "unable to allocate memory for vector of Mats";
+    return false;
+  }
+  /* associate native object with JVM object */
+  return SetNativeAddress(env, object, native_ptr);
 }
 
 /*
@@ -29,9 +45,9 @@ JNIEXPORT jboolean JNICALL Java_com_yahoo_ml_jcaffe_MatVector_allocate
  */
 JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_MatVector_deallocateVec(JNIEnv *env, jobject object, jlong address) {
 
-    vector<cv::Mat>* native_ptr = (vector<cv::Mat>*) address;
+  vector<cv::Mat>* native_ptr = (vector<cv::Mat>*) address;
     
-    delete native_ptr;
+  delete native_ptr;
 }
 
 /*
@@ -42,15 +58,36 @@ JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_MatVector_deallocateVec(JNIEnv *
 JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_MatVector_putnative
   (JNIEnv *env, jobject object, jint pos, jobject mat) {
 
-    vector<cv::Mat> *native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
+  vector<cv::Mat> *native_ptr = NULL;
+  try {
+    native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return;
+  }
 
-    cv::Mat* mat_ptr = (cv::Mat*) GetNativeAddress(env, mat);
-    if (mat_ptr==NULL) {
-        LOG(ERROR) << "invalid native address of Mat";
-        return;
-    }
+  
+  cv::Mat* mat_ptr = NULL;
+  try {
+    mat_ptr = (cv::Mat*) GetNativeAddress(env, mat);
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return;
+  }
 
-    (*native_ptr)[pos] = *mat_ptr;
+  if (mat_ptr==NULL) {
+    LOG(ERROR) << "invalid native address of Mat";
+    ThrowCosJavaException((char*)"invalid native address of Mat", env);
+    return;
+  }
+  
+  if (pos < 0 || pos >= native_ptr->size()) {
+    LOG(ERROR) << "invalid index in MatVector";
+    ThrowCosJavaException((char*)"invalid index in MatVector", env);
+    return;
+  }
+  
+  (*native_ptr)[pos] = *mat_ptr;
 }
 
 /*
@@ -61,17 +98,39 @@ JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_MatVector_putnative
 JNIEXPORT jbyteArray JNICALL Java_com_yahoo_ml_jcaffe_MatVector_data
     (JNIEnv *env, jobject object, jint pos) {
     
-    vector<cv::Mat> *native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
-    cv::Mat mat = (cv::Mat)(*native_ptr)[pos];
-    int size = mat.total() * mat.elemSize();
+  vector<cv::Mat> *native_ptr = NULL;
+  try {
+    native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return NULL;
+  }
+  
+  if (pos < 0 || pos > native_ptr->size()) {
+    LOG(ERROR) << "Invalid Mat index in MatVector";
+    return NULL;
+  }
 
-    jbyteArray dataarray = env->NewByteArray(size);
-    if(dataarray == NULL){
-        LOG(ERROR) << "Out of memory while allocating array for Mat data" ;
-        return NULL;
-    }
-    env->SetByteArrayRegion(dataarray,0, size, (jbyte*)mat.data);
-    return dataarray;
+  cv::Mat mat = (cv::Mat)(*native_ptr)[pos];
+  int size = 0;
+  try {
+    size = mat.total() * mat.elemSize();
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return NULL;
+  }
+  
+  jbyteArray dataarray = env->NewByteArray(size);
+  if(dataarray == NULL || env->ExceptionCheck()){
+    LOG(ERROR) << "Out of memory while allocating array for Mat data" ;
+    return NULL;
+  }
+  env->SetByteArrayRegion(dataarray,0, size, (jbyte*)mat.data);
+  if (env->ExceptionCheck()) {
+    LOG(ERROR) << "SetByteArrayRegion failed";
+    return NULL;
+  }
+  return dataarray;
 }
 
 /*
@@ -83,9 +142,24 @@ JNIEXPORT jbyteArray JNICALL Java_com_yahoo_ml_jcaffe_MatVector_data
 JNIEXPORT jint JNICALL Java_com_yahoo_ml_jcaffe_MatVector_height
     (JNIEnv *env, jobject object, jint pos) {
   
-    vector<cv::Mat> *native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
-    cv::Mat mat = (cv::Mat)(*native_ptr)[pos];
+  vector<cv::Mat> *native_ptr = NULL;
+  try {
+    native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return -1;
+  }
+  if (pos < 0 || pos > native_ptr->size()) {
+    LOG(ERROR) << "Invalid Mat index in MatVector";
+    return -1;
+  }
+  cv::Mat mat = (cv::Mat)(*native_ptr)[pos];
+  try {
     return mat.rows;
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return -1;
+  }
 }
 
 /*
@@ -97,9 +171,24 @@ JNIEXPORT jint JNICALL Java_com_yahoo_ml_jcaffe_MatVector_height
 JNIEXPORT jint JNICALL Java_com_yahoo_ml_jcaffe_MatVector_width
     (JNIEnv *env, jobject object, jint pos) {
   
-    vector<cv::Mat> *native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
-    cv::Mat mat = (cv::Mat)(*native_ptr)[pos];
+  vector<cv::Mat> *native_ptr = NULL;
+  try {
+    native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
+  } catch (const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return -1;
+  }
+  if (pos < 0 || pos > native_ptr->size()) {
+    LOG(ERROR) << "Invalid Mat index in MatVector";
+    return -1;
+  }
+  cv::Mat mat = (cv::Mat)(*native_ptr)[pos];
+  try {
     return mat.cols;
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return -1;
+  }
 }
 
 /*
@@ -111,7 +200,22 @@ JNIEXPORT jint JNICALL Java_com_yahoo_ml_jcaffe_MatVector_width
 JNIEXPORT jint JNICALL Java_com_yahoo_ml_jcaffe_MatVector_channels
 (JNIEnv *env, jobject object, jint pos) {
 
-  vector<cv::Mat> *native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
+  vector<cv::Mat> *native_ptr = NULL;
+  try {
+    native_ptr = (vector<cv::Mat>*) GetNativeAddress(env, object);
+  } catch (const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return -1;
+  }
+  if (pos < 0 || pos > native_ptr->size()) {
+    LOG(ERROR) << "Invalid Mat index in MatVector";
+    return -1;
+  }
   cv::Mat mat = (cv::Mat)(*native_ptr)[pos];
-  return mat.channels();
+  try {
+    return mat.channels();
+  } catch(const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return -1;
+  }
 }

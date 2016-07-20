@@ -15,13 +15,14 @@ using  namespace caffe;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-    bool SetNativeAddress(JNIEnv *env, jobject object, void* address);
-    void* GetNativeAddress(JNIEnv *env, jobject object);
-
-    bool GetStringVector(vector<const char*>& vec, JNIEnv *env, jobjectArray array, int length);
-    bool GetFloatBlobVector(vector< Blob<float>* >& vec, JNIEnv *env, jobjectArray array, int length);
-
+  
+  bool SetNativeAddress(JNIEnv *env, jobject object, void* address);
+  void* GetNativeAddress(JNIEnv *env, jobject object);
+  
+  bool GetStringVector(vector<const char*>& vec, JNIEnv *env, jobjectArray array, int length);
+  bool GetFloatBlobVector(vector< Blob<float>* >& vec, JNIEnv *env, jobjectArray array, int length);
+  void ThrowJavaException(const std::exception& ex, JNIEnv* env);
+  void ThrowCosJavaException(char* message, JNIEnv* env);
 #ifdef __cplusplus
 }
 #endif
