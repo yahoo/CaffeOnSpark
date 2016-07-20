@@ -52,7 +52,7 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
   var threadsStarted = false
   val objectHolder: ConcurrentHashMap[Object, Object] = new ConcurrentHashMap[Object, Object]()
   val snapshotInterval =  source.solverParameter.getSnapshot()
-  var STOP_MARK: (Array[String], Array[FloatBlob], FloatBlob) =  (Array[String](), Array(), new FloatBlob())
+  var STOP_MARK: (Array[String], Array[FloatBlob]) =  (Array[String](), Array())
   var results: ArrayList[Row] = new ArrayList[Row]
   var solversFinished = false
   val localModelPath : String = {
@@ -122,7 +122,7 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
 
 
     for (g <- 0 until numLocalGPUs) {
-      val queuePair = new QueuePair[(Array[String], Array[FloatBlob], FloatBlob)]()
+      val queuePair = new QueuePair[(Array[String], Array[FloatBlob])]()
 
       if (source.isTrain) {
         //start solvers w/ only rank 0 will save model
@@ -183,7 +183,7 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
       try {
         Await.result(transformer, Duration(1, "ms"))
       } catch {
-        case e: Exception => log.warn("Some tranformer threads haven't been terminated yet")
+        case e: Exception => log.warn("Some transformer threads haven't been terminated yet")
       }
     }
     threadsStarted = false
@@ -197,8 +197,8 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     exec.shutdown()
   }
 
-  private def takeFromQueue(queue: ArrayBlockingQueue[(Array[String], Array[FloatBlob], FloatBlob)], queueIdx: Int): (Array[String], Array[FloatBlob], FloatBlob) = {
-    var tpl: (Array[String], Array[FloatBlob], FloatBlob) = null
+  private def takeFromQueue(queue: ArrayBlockingQueue[(Array[String], Array[FloatBlob])], queueIdx: Int): (Array[String], Array[FloatBlob]) = {
+    var tpl: (Array[String], Array[FloatBlob]) = null
     while (!solvers.get(queueIdx).isCompleted && tpl==null)
       tpl = queue.peek()
 
@@ -206,74 +206,135 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     queue.take()
   }
 
-  private def putIntoQueue(tpl:(Array[String], Array[FloatBlob], FloatBlob), queue : ArrayBlockingQueue[(Array[String], Array[FloatBlob], FloatBlob)], queueIdx: Int): Unit = {
+  private def putIntoQueue(tpl:(Array[String], Array[FloatBlob]), queue : ArrayBlockingQueue[(Array[String], Array[FloatBlob])], queueIdx: Int): Unit = {
     var status = false
     while (!solvers.get(queueIdx).isCompleted && status==false)
         status = queue.offer(tpl)
   }
 
-  private def initialFreeQueue(queuePair: QueuePair[(Array[String], Array[FloatBlob], FloatBlob)]): Unit = {
+  private def initialFreeQueue(queuePair: QueuePair[(Array[String], Array[FloatBlob])]): Unit = {
     val batchSize = source.batchSize()
     for (j <- queuePair.Free.remainingCapacity() to 1 by -1) {
       val datablob: Array[FloatBlob] = source.dummyDataBlobs()
-      val labelblob: FloatBlob = new FloatBlob()
-      labelblob.reshape(batchSize, 1, 1 ,1)
-      queuePair.Free.put((new Array[String](batchSize), datablob, labelblob))
+      queuePair.Free.put((new Array[String](batchSize), datablob))
     }
   }
 
   private def doTransform(caffeNet: CaffeNet, solverIdx: Int,
-                          queuePair: QueuePair[(Array[String], Array[FloatBlob], FloatBlob)],
+                          queuePair: QueuePair[(Array[String], Array[FloatBlob])],
                           queueIdx: Int): Unit = {
 
     //This will eliminate data copy by solver thread
     caffeNet.init(solverIdx)
-    
-    var transformer: FloatDataTransformer = null
-    if (source.transformationParameter != null) {
-      transformer = new FloatDataTransformer(source.transformationParameter, source.isTrain)
-    }
-
     try {
-      var data: Array[FloatBlob] = if (transformer != null) source.dummyDataBlobs() else null
-      val batchSize = source.batchSize()
-      val dataHolder = source.dummyDataHolder()
-      val labels = new FloatBlob()
-      labels.reshape(batchSize, 1, 1, 1)
-      val sampleIds = new Array[String](batchSize)
-
-      //initialize free queue now that device is set
-      initialFreeQueue(queuePair)
-
-      while (!solvers.get(solverIdx).isCompleted && source.nextBatch(sampleIds, dataHolder, labels)) {
-        if (transformer != null) {
-          dataHolder match {
-            case matVector: MatVector => {
-              transformer.transform(matVector, data(0))
-	        }
-            case _ => throw new Exception("Unsupported data type for transformer")
+      if (source.useCoSDataLayer()) {
+        //this uses CoSDataLayer
+        val batchSize = source.batchSize()
+        val numTops = source.getNumTops()
+        val dataHolder = source.dummyDataHolder()
+        val data:Array[FloatBlob] = source.dummyDataBlobs()
+        val sampleIds = new Array[String](batchSize)
+        val dataType: Array[CoSDataParameter.DataType] = new Array(numTops)
+        val transformParams: Array[TransformationParameter] = new Array(numTops)
+        val transformers: Array[FloatDataTransformer] = new Array(numTops)
+        for (i <- 0 until numTops) {
+          dataType(i) = source.getTopDataType(i)
+          transformParams(i) = source.getTopTransformParam(i)
+          if (transformParams(i) != null) {
+            transformers(i) = new FloatDataTransformer(
+              transformParams(i), source.isTrain)
+          } else {
+            transformers(i) = null
           }
         }
+        //initialize free queue now that device is set
+        initialFreeQueue(queuePair)
+        while (!solvers.get(solverIdx).isCompleted && source.nextBatch(sampleIds, dataHolder)) {
+          val dataArray = dataHolder.asInstanceOf[Array[Any]]
+          val tpl = takeFromQueue(queuePair.Free, queueIdx)
+          if (tpl != null) {
+            sampleIds.copyToArray(tpl._1)
+            for (i <- 0 until numTops) {
+              dataType(i) match {
+                case CoSDataParameter.DataType.STRING |
+                     CoSDataParameter.DataType.INT |
+                     CoSDataParameter.DataType.FLOAT |
+                     CoSDataParameter.DataType.INT_ARRAY |
+                     CoSDataParameter.DataType.FLOAT_ARRAY => {
+                  if (transformers(i) != null) {
+                    transformers(i).transform(dataArray(i).asInstanceOf[FloatBlob], data(i))
+                  }
+                }
 
-        /* push the data/lablels to solver thread */
-        var tpl = takeFromQueue(queuePair.Free, queueIdx)
-        if (tpl !=null) {
-          sampleIds.copyToArray(tpl._1)
-          if (transformer != null) {
-            for (vidx <- 0 until data.size)
-              tpl._2(vidx).copyFrom(data(vidx))
-          }
-          else {
-            dataHolder match {
-              case dataBlobs: Seq[FloatBlob @unchecked] => {
-                for (vidx <- 0 until dataBlobs.size)
-                  tpl._2(vidx).copyFrom(dataBlobs(vidx))
+                case CoSDataParameter.DataType.RAW_IMAGE |
+                     CoSDataParameter.DataType.ENCODED_IMAGE => {
+                  if (transformers(i) != null) {
+                    transformers(i).transform(dataArray(i).asInstanceOf[MatVector], data(i))
+                  } else {
+                    throw new Exception("Images require a transformer to convert from MatVector to FloatBlob")
+                  }
+                }
               }
-              case _ => throw new Exception("Untranformed data type must be FloatBlob")
+              if (transformers(i) != null)
+                tpl._2(i).copyFrom(data(i))
+              else
+                tpl._2(i).copyFrom(dataArray(i).asInstanceOf[FloatBlob])
             }
+            putIntoQueue(tpl, queuePair.Full, queueIdx)
           }
-          tpl._3.copyFrom(labels)
-          putIntoQueue(tpl, queuePair.Full, queueIdx)
+        }
+      } else {
+        //This uses legacy memory data layer, will be removed in the future.	
+	var transformer: FloatDataTransformer = null   
+    	if (source.transformationParameter != null) {
+      	   transformer = new FloatDataTransformer(source.transformationParameter, source.isTrain)
+    	}
+
+      	var data: Array[FloatBlob] = if (transformer != null) source.dummyDataBlobs() else null
+      	val batchSize = source.batchSize()
+      	val dataHolder = source.dummyDataHolder()
+      	val sampleIds = new Array[String](batchSize)
+
+      	//initialize free queue now that device is set
+      	initialFreeQueue(queuePair)
+
+      	while (!solvers.get(solverIdx).isCompleted && source.nextBatch(sampleIds, dataHolder)) {
+          // push the data/lablels to solver thread
+          val tpl = takeFromQueue(queuePair.Free, queueIdx)
+          if (tpl != null) {
+            // copy ids
+            sampleIds.copyToArray(tpl._1)
+            // processing data
+            if (transformer != null) {
+              val validInput: Boolean = dataHolder match {
+                case (first, second) => {
+                  if (first.isInstanceOf[MatVector] &&
+                    second.isInstanceOf[FloatBlob]) {
+                    transformer.transform(first.asInstanceOf[MatVector], data(0))
+                    // copy data
+                    for (idx <- 0 until data.size - 1)
+                      tpl._2(idx).copyFrom(data(idx))
+                    // copy label
+                    tpl._2(data.size - 1).copyFrom(second.asInstanceOf[FloatBlob])
+                    true
+                  } else false
+                }
+                case _ => false
+              }
+              if (!validInput) {
+                throw new Exception("Unsupported data type for transformer")
+              }
+           }  else {
+              dataHolder match {
+                case dataBlobs: Seq[FloatBlob @unchecked] => {
+                  for (vidx <- 0 until dataBlobs.size)
+                    tpl._2(vidx).copyFrom(dataBlobs(vidx))
+                }
+                case _ => throw new Exception("Untransformed data type must be FloatBlob")
+              }
+            }
+            putIntoQueue(tpl, queuePair.Full, queueIdx)
+          }
         }
       }
     }
@@ -289,19 +350,14 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
 
   }
 
-  private def toDataPtr(from: FloatBlob): FloatArray = {
-    if (solverMode == SolverParameter.SolverMode.CPU_VALUE) from.cpu_data()
-    else from.gpu_data()
-  }
-
   private def doTrain(caffeNet: CaffeNet, syncIdx: Int,
-                      queuePair: QueuePair[(Array[String], Array[FloatBlob], FloatBlob)]): Unit = {
+                      queuePair: QueuePair[(Array[String], Array[FloatBlob])]): Unit = {
     try {
       val isRootSolver: Boolean = (syncIdx == 0)
       val snapshotPrefix: String = source.solverParameter.getSnapshotPrefix()
       val modelFilePrefix: String = conf.modelPath.substring(0, conf.modelPath.lastIndexOf("/") + 1)
 
-      var tpl: (Array[String], Array[FloatBlob], FloatBlob) = null
+      var tpl: (Array[String], Array[FloatBlob]) = null
       val initIter: Int = caffeNet.getInitIter(syncIdx)
       val maxIter: Int = caffeNet.getMaxIter(syncIdx)
       caffeNet.init(syncIdx, true)
@@ -310,7 +366,7 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
         if (tpl == STOP_MARK)  {
           queuePair.Free.put(tpl)
         } else {
-          val rs : Boolean = caffeNet.train(syncIdx, tpl._2, toDataPtr(tpl._3))
+          val rs : Boolean = caffeNet.train(syncIdx, tpl._2)
           if (!rs) {
             log.warn("Failed at training at iteration "+it)
           }
@@ -337,13 +393,13 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
   }
 
   private def doFeatures(caffeNet: CaffeNet, syncIdx: Int,
-                     queuePair: QueuePair[(Array[String], Array[FloatBlob], FloatBlob)]): Unit = {
+                     queuePair: QueuePair[(Array[String], Array[FloatBlob])]): Unit = {
     try {
       var blobNames = conf.features
       if (conf.isTest)
         blobNames = getTestOutputBlobNames()
       var act_iter: Int = 0
-      var tpl: (Array[String], Array[FloatBlob], FloatBlob) = null
+      var tpl: (Array[String], Array[FloatBlob]) = null
       val max_iter: Int = caffeNet.getMaxIter(syncIdx)
       val batchSize = source.batchSize()
       val bl = blobNames.length
@@ -353,7 +409,7 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
         if (tpl == STOP_MARK) {
           queuePair.Free.put(tpl)
         } else {
-          val top_vec = caffeNet.predict(syncIdx, tpl._2, toDataPtr(tpl._3), blobNames)
+          val top_vec = caffeNet.predict(syncIdx, tpl._2, blobNames)
           val dim_features: Seq[Int] = (0 until bl).map{i => top_vec(i).count/batchSize}
           for (i <- 0 until batchSize) {
             // processing the result row by row
