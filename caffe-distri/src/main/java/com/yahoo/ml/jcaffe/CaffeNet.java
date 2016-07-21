@@ -108,11 +108,10 @@ public class CaffeNet extends BaseObject {
      * If this thread has not been initd, we will invoke init(solver_index, true).
      * @param solver_index index of our solver
      * @param data   array of input data to be attached to input blobs
-     * @param labels   array of input labels to be attached to input blobs
      * @param output_blobnames array of output blob names
      * @return output data from the output blobs. null if failed
      */
-    public native FloatBlob[] predict(int solver_index, FloatBlob[] data, FloatArray labels, String[] output_blobnames);
+    public native FloatBlob[] predict(int solver_index, FloatBlob[] data, String[] output_blobnames);
 
     /**
      * Apply the given input data to perform 1 step of training
@@ -120,10 +119,9 @@ public class CaffeNet extends BaseObject {
      * If this thread has not been initialize, we will invoke init(solver_index, true).
      * @param solver_index index of our solver
      * @param data   array of input data to be attached to input blobs
-     * @param labels   array of input labels to be attached to input blobs
      * @return true iff successed
      */
-    public native boolean train(int solver_index, FloatBlob[] data, FloatArray labels);
+    public native boolean train(int solver_index, FloatBlob[] data);
 
     /**
      * retrieve the server address in which we will accept messages from peers in the cluster

@@ -25,7 +25,7 @@ import org.slf4j.{LoggerFactory, Logger}
  * @param isTrain
  */
 abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
-  extends DataSource[(String, String, Int, Int, Int, Boolean, Array[Byte]), MatVector](conf,
+  extends DataSource[(String, String, Int, Int, Int, Boolean, Array[Byte]), (MatVector, FloatBlob)](conf,
     layerId, isTrain, (null, null, 0, 0, 0, false, null)) {
   @transient protected var log: Logger = null
   @transient protected var memdatalayer_param: MemoryDataParameter = null
@@ -76,23 +76,30 @@ abstract class ImageDataSource(conf: Config, layerId: Int, isTrain: Boolean)
   /* make a data blob for solver/test threads */
   def dummyDataBlobs(): Array[FloatBlob] = {
     val dataBlobs: Array[FloatBlob] = Array()
+    val labelBlob = new FloatBlob()
+    labelBlob.reshape(batchSize_, 1, 1, 1)
     val dataBlob = new FloatBlob()
     dataBlob.reshape(batchSize_, numChannels, height, width)
-    dataBlobs :+ dataBlob
+    // last element is label blob
+    dataBlobs :+ dataBlob :+ labelBlob
   }
 
   /* make a data holder for solver/test threads */
-  def dummyDataHolder(): MatVector = {
-    new MatVector(batchSize_)
+  def dummyDataHolder(): (MatVector, FloatBlob) = {
+    val labelBlob = new FloatBlob()
+    labelBlob.reshape(batchSize_, 1, 1, 1)
+    val matVector = new MatVector(batchSize_)
+    (matVector, labelBlob)
   }
 
   /* create a batch of samples extracted from source queue, up to a batch size.
    *
    * return false if seeing STOP_MARK from source queue
    * */
-  def nextBatch(sampleIds: Array[String], mats: MatVector, labels: FloatBlob): Boolean = {
+  def nextBatch(sampleIds: Array[String], data: (MatVector, FloatBlob)): Boolean = {
+    val mats: MatVector = data._1
+    val labels: FloatBlob = data._2
     var labelCPU = labels.cpu_data()
-
     var shouldContinue = true
     var mat: Mat = null
     var oldmat: Mat = null

@@ -34,4 +34,8 @@ public class FloatDataTransformer extends BaseObject {
      *    set_cpu_data() is used. See memory_layer.cpp for an example.
      */
     public native void transform(MatVector mat_vector, FloatBlob transformed_blob);
+
+    public void transform(FloatBlob input_blob, FloatBlob transformed_blob) throws Exception {
+        throw new Exception("transform from floatblob to floatblob is not implemented");
+    }
 }

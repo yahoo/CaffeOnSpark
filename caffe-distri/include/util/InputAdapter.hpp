@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "caffe/caffe.hpp"
+#include "extra_layers.hpp"
 
 template<typename Dtype>
 class InputAdapter {
@@ -27,7 +28,7 @@ class InputAdapter {
     /**
      * feed a layer with data and label
      */
-    virtual void feed(vector< Blob<Dtype>* >&  dataBlobs, Dtype* labelPtr) = 0;
+    virtual void feed(vector< Blob<Dtype>* >&  dataBlobs) = 0;
 };
 
 struct cmp_str

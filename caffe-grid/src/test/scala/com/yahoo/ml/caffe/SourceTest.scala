@@ -73,14 +73,14 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     assertNotNull(rdd)
 
     //dummy objects
-    val label = new FloatBlob()
-    assertNotNull(label)
     val batchSize = source.batchSize()
-    label.reshape(batchSize, 1, 1, 1)
     val data = source.dummyDataBlobs()
     assertNotNull(data)
-    val matVector = source.dummyDataHolder()
+    val dataholder = source.dummyDataHolder()
+    val matVector = dataholder._1
+    val label = dataholder._2
     assertNotNull(matVector)
+    assertNotNull(label)
     val sampleIds = new Array[String](batchSize)
 
     //source transformer
@@ -95,14 +95,17 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
         assertTrue(res)
 
         //next batch
-        res = source.nextBatch(sampleIds, matVector, label)
+        res = source.nextBatch(sampleIds, dataholder)
         assertTrue(res)
 
         //tranform the data blob
         transformer.transform(matVector, data(0))
 
+        //copy label
+        data(1).copyFrom(label)
+
         //training
-        assertTrue(net.train(0, data, label.cpu_data))
+        assertTrue(net.train(0, data))
     }
 
     //save snapshot
@@ -134,14 +137,14 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
 
 
     //dummy objects
-    val label = new FloatBlob()
-    assertNotNull(label)
     val batchSize = source.batchSize()
-    label.reshape(batchSize, 1, 1, 1)
     val data = source.dummyDataBlobs()
     assertNotNull(data)
-    val matVector = source.dummyDataHolder()
+    val dataholder = source.dummyDataHolder()
+    val matVector = dataholder._1
+    val label = dataholder._2
     assertNotNull(matVector)
+    assertNotNull(label)
     val sampleIds = new Array[String](batchSize)
 
     //source transformer
@@ -153,15 +156,18 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     assertTrue(res)
 
     //next batch
-    res = source.nextBatch(sampleIds, matVector, label)
+    res = source.nextBatch(sampleIds, dataholder)
     assertTrue(res)
 
     //tranform the data blob
     transformer.transform(matVector, data(0))
 
+    //copy label
+    data(1).copyFrom(label)
+
     //test
     val test_features : Array[String] = Array("accuracy","loss")
-    val top_blobs_vec = test_net.predict(0, data, label.cpu_data, test_features)
+    val top_blobs_vec = test_net.predict(0, data, test_features)
 
     //validate test results
     for (j <- 0 until top_blobs_vec.length) {

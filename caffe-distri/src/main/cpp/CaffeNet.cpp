@@ -549,7 +549,7 @@ void CaffeNet<Dtype>::setInputAdapter(int solver_index, shared_ptr<Layer<Dtype> 
  */
 template<typename Dtype>
 void CaffeNet<Dtype>::predict(int solver_index,
-                              vector< Blob<Dtype>* >&  input_data, Dtype* input_labels,
+                              vector< Blob<Dtype>* >&  input_data,
                               vector<const char*>& output_blob_names,
                               vector<Blob<Dtype>* >& output_blobs) {
     //connect input data to input adapter
@@ -557,7 +557,7 @@ void CaffeNet<Dtype>::predict(int solver_index,
         //initialize the current thread
         init(solver_index, true);
     }
-    input_adapter_[solver_index]->feed(input_data, input_labels);
+    input_adapter_[solver_index]->feed(input_data);
 
     //invoke network's Forward operation
     CHECK(nets_[solver_index]);
@@ -578,14 +578,14 @@ void CaffeNet<Dtype>::predict(int solver_index,
  * @return true iff successed
  */
 template<typename Dtype>
-bool CaffeNet<Dtype>::train(int solver_index, vector< Blob<Dtype>* >& input_data, Dtype* input_labels) {
+bool CaffeNet<Dtype>::train(int solver_index, vector< Blob<Dtype>* >& input_data) {
     //connect input data to input adapter
     if (input_adapter_[solver_index].get()==NULL) {
         //initialize the current thread
         init(solver_index, true);
     }
 
-    input_adapter_[solver_index]->feed(input_data, input_labels);
+    input_adapter_[solver_index]->feed(input_data);
 
     //invoke network's Forward operation
     shared_ptr<Solver<Dtype> > solver;

@@ -104,11 +104,10 @@ class CaffeNet {
      *
      * @param solver_index index of our solver
      * @param input_data   array of input data to be attached to input blobs
-     * @param input_labels   array of input labels to be attached to input blobs
      * @param output_blobs array of output blob names
      * @return array of output data from the output blobs. null if failed
      */
-    virtual void predict(int solver_index, vector< Blob<Dtype>* >&  input_data, Dtype* input_labels,
+    virtual void predict(int solver_index, vector< Blob<Dtype>* >&  input_data,
         vector<const char*>& output_blob_names, vector<Blob<Dtype>* >& output_blobs);
 
     /**
@@ -116,10 +115,9 @@ class CaffeNet {
      *
      * @param solver_index index of our solver
      * @param input_data   array of input data to be attached to input blobs
-     * @param input_labels   array of input labels to be attached to input blobs
      * @return true iff successed
      */
-    virtual bool train(int solver_index, vector< Blob<Dtype>* >& input_data, Dtype* input_labels);
+    virtual bool train(int solver_index, vector< Blob<Dtype>* >& input_data);
 
     /**
      * number of iterations performed previously

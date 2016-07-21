@@ -21,11 +21,14 @@ MemoryInputAdapter<Dtype>::~MemoryInputAdapter() {
 }
 
 template<typename Dtype>
-void MemoryInputAdapter<Dtype>::feed(vector< Blob<Dtype>* >&  dataBlobs, Dtype* labelBlobPtr) {
-    if (InputAdapter<Dtype>::solver_mode_ == Caffe::CPU)
-        mem_->Reset(dataBlobs[0]->mutable_cpu_data(), labelBlobPtr, batchSize_);
-    else
-        mem_->Reset(dataBlobs[0]->mutable_gpu_data(), labelBlobPtr, batchSize_);
+void MemoryInputAdapter<Dtype>::feed(vector< Blob<Dtype>* >&  dataBlobs) {
+  int vectlen = dataBlobs.size();
+  // the last blob is label
+  Dtype* labelBlobPtr = dataBlobs[vectlen-1]->mutable_cpu_data();
+  if (InputAdapter<Dtype>::solver_mode_ == Caffe::CPU)
+    mem_->Reset(dataBlobs[0]->mutable_cpu_data(), labelBlobPtr, batchSize_);
+  else
+    mem_->Reset(dataBlobs[0]->mutable_gpu_data(), labelBlobPtr, batchSize_);
 }
 
 REGISTER_INPUT_ADAPTER("MemoryData", MemoryInputAdapter);
