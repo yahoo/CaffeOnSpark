@@ -44,7 +44,7 @@ public class CaffeNetTest {
                 0, //node_rank,
                 true, //isTraining,
                 0, //NONE
-                -1);
+		-1, 0);
         assertTrue(net != null);
 
         test_net = new CaffeNet(solver_config_path,
@@ -55,7 +55,7 @@ public class CaffeNetTest {
                 0, //node_rank,
                 false, //isTraining,
                 0, //NONE
-                -1);
+		-1, 0);
         assertTrue(test_net != null);
 
 	socket_net = new CaffeNet(solver_config_path,
@@ -66,7 +66,7 @@ public class CaffeNetTest {
 				  0, //node_rank,
 				  false, //isTraining,
 				  CaffeNet.SOCKET, //NONE
-				  -1);
+				  -1, 0);
 	assertTrue(socket_net != null);
         solver_param = Utils.GetSolverParam(solver_config_path);
         assertEquals(solver_param.getSolverMode(), SolverParameter.SolverMode.CPU);
@@ -153,8 +153,9 @@ public class CaffeNetTest {
         String model_snapshot_fn = net.snapshotFilename(0, false);
         assertTrue(model_snapshot_fn.startsWith(solver_param.getSnapshotPrefix() + "_iter_0.caffemodel"));
 
-        String testOutputBlobNames = test_net.getTestOutputBlobNames();
-        assertTrue(testOutputBlobNames.equals("accuracy,loss"));
+        String[] testOutputBlobNames = test_net.getValidationOutputBlobNames();
+        assertTrue(testOutputBlobNames[0].contains("accuracy"));
+        assertTrue(testOutputBlobNames[1].contains("loss"));
     }
 
     private void nextBatch(MatVector matVec, FloatBlob labels) throws Exception {

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<allocations>
+  <pool name="train">
+    <schedulingMode>FAIR</schedulingMode>
+    <weight>100</weight>
+    <minShare>1</minShare>
+  </pool>
+  <pool name="validation">
+    <schedulingMode>FAIR</schedulingMode>
+    <weight>1</weight>
+    <minShare>1</minShare>
+  </pool>
+</allocations>

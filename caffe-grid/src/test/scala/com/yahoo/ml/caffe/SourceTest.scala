@@ -59,7 +59,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     val source =  new SeqImageDataSource(conf, conf.train_data_layer_id, true)
 
     //caffenet
-    val net = new CaffeNet(conf.protoFile, "", "", 1, 1, 0, true, 0, -1)
+    val net = new CaffeNet(conf.protoFile, "", "", 1, 1, 0, true, 0, -1, 0)
     assertTrue(net != null)
     assertTrue(net.connect(null))
 
@@ -122,7 +122,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     val source =  new SeqImageDataSource(conf, conf.test_data_layer_id, false)
 
     //caffenet
-    val test_net = new CaffeNet(conf.protoFile, "", "", 1, 1, 0, false, 0, -1)
+    val test_net = new CaffeNet(conf.protoFile, "", "", 1, 1, 0, false, 0, -1, 0)
     assertTrue(test_net != null)
     assertTrue(test_net.connect(null))
 

@@ -135,29 +135,25 @@ class DataFrameSource(conf: Config, layerId: Int, isTrain: Boolean)
     val imageHeight = tops(topidx).height_
     val imageWidth = tops(topidx).width_
     val imageChannels = tops(topidx).channels_
-    if (imageHeight > 0 && imageWidth > 0 && imageChannels > 0) {
-      mat = new Mat(imageChannels, imageHeight, imageWidth, data)
-      if (encoded)
-        mat.decode(Mat.CV_LOAD_IMAGE_UNCHANGED)
-      if (mat.width() != imageWidth || mat.height() != imageHeight) {
-        log.warn("Skip image " + topidx + ", " + offset)
-        mat = null
-      }
-    } else {
-      mat = new Mat(data)
-      if (encoded) {
-        imageChannels match {
+    if (encoded) {
+       mat = new Mat(data)
+       imageChannels match {
           case 1 => mat.decode(Mat.CV_LOAD_IMAGE_GRAYSCALE)
           case 3 => mat.decode(Mat.CV_LOAD_IMAGE_COLOR)
           case _ => mat.decode(Mat.CV_LOAD_IMAGE_UNCHANGED)
         }
-      }
+
       if (mat.width() == 0) {
-        log.warn("Skipped image " + + topidx + ", " + offset)
+      	log.warn("Skip image at top#" + topidx + ", index#" + offset)
+    	mat = null
+      }
+    } else {
+      mat = new Mat(imageChannels, imageHeight, imageWidth, data)
+      if (mat.width() != imageWidth || mat.height() != imageHeight) {
+        log.warn("Skip image at top#" + topidx + ", index#" + offset)
         mat = null
       }
     }
-
     if (mat != null) {
       oldmat = mats.put(offset, mat)
       if (oldmat != null)
