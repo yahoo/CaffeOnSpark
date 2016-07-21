@@ -38,6 +38,7 @@ public class CaffeNet extends BaseObject {
      * @param isTraining       true for training, false otherwise
      * @param connection_type  connection type among the servers
      * @param start_device_id  the start ID of device. default: -1
+     * @param validation_net_id validation net id. default: 0
      */
     public CaffeNet(String solver_conf_file,
                     String input_model_file,
@@ -47,11 +48,12 @@ public class CaffeNet extends BaseObject {
                     int node_rank,
                     boolean isTraining,
                     int connection_type,
-                    int start_device_id) throws IOException {
+                    int start_device_id,
+		    int validation_net_id) throws IOException {
         solverParameter_ = Utils.GetSolverParam(solver_conf_file);
         if (!allocate(solver_conf_file, input_model_file, input_state_file,
                 num_local_devices, cluster_size, node_rank, isTraining,
-                connection_type, start_device_id))
+		      connection_type, start_device_id, validation_net_id))
             throw new RuntimeException("Failed to create CaffeNet object");
     }
 
@@ -63,7 +65,8 @@ public class CaffeNet extends BaseObject {
                                     int node_rank,
                                     boolean isTraining,
                                     int connection_type,
-                                    int start_device_id);
+                                    int start_device_id,
+				    int validation_net_id);
 
     @Override
     protected native void deallocate(long address);
@@ -154,6 +157,22 @@ public class CaffeNet extends BaseObject {
      */
     public native int getMaxIter(int solver_index);
 
+
+    /**
+     * test iterations to be performed
+     *
+     * @param solver_index index of our solver
+     * @return test iterations
+     */
+    public native int getTestIter(int solver_index);
+
+    /**
+     * test interval 
+     *
+     * @return test interval
+     */
+    public native int getTestInterval();
+
     /**
      * snapshot the model and state
      * @return iteration ID for which the snapshot was performed; -1 if failed
@@ -161,10 +180,18 @@ public class CaffeNet extends BaseObject {
     public native int snapshot();
 
     /**
-     * get the test net output blob names
+     * get the validation net output blob names
      * @return comma separate string of output blob names.
      */
-    public native String getTestOutputBlobNames();
+    public native String[] getValidationOutputBlobNames();
+
+
+    /**
+     * get the test net output blobs
+     * @param length no. of output blobs
+     * @return array of output blobs.
+     */
+    public native FloatBlob[] getValidationOutputBlobs(int length);
 
     /**
      * get the file name of mode or state snapshot
@@ -187,4 +214,19 @@ public class CaffeNet extends BaseObject {
 
         return  solverParameter_.getSnapshotPrefix() + "_iter_"+ iter + extension.toString();
     }
+
+  /**
+   * Apply the given input data to perform 1 step of validation
+   *
+   * @param validation_data array of input validation data to be attached to input blobs
+   */
+  public native void validation(FloatBlob[] input_validation_data);
+
+  /**
+   * Compute the aggregate of all the validation scores and the final loss etc
+   *
+   * @param  index of our validation net
+   */  
+  public native void aggregateValidationOutputs();
+
 };

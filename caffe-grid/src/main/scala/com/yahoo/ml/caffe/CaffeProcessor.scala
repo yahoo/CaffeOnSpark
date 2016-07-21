@@ -13,12 +13,13 @@ import org.slf4j.{LoggerFactory, Logger}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, ExecutionContext}
 import org.apache.spark.sql.Row
+import scala.collection.immutable.Map
+import scala.collection.mutable.ArrayBuffer
 
 private[caffe] object CaffeProcessor {
   var myInstance: CaffeProcessor[_, _] = null
-
-  def instance[T1, T2](source: DataSource[T1, T2], rank: Int): CaffeProcessor[T1, T2] = {
-    myInstance = new CaffeProcessor[T1, T2](source, rank)
+  def instance[T1, T2](sources: Array[DataSource[T1, T2]], rank: Int): CaffeProcessor[T1, T2] = {
+    myInstance = new CaffeProcessor[T1, T2](sources, rank)
     myInstance.asInstanceOf[CaffeProcessor[T1, T2]]
   }
 
@@ -32,42 +33,48 @@ private[caffe] class QueuePair[T]  {
   val Full: ArrayBlockingQueue[T] = new ArrayBlockingQueue[T] (2)
 }
 
-private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
+private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2]],
                                              val rank: Int) {
   val log: Logger = LoggerFactory.getLogger(this.getClass)
   log.info("my rank is " + rank)
-  //initialize source
-  if (!source.init()) {
-    throw new Exception("Failed to initialize data source")
+  //initialize sources
+  for (source <- sources) {
+    if (!source.init()) {
+      throw new Exception("Failed to initialize data source")
+    }
   }
-  val conf = source.conf
-  val solverMode: Int = source.solverParameter.getSolverMode().getNumber()
+
+  var isValidationExecutor: Boolean = false;
+  var validationBlobOutput: ArrayBuffer[ArrayBuffer[Float]] = new ArrayBuffer[ArrayBuffer[Float]]()
+  val conf = sources(0).conf
+  val solverMode: Int = sources(0).solverParameter.getSolverMode().getNumber()
   val numLocalGPUs: Int = conf.devices
   val numTotalGPUs: Int = numLocalGPUs * conf.clusterSize
-  assert(source != null)
-  implicit val exec = ExecutionContext.fromExecutorService(new ForkJoinPool(numLocalGPUs * (conf.transform_thread_per_device + 1)))
+  assert(sources != null)
+  val poolSize = numLocalGPUs * (conf.transform_thread_per_device + 1) + conf.transform_thread_per_device
+  implicit val exec = ExecutionContext.fromExecutorService(new ForkJoinPool(poolSize))
   val transformers: ArrayList[Future[_]] = new ArrayList[Future[_]]
   val solvers: ArrayList[Future[_]] = new ArrayList[Future[_]]
   var rdmaStarted = false
   var threadsStarted = false
   val objectHolder: ConcurrentHashMap[Object, Object] = new ConcurrentHashMap[Object, Object]()
-  val snapshotInterval =  source.solverParameter.getSnapshot()
+  val snapshotInterval =  sources(0).solverParameter.getSnapshot()
   var STOP_MARK: (Array[String], Array[FloatBlob]) =  (Array[String](), Array())
   var results: ArrayList[Row] = new ArrayList[Row]
   var solversFinished = false
   val localModelPath : String = {
-    if (source.isTrain) ""
+    if (sources(0).isTrain) ""
     else FSUtils.GetLocalFileName(conf.modelPath, "model.tmp")
   }
 
   //create a list of caffeTops
   val caffeNetList: Seq[CaffeNet] = {
-    if (source.isTrain) {
+    if (sources(0).isTrain) {
       // resume training if available
       val localStateFile: String = FSUtils.GetLocalFileName(conf.snapshotStateFile, "state.tmp")
       val localModelFile: String = FSUtils.GetLocalFileName(conf.snapshotModelFile, "model.tmp")
       Seq(new CaffeNet(conf.protoFile, localModelFile, localStateFile, numLocalGPUs,
-          conf.clusterSize, rank, true, conf.connection, -1))
+          conf.clusterSize, rank, true, conf.connection, -1, 0))
     } else {
       // feature or test mode, we have numLocalGPUs caffeTops, each of them has one gpu.
       // this is to avoid create master/slave gpus where slave gpu does not do test.
@@ -75,7 +82,7 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
       var seq : Seq[CaffeNet] = Seq()
       for (g <- 0 until numLocalGPUs){
         val caffeNet = new CaffeNet(conf.protoFile, localModelPath, "", 1,
-          1, 0, false, CaffeNet.NONE, startGPUIdx)
+          1, 0, false, CaffeNet.NONE, startGPUIdx, 0)
         //in order to get GPU, we need to initialize P2P Sync 1st
         caffeNet.connect(null)
         startGPUIdx = caffeNet.deviceID(0)
@@ -90,13 +97,13 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     caffeNetList(0).localAddresses
   }
 
-  def getTestOutputBlobNames(): Array[String] = {
-    caffeNetList(0).getTestOutputBlobNames.split(',')
+  def getValidationOutputBlobNames(): Array[String] = {
+    caffeNetList(0).getValidationOutputBlobNames()
   }
 
   //start the processor
   def start(rank2addresses: Array[(Int, Array[String])]) : Unit = {
-    if (source.isTrain) {
+    if (sources(0).isTrain) {
       val peer_addr = new Array[String](rank2addresses.length)
       for ((peer_rank, addrs) <- rank2addresses) {
           if (peer_rank != rank)
@@ -106,7 +113,8 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     }
 
     //clear the source queue
-    source.sourceQueue.clear()
+    for (source <- sources)
+      source.sourceQueue.clear()
 
     //start worker threads
     startThreads()
@@ -122,32 +130,50 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
 
 
     for (g <- 0 until numLocalGPUs) {
-      val queuePair = new QueuePair[(Array[String], Array[FloatBlob])]()
-
-      if (source.isTrain) {
+      var queuePairTrain = new QueuePair[(Array[String], Array[FloatBlob])]()
+      var queuePairSet: Array[QueuePair[(Array[String], Array[FloatBlob])]] = new Array[QueuePair[(Array[String], Array[FloatBlob])]](2)
+      var queuePairValidation: QueuePair[(Array[String], Array[FloatBlob])] = null
+      queuePairSet(0) = queuePairTrain
+      if ((g==0) && sources.length > 1 && !sources(1).isTrain) {
+        log.info("Interleave enabled")
+        queuePairValidation = new QueuePair[(Array[String], Array[FloatBlob])]()
+        queuePairSet(1) = queuePairValidation
+      }
+      if (sources(0).isTrain) {
         //start solvers w/ only rank 0 will save model
         solvers.add(Future {
-          doTrain(caffeNetList(0), g, queuePair)
+          doTrain(caffeNetList(0), g, queuePairSet)
         })
         //start transformers
-        for (t <- 0 until conf.transform_thread_per_device)
+        for (t <- 0 until conf.transform_thread_per_device) {
+          log.info("Start transformer for train in CaffeProcessor StartThreads")
           transformers.add(Future {
-            doTransform(caffeNetList(0), g, queuePair, g)
+            doTransform(0, caffeNetList(0), g, queuePairTrain, g)
           })
+        }
+
+        if ((g == 0) && (sources.length > 1)) {
+          for (t <- 0 until conf.transform_thread_per_device) {
+            log.info("Start transformer for validation in CaffeProcessor StartThreads")
+            transformers.add(Future {
+              doTransform(1, caffeNetList(0), g, queuePairValidation, g)
+            })
+          }
+        }
       } else {
         //start solvers for test
         solvers.add(Future {
-          doFeatures(caffeNetList(g), 0, queuePair)
+          doFeatures(caffeNetList(g), 0, queuePairTrain)
         })
         //start transformers
-        for (t <- 0 until conf.transform_thread_per_device)
+        for (t <- 0 until conf.transform_thread_per_device) 
           transformers.add(Future {
-            doTransform(caffeNetList(g), 0, queuePair, g)
+            doTransform(0,caffeNetList(g), 0, queuePairTrain, g)
           })
       }
     }
-    
-    threadsStarted = true
+
+      threadsStarted = true
   }
 
   // sync the executors
@@ -157,16 +183,16 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
      * To sure that all executors are synchronized, we will execute those invocation in sequence.
      */
     synchronized {
-      if (source.isTrain)
+      if (sources(0).isTrain)
         caffeNetList(0).sync
     }
   }
 
   //feed data to train queue
-  def feedQueue(item: T1): Boolean = {
+  def feedQueue(sourceId: Int, item: T1): Boolean = {
     var offer_status = false
     while (!solvers.get(0).isCompleted && !offer_status) {
-      offer_status = source.sourceQueue.offer(item)
+      offer_status = sources(sourceId).sourceQueue.offer(item)
     }
     !solvers.get(0).isCompleted
   }
@@ -175,7 +201,9 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
   def stopThreads(): Unit = {
     //send stop signals
     for (i <- 0 until conf.transform_thread_per_device * numLocalGPUs)
-      feedQueue(source.STOP_MARK)
+      for (j <- 0 until sources.length)
+        feedQueue(j, sources(j).STOP_MARK)
+
     //stop transformers & solvers
     import scala.collection.JavaConversions._
     for (solver <- solvers) Await.result(solver, Duration.Inf)
@@ -197,7 +225,8 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     exec.shutdown()
   }
 
-  private def takeFromQueue(queue: ArrayBlockingQueue[(Array[String], Array[FloatBlob])], queueIdx: Int): (Array[String], Array[FloatBlob]) = {
+  private def takeFromQueue(queue: ArrayBlockingQueue[(Array[String],
+      Array[FloatBlob])], queueIdx: Int): (Array[String], Array[FloatBlob]) = {
     var tpl: (Array[String], Array[FloatBlob]) = null
     while (!solvers.get(queueIdx).isCompleted && tpl==null)
       tpl = queue.peek()
@@ -206,26 +235,30 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     queue.take()
   }
 
-  private def putIntoQueue(tpl:(Array[String], Array[FloatBlob]), queue : ArrayBlockingQueue[(Array[String], Array[FloatBlob])], queueIdx: Int): Unit = {
+  private def putIntoQueue(tpl:(Array[String], Array[FloatBlob]),
+      queue : ArrayBlockingQueue[(Array[String], Array[FloatBlob])],
+      queueIdx: Int): Unit = {
     var status = false
     while (!solvers.get(queueIdx).isCompleted && status==false)
         status = queue.offer(tpl)
   }
 
-  private def initialFreeQueue(queuePair: QueuePair[(Array[String], Array[FloatBlob])]): Unit = {
-    val batchSize = source.batchSize()
+  private def initialFreeQueue(sourceId: Int, queuePair: QueuePair[(Array[String], Array[FloatBlob])]): Unit = {
+    val batchSize = sources(sourceId).batchSize()
     for (j <- queuePair.Free.remainingCapacity() to 1 by -1) {
-      val datablob: Array[FloatBlob] = source.dummyDataBlobs()
+      val datablob: Array[FloatBlob] = sources(sourceId).dummyDataBlobs()
       queuePair.Free.put((new Array[String](batchSize), datablob))
     }
   }
 
-  private def doTransform(caffeNet: CaffeNet, solverIdx: Int,
+  private def doTransform(sourceId: Int, caffeNet: CaffeNet, solverIdx: Int,
                           queuePair: QueuePair[(Array[String], Array[FloatBlob])],
                           queueIdx: Int): Unit = {
 
+    var source = sources(sourceId)
     //This will eliminate data copy by solver thread
     caffeNet.init(solverIdx)
+
     try {
       if (source.useCoSDataLayer()) {
         //this uses CoSDataLayer
@@ -248,7 +281,7 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
           }
         }
         //initialize free queue now that device is set
-        initialFreeQueue(queuePair)
+        initialFreeQueue(sourceId, queuePair)
         while (!solvers.get(solverIdx).isCompleted && source.nextBatch(sampleIds, dataHolder)) {
           val dataArray = dataHolder.asInstanceOf[Array[Any]]
           val tpl = takeFromQueue(queuePair.Free, queueIdx)
@@ -284,21 +317,20 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
           }
         }
       } else {
-        //This uses legacy memory data layer, will be removed in the future.	
-	var transformer: FloatDataTransformer = null   
-    	if (source.transformationParameter != null) {
-      	   transformer = new FloatDataTransformer(source.transformationParameter, source.isTrain)
-    	}
+        //This uses legacy memory data layer, will be removed in the future.
+        var transformer: FloatDataTransformer = null
+        if (source.transformationParameter != null) {
+          transformer = new FloatDataTransformer(source.transformationParameter, source.isTrain)
+        }
+        var data: Array[FloatBlob] = if (transformer != null) source.dummyDataBlobs() else null
+        val batchSize = source.batchSize()
+        val dataHolder = source.dummyDataHolder()
+        val sampleIds = new Array[String](batchSize)
 
-      	var data: Array[FloatBlob] = if (transformer != null) source.dummyDataBlobs() else null
-      	val batchSize = source.batchSize()
-      	val dataHolder = source.dummyDataHolder()
-      	val sampleIds = new Array[String](batchSize)
+        //initialize free queue now that device is set
+        initialFreeQueue(sourceId, queuePair)
 
-      	//initialize free queue now that device is set
-      	initialFreeQueue(queuePair)
-
-      	while (!solvers.get(solverIdx).isCompleted && source.nextBatch(sampleIds, dataHolder)) {
+        while (!solvers.get(solverIdx).isCompleted && source.nextBatch(sampleIds, dataHolder)) {
           // push the data/lablels to solver thread
           val tpl = takeFromQueue(queuePair.Free, queueIdx)
           if (tpl != null) {
@@ -324,9 +356,9 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
               if (!validInput) {
                 throw new Exception("Unsupported data type for transformer")
               }
-           }  else {
+            } else {
               dataHolder match {
-                case dataBlobs: Seq[FloatBlob @unchecked] => {
+                case dataBlobs: Seq[FloatBlob@unchecked] => {
                   for (vidx <- 0 until dataBlobs.size)
                     tpl._2(vidx).copyFrom(dataBlobs(vidx))
                 }
@@ -347,30 +379,73 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
       takeFromQueue(queuePair.Free, queueIdx)
       putIntoQueue(STOP_MARK, queuePair.Full, queueIdx)
     }
+  }
 
+  private def getValidationOutputBlobs(length: Int, batchSize: Int): ArrayBuffer[Float] = {
+    val top_vec = caffeNetList(0).getValidationOutputBlobs(length)
+    val dim_features: Seq[Int] = (0 until length).map{i => top_vec(i).count/batchSize}
+    var outputArray = new ArrayBuffer[Float]()
+    for (i <- 0 until batchSize) {
+      // processing the result row by row
+      // first item is the SampleID
+      for (j <- 0 until length) {
+        val blob = top_vec(j)
+        val offset:Int = dim_features(j) * i
+        // If dim_feature(j) == 0, the layer does aggregation.
+        // We repeat the feature values for individual samples in the batch.
+        // To avoid this, batch size = 1 is recommended.
+        val featureSize = if (dim_features(j) > 0) dim_features(j) else blob.count
+        val fv = new Array[Float](featureSize)
+        for (k <- 0 until featureSize) {
+          fv(k) = blob.cpu_data().get(k + offset)
+          outputArray += fv(k)
+        }
+      }
+    }
+    outputArray
   }
 
   private def doTrain(caffeNet: CaffeNet, syncIdx: Int,
-                      queuePair: QueuePair[(Array[String], Array[FloatBlob])]): Unit = {
+                      queuePairSet: Array[QueuePair[(Array[String], Array[FloatBlob])]]): Unit = {
+
     try {
       val isRootSolver: Boolean = (syncIdx == 0)
-      val snapshotPrefix: String = source.solverParameter.getSnapshotPrefix()
+      val snapshotPrefix: String = sources(0).solverParameter.getSnapshotPrefix()
       val modelFilePrefix: String = conf.modelPath.substring(0, conf.modelPath.lastIndexOf("/") + 1)
 
       var tpl: (Array[String], Array[FloatBlob]) = null
+      var tp2: (Array[String], Array[FloatBlob]) = null
       val initIter: Int = caffeNet.getInitIter(syncIdx)
       val maxIter: Int = caffeNet.getMaxIter(syncIdx)
       caffeNet.init(syncIdx, true)
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
-        tpl = queuePair.Full.take
+        tpl = queuePairSet(0).Full.take
+        var validationInterval: Int = caffeNet.getTestInterval()
+        log.info("Iteration: "+ it)
+        var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) && isValidationExecutor && isRootSolver 
         if (tpl == STOP_MARK)  {
-          queuePair.Free.put(tpl)
+          queuePairSet(0).Free.put(tpl)
+          if (validationTime) 
+            queuePairSet(1).Free.put(tp2)
         } else {
-          val rs : Boolean = caffeNet.train(syncIdx, tpl._2)
+          if (validationTime) {
+            validationBlobOutput.clear()
+            for (testit <- 0 until caffeNet.getTestIter(0)) {
+              tp2 = queuePairSet(1).Full.take
+              caffeNet.validation(tp2._2)
+              var outputBlobNames: Array[String] = getValidationOutputBlobNames();
+              validationBlobOutput += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
+              queuePairSet(1).Free.put(tp2)
+            }
+            caffeNet.aggregateValidationOutputs()
+          }
+          var rs : Boolean = false
+          rs = caffeNet.train(syncIdx, tpl._2)
+
           if (!rs) {
             log.warn("Failed at training at iteration "+it)
           }
-          queuePair.Free.put(tpl)
+          queuePairSet(0).Free.put(tpl)
 
           if ((rank == 0) && isRootSolver && (snapshotInterval > 0) && ((it + 1) % snapshotInterval == 0)) {
             log.info("Snapshot saving into files at iteration #" + (it + 1))
@@ -389,7 +464,6 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
         log.error("Train solver exception", ex)
       }
     }
-
   }
 
   private def doFeatures(caffeNet: CaffeNet, syncIdx: Int,
@@ -397,11 +471,11 @@ private[caffe] class CaffeProcessor[T1, T2](val source: DataSource[T1, T2],
     try {
       var blobNames = conf.features
       if (conf.isTest)
-        blobNames = getTestOutputBlobNames()
+        blobNames = getValidationOutputBlobNames()
       var act_iter: Int = 0
       var tpl: (Array[String], Array[FloatBlob]) = null
       val max_iter: Int = caffeNet.getMaxIter(syncIdx)
-      val batchSize = source.batchSize()
+      val batchSize = sources(0).batchSize()
       val bl = blobNames.length
       caffeNet.init(syncIdx, true)
       while (act_iter < max_iter && tpl != STOP_MARK) {

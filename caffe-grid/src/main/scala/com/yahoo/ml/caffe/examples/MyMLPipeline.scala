@@ -6,7 +6,7 @@ package com.yahoo.ml.caffe.examples
 import com.yahoo.ml.caffe.{Config, CaffeOnSpark, DataSource}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.ml.classification.LogisticRegression
-
+import scala.collection.immutable.Map
 /**
  * Sample Spark program that uses
  * CaffeOnSpark for deep learning, and
@@ -21,7 +21,7 @@ object MyMLPipeline {
 
     //perform DL training using the TRAINING source specified in Net prototxt
     val dl_train_source = DataSource.getSource(conf, true)
-    cos.train(dl_train_source)
+    cos.train(Array(dl_train_source))
 
     //apply DL model for feature extraction using the TEST source specified in Net prototxt
     val lr_raw_source = DataSource.getSource(conf, false)

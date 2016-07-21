@@ -7,16 +7,20 @@ DYLD_LIBRARY_PATH2=${DYLD_LIBRARY_PATH}:${CAFFE_ON_SPARK}/caffe-public/distribut
 
 build: 
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
-	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; mvn -B package
+	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; mvn -B package -DskipTests
 	jar -xvf caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar META-INF/native/linux64/liblmdbjni.so
 	mv META-INF/native/linux64/liblmdbjni.so ${CAFFE_ON_SPARK}/caffe-distri/distribute/lib
+	${CAFFE_ON_SPARK}/scripts/setup-mnist.sh
+	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; mvn -B package
 	cp -r ${CAFFE_ON_SPARK}/caffe-public/python/caffe ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/
 	cd ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/; zip -r caffeonsparkpythonapi  *; mv caffeonsparkpythonapi.zip ${CAFFE_ON_SPARK}/caffe-grid/target/;cd ${CAFFE_ON_SPARK}
 buildosx: 
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
-	export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; mvn -B package
+	export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; mvn -B package -DskipTests
 	jar -xvf caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar META-INF/native/osx64/liblmdbjni.jnilib
 	mv META-INF/native/osx64/liblmdbjni.jnilib ${CAFFE_ON_SPARK}/caffe-distri/distribute/lib
+	${CAFFE_ON_SPARK}/scripts/setup-mnist.sh
+	export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; mvn -B package
 	cp -r ${CAFFE_ON_SPARK}/caffe-public/python/caffe ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/
 	cd ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/; zip -r caffeonsparkpythonapi  *; mv caffeonsparkpythonapi.zip ${CAFFE_ON_SPARK}/caffe-grid/target/; cd ${CAFFE_ON_SPARK}
 update:

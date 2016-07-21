@@ -22,10 +22,10 @@ class CaffeNet {
     int num_local_devices_, num_total_devices_;
     int cluster_size_, node_rank_, start_device_id_;
     bool isTraining_;
-
+    bool interleaved;
     SolverParameter solver_param_;
     int solver_mode_;
-
+    int validation_net_id_;
     vector<int> local_devices_;
     shared_ptr<Solver<Dtype> > root_solver_;
 #ifndef CPU_ONLY
@@ -35,7 +35,14 @@ class CaffeNet {
 #endif
     vector<shared_ptr<Net<Dtype> > > nets_;
     vector<shared_ptr<InputAdapter<Dtype> > > input_adapter_;
+    shared_ptr<InputAdapter<Dtype> > input_adapter_validation_;
+    vector<Dtype> validation_score;
+    vector<int> validation_score_output_id;
+    Dtype loss;
+    int test_interval;
+
   public:
+  
     /**
      * constructor of CaffeNet.
      * Solvers will be constructed, and each solver will be assigned a device
@@ -49,6 +56,7 @@ class CaffeNet {
      * @param node_rank        this node's rank in the cluster
      * @param isTraining       true for training, false otherwise
      * @param start_device_id  the start ID of device. default: -1
+     * @param validation_net_id  validation net id. default: 0
      */
     CaffeNet(const string& solver_conf_file,
              const string& model_file,
@@ -57,7 +65,8 @@ class CaffeNet {
              int cluster_size,
              int node_rank,
              bool isTraining,
-             int start_device_id);
+             int start_device_id,
+             int validation_net_id);
 
     /**
        destructor
@@ -115,10 +124,20 @@ class CaffeNet {
      *
      * @param solver_index index of our solver
      * @param input_data   array of input data to be attached to input blobs
-     * @return true iff successed
+     * @return true if success
      */
     virtual bool train(int solver_index, vector< Blob<Dtype>* >& input_data);
 
+    /**
+     * Apply the given input data to perform test_iter number of interleaved validation
+     *
+     * @param input_data   array of validation input data to be attached to input blobs
+     */
+  virtual void validation(vector< Blob<Dtype>* >& input_data);
+
+  /** Calculate the aggregate loss for all the validation iterations
+   */
+  virtual void aggregateValidationOutputs();
     /**
      * number of iterations performed previously
      *
@@ -141,18 +160,37 @@ class CaffeNet {
     virtual int snapshot();
 
     /**
-     * get the test net output blob names
+     * get the validation net output blob names
      */
-    string getTestOutputBlobNames();
+    vector<string> getValidationOutputBlobNames();
+
+
+    /**
+     * get the validation net output blobs
+     * @param length no. of output blobs
+     */
+    vector<Blob<Dtype>*> getValidationOutputBlobs(int length);
+
+    /**
+     * get the no. of test iterations
+     */
+    virtual int getTestIter(int solver_index);
+
+    /**
+     * get the test interval
+     */
+    virtual int getTestInterval();
 
   protected:
     /**
        Store the previously learned network into a given file
        @param state_filename state file that contains previously learned state
-       @param model_filename model file into which we will save the learned network
+       @param model_filename model file into which we will save the learned
+       network
+       @param is this for setting train or interleave/validation
     */
     virtual void setLearnedNet(const std::string& state_filename, const std::string& model_filename);
-    void setInputAdapter(int solver_index, shared_ptr<Layer<Dtype> > layer);
+  void setInputAdapter(int solver_index, shared_ptr<Layer<Dtype> > layer, bool isValidation);
 
   private:
     void setLearnedNetHDF5(const std::string& state_filename, const std::string& model_filename);
@@ -181,7 +219,8 @@ class LocalCaffeNet : public CaffeNet<Dtype> {
                   const string& state_file,
                   int num_local_devices,
                   bool isTraining,
-                  int start_device_id);
+                  int start_device_id, 
+                  int validation_net_id);
 
     /**
        destructor
@@ -231,7 +270,8 @@ class RDMACaffeNet : public CaffeNet<Dtype> {
                  int cluster_size,
                  int node_rank,
                  bool isTraining,
-                 int start_device_id);
+                 int start_device_id,
+                 int validation_net_id);
 
     /**
        destructor
@@ -283,7 +323,8 @@ class SocketCaffeNet : public CaffeNet<Dtype> {
 	       int cluster_size,
 	       int node_rank,
 	       bool isTraining,
-	       int start_device_id);
+               int start_device_id,
+               int validation_net_id);
 
   /**
        destructor

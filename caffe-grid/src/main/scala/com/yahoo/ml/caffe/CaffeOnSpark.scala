@@ -18,8 +18,22 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.functions.udf
 
 import org.slf4j.{LoggerFactory, Logger}
-
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future, ExecutionContext}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
+import scala.collection.immutable.Map
+import scala.collection.mutable.ArrayBuffer
+import org.apache.spark._
+import org.apache.hadoop.fs._
+import org.apache.hadoop.conf._
+import org.apache.hadoop.io._
+import org.apache.hadoop.mapred._
+import org.apache.hadoop.util._
+import java.io.BufferedWriter
+import java.io.OutputStreamWriter
+import java.net._
+
 
 object CaffeOnSpark {
   private val log: Logger = LoggerFactory.getLogger(this.getClass)
@@ -33,11 +47,18 @@ object CaffeOnSpark {
     //Caffe-on-Spark configuration
     var conf = new Config(sc, args)
 
+    sc_conf.set("spark.scheduler.allocation.file", getClass().getResource("/schedulerconf.xml").getPath())
+    sc_conf.set("spark.scheduler.mode", "FAIR")
+
     //training if specified
     val caffeSpark = new CaffeOnSpark(sc)
-    if (conf.isTraining) {
-      val source = DataSource.getSource(conf, true)
-      caffeSpark.train(source)
+    if (conf.isTraining && conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestIter(0) != 0)) {
+      val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
+      val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
+      caffeSpark.train(Array(sourceTrain, sourceValidation))
+    } else {
+      val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
+      caffeSpark.train(Array(sourceTrain))
     }
 
     //feature extraction
@@ -95,19 +116,33 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     Vectors.dense(double_features)
   })
 
+  var interleaveResult: ArrayBuffer[ArrayBuffer[Float]] = null
+  var getResult: Boolean = false
   /**
    * Training with a specific data source
    * @param source input data source
    */
-  def train[T1, T2](source: DataSource[T1, T2]): Unit = {
-    var trainDataRDD: RDD[T1] = source.makeRDD(sc)
+  def train[T1, T2](sources: Array[DataSource[T1, T2]]): Unit = {
+    var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data is given")
       return
     }
-
+    
+    var validationDataRDD: RDD[T1] = null
+    if (sources.length > 1) {
+      var validationDataMultRDD = sources(1).makeRDD(sc)
+      if (validationDataMultRDD == null) {
+        log.info("No validation data given")
+        return
+      }
+      //Send all validation data to a single executor by coalesce everything in validation RDD
+      //to a single partition
+      validationDataRDD = validationDataMultRDD.coalesce(1)
+    }
+ 
     //Phase 1: Gather RDMA addresses from executors
-    val conf = source.conf
+    val conf = sources(0).conf
     if (!conf.snapshotStateFile.isEmpty && conf.snapshotModelFile.isEmpty) {
       log.error("to resume training, please provide input model file")
       return
@@ -115,8 +150,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
 
     var rank_2_addresses_n_host = sc.parallelize(0 until conf.clusterSize, conf.clusterSize).map {
       case rank: Int => {
-        val processor = CaffeProcessor.instance[T1, T2](source, rank)
-
+        val processor = CaffeProcessor.instance[T1, T2](sources, rank)
         //announce local RDMA address
         if (conf.clusterSize > 1) {
           (rank, processor.getLocalAddress(), InetAddress.getLocalHost.getHostName)
@@ -183,33 +217,98 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       log.info("Partition size: min=" + minPartSize + " max=" + sizeRDD.max())
     }
 
-    //Phase 6: feed the processor
-    var continue: Boolean = true
-    while (continue) {
-      //conduct training with dataRDD
-      continue = trainDataRDD.mapPartitions {
-        iter => {
-          var res = false
-          //feed training data from iterator
-          val processor = CaffeProcessor.instance[T1, T2]()
-          if (!processor.solversFinished) {
-            if (minPartSize > 0) {
-              var idx = 0
-              //the entire iterator needs to be consumed, otherwise GC won't be triggered
-              res = iter.map { sample => {
-                idx += 1
-                if (idx <= minPartSize) processor.feedQueue(sample) else true
-              }}.reduce(_ && _)
-            } else {
-              res = iter.map { sample => processor.feedQueue(sample) }.reduce(_ && _)
+    //Phase 6: feed the processor    
+    var ThreadTrain = Future {
+      log.info("Starting the train thread in CaffeOnSpark")
+      var continuetrain: Boolean = true	
+      var i: Int = 0
+      while (continuetrain) {
+        i += 1
+        sc.setLocalProperty("spark.scheduler.pool", "train")
+      	//conduct training with dataRDD
+      	continuetrain = trainDataRDD.mapPartitions {
+       	  iter => {
+            var res = false
+            //feed training data from iterator
+            val processor = CaffeProcessor.instance[T1, T2]()
+            if (!processor.solversFinished) {
+              if (minPartSize > 0) {
+                var idx = 0 
+                //the entire iterator needs to be consumed, otherwise GC won't be triggered 
+                res = iter.map { sample => {
+                  idx += 1
+                  if (idx <= minPartSize) processor.feedQueue(0, sample) else true
+                }}.reduce(_ && _)
+              } else {
+                res = iter.map { sample => processor.feedQueue(0, sample) }.reduce(_ && _)
+              }
+              processor.solversFinished = !res
             }
-            processor.solversFinished = !res
+            Iterator(res)
           }
-          Iterator(res)
-        }
-      }.reduce(_ && _)
+        }.reduce(_ && _)
+      }
     }
 
+    var ThreadValidation: Future[Unit] = null    
+    if (sources.length > 1) {
+      log.info("Starting the validation thread in CaffeOnSpark")
+
+      ThreadValidation = Future {
+        //Do mappartition for collecting the validation executor id
+        var validationExecutorId: Array[String] = null
+        validationExecutorId = validationDataRDD.mapPartitions {
+          iter => {
+            val processor = CaffeProcessor.instance[T1, T2]()
+            Iterator(SparkEnv.get.executorId)
+          }
+        }.collect()
+        log.info("Validation Executor Id: " + validationExecutorId(0))
+
+        //Feed the validation data to executors
+        var continuevalidation: Boolean = true
+        var j: Int = 0
+        while (continuevalidation) {
+          j += 1
+          sc.setLocalProperty("spark.scheduler.pool", "validation")
+          //conduct validation with dataRDD
+          continuevalidation = validationDataRDD.mapPartitions {
+            iter => {
+              var res = false
+              //feed validation data from iterator
+              val processor = CaffeProcessor.instance[T1, T2]()
+              if (!processor.solversFinished) {
+                res = iter.map { sample => {
+                  processor.isValidationExecutor = true
+                  processor.feedQueue(1, sample)
+                }
+                }.reduce(_ && _)
+              }
+              processor.solversFinished = !res
+              Iterator(res)
+            }
+          }.reduce(_ && _)
+        }
+
+        //Do mappartition for collecting the results
+        if(getResult) {
+          var outputResult: Array[ArrayBuffer[ArrayBuffer[Float]]] = null
+          outputResult = validationDataRDD.mapPartitions {
+            iter => {
+              val processor = CaffeProcessor.instance[T1, T2]()
+              Iterator(processor.validationBlobOutput)
+            }
+          }.collect()
+          interleaveResult = outputResult(0)
+        }
+      }
+    }
+
+    Await.result(ThreadTrain, Duration.Inf)
+    if (sources.length > 1)
+        Await.result(ThreadValidation, Duration.Inf)
+
+    log.info("Shutting down COS")
     //Phase 7: shutdown processors
     shutdownProcessors(conf)
   }
@@ -291,7 +390,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val size = sc.parallelize(0 until clusterSize, clusterSize).map {
       case rank: Int => {
         // each processor has clusterSize 1 and rank 0
-        val processor = CaffeProcessor.instance[T1, T2](source, rank)
+        val processor = CaffeProcessor.instance[T1, T2](Array(source), rank)
       }
     }.count()
     if (size < clusterSize) {
@@ -314,7 +413,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     else // this is test mode
       sc.parallelize(0 until clusterSize, clusterSize).map { _ =>
         val processor = CaffeProcessor.instance[T1, T2]()
-        processor.getTestOutputBlobNames
+        processor.getValidationOutputBlobNames()
       }.collect()(0)
     val schema = new StructType(Array(StructField("SampleID", StringType, false)) ++ blobNames.map(name => StructField(name, ArrayType(FloatType), false)))
     log.info("Schema:" + schema)
@@ -329,7 +428,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           else {
             processor.synchronized {
               processor.start(null)
-              val res = iter.map { sample => processor.feedQueue(sample) }.reduce(_ && _)
+              val res = iter.map { sample => processor.feedQueue(0, sample) }.reduce(_ && _)
               processor.solversFinished = !res
               processor.stopThreads()
 

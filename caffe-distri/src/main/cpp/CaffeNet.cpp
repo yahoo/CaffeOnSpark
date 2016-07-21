@@ -30,11 +30,77 @@ void SetCaffeMode(int solver_mode) {
     else Caffe::set_mode(Caffe::CPU);
 }
 
+
+template<typename Dtype>
+void CaffeNet<Dtype>::aggregateValidationOutputs() {
+  const shared_ptr<Net<Dtype> >& validation_net = root_solver_->test_nets()[validation_net_id_];
+  if(root_solver_->param().test_compute_loss()){
+    loss /= root_solver_->param().test_iter(validation_net_id_);
+    LOG(INFO) << "Test loss: " << loss;
+  }
+
+  for (int i = 0; i < validation_score.size(); ++i) {
+    const int output_blob_index =
+      validation_net->output_blob_indices()[validation_score_output_id[i]];
+    const string& output_name = validation_net->blob_names()[output_blob_index];
+    const Dtype loss_weight = validation_net->blob_loss_weights()[output_blob_index];
+    ostringstream loss_msg_stream;
+    const Dtype mean_score = validation_score[i] / root_solver_->param().test_iter(validation_net_id_);
+    if (loss_weight) {
+      loss_msg_stream << " (* " << loss_weight
+                      << " = " << loss_weight * mean_score << " loss)";
+    }
+    LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "
+              << mean_score << loss_msg_stream.str();
+    
+  }
+  validation_score_output_id.clear();
+  validation_score.clear();
+  loss = 0;
+}
+
+template<typename Dtype>
+void CaffeNet<Dtype>::validation(vector< Blob<Dtype>* >& input_validation_data) {
+   
+  input_adapter_validation_->feed(input_validation_data);
+  CHECK(Caffe::root_solver());
+  CHECK_NOTNULL(root_solver_->test_nets()[validation_net_id_].get())->
+    ShareTrainedLayersWith(root_solver_->net().get());
+  Dtype iter_loss;
+  const shared_ptr<Net<Dtype> >& validation_net = root_solver_->test_nets()[validation_net_id_];
+  const vector<Blob<Dtype>*>& result =
+    validation_net->Forward(&iter_loss);
+  if(root_solver_->param().test_compute_loss()){
+    loss += iter_loss;
+  }
+
+  if (validation_score.empty()) {
+    for (int j = 0; j < result.size(); ++j) {
+      const Dtype* result_vec = result[j]->cpu_data();
+      for (int k = 0; k < result[j]->count(); ++k) {
+        validation_score.push_back(result_vec[k]);
+        validation_score_output_id.push_back(j);
+      }
+    }
+  } else {
+    int idx = 0;
+    for (int j = 0; j < result.size(); ++j) {
+      const Dtype* result_vec = result[j]->cpu_data();
+      for (int k = 0; k < result[j]->count(); ++k) {
+        validation_score[idx++] += result_vec[k];
+      }
+    }
+  }
+  return;
+}
+
+
+
 template<typename Dtype>
 CaffeNet<Dtype>::CaffeNet(const string& solver_conf_file, const string& model_file,
         const string& state_file, int num_local_devices, int cluster_size,
         int node_rank, bool isTraining,
-        int start_device_id)
+        int start_device_id, int validation_net_id)
     :
     solver_conf_file_(solver_conf_file),
     model_file_(model_file),
@@ -43,7 +109,11 @@ CaffeNet<Dtype>::CaffeNet(const string& solver_conf_file, const string& model_fi
     cluster_size_(cluster_size),
     node_rank_(node_rank),
     start_device_id_(start_device_id),
-    isTraining_(isTraining) {
+    isTraining_(isTraining),
+    validation_net_id_(validation_net_id) {
+
+    validation_score_output_id.clear();
+    validation_score.clear();
 
     num_total_devices_ = cluster_size_ * num_local_devices_;
     //read in solver parameter
@@ -58,6 +128,7 @@ CaffeNet<Dtype>::CaffeNet(const string& solver_conf_file, const string& model_fi
     input_adapter_.resize(num_local_devices_);
     local_devices_.resize(num_local_devices_);
     int d = start_device_id_;
+    input_adapter_validation_.reset();
     for (int i = 0; i < num_local_devices_; i++ ) {
         input_adapter_[i].reset();
         if (solver_mode_ != Caffe::GPU)
@@ -93,9 +164,12 @@ CaffeNet<Dtype>::CaffeNet(const string& solver_conf_file, const string& model_fi
     CHECK_GT(max_iter, 0);
     local_solver_param.set_snapshot(max_iter);
 
-    // turn off test 
+    test_interval = local_solver_param.test_interval();
+    
     local_solver_param.set_test_interval(max_iter);
     local_solver_param.set_test_initialization(false);
+
+    LOG(INFO) << "local_solver_param:" << local_solver_param.net();
 
     NetParameter net_param;
     ReadNetParamsFromTextFileOrDie(local_solver_param.net(), &net_param);
@@ -144,18 +218,18 @@ CaffeNet<Dtype>::CaffeNet(const string& solver_conf_file, const string& model_fi
 
 template<typename Dtype>
 LocalCaffeNet<Dtype>::LocalCaffeNet(const string& solver_conf_file, const string& model_file,
-          const string& state_file, int num_local_devices, bool isTraining, int start_device_id)
-    : CaffeNet<Dtype>(solver_conf_file, model_file, state_file, num_local_devices, 1, 1,
-                      isTraining, start_device_id) {
+                                    const string& state_file, int num_local_devices, bool isTraining, int start_device_id, int validation_net_id)
+    : CaffeNet<Dtype>(solver_conf_file, model_file, state_file, num_local_devices, 1, 0,
+                      isTraining, start_device_id, validation_net_id) {
 }
 
 #ifdef INFINIBAND
 template<typename Dtype>
 RDMACaffeNet<Dtype>::RDMACaffeNet(const string& solver_conf_file, const string& model_file,
           const string& state_file, int num_local_devices,
-          int cluster_size, int node_rank, bool isTraining, int start_device_id)
+                                  int cluster_size, int node_rank, bool isTraining, int start_device_id, int validation_net_id)
     : CaffeNet<Dtype>(solver_conf_file, model_file, state_file, num_local_devices,
-                      cluster_size, node_rank,isTraining, start_device_id) {
+                      cluster_size, node_rank,isTraining, start_device_id, validation_net_id) {
 
     rdma_channels_.resize(this->cluster_size_);
 
@@ -176,9 +250,9 @@ RDMACaffeNet<Dtype>::RDMACaffeNet(const string& solver_conf_file, const string& 
 template<typename Dtype>
 SocketCaffeNet<Dtype>::SocketCaffeNet(const string& solver_conf_file, const string& model_file,
             const string& state_file, int num_local_devices,
-            int cluster_size, int node_rank, bool isTraining, int start_device_id)
+                                      int cluster_size, int node_rank, bool isTraining, int start_device_id, int validation_net_id)
     : CaffeNet<Dtype>(solver_conf_file, model_file, state_file, num_local_devices,
-                      cluster_size, node_rank,isTraining, start_device_id) {
+                      cluster_size, node_rank,isTraining, start_device_id, validation_net_id) {
 
     sockt_channels_.resize(this->cluster_size_);
 
@@ -206,6 +280,7 @@ CaffeNet<Dtype>::~CaffeNet() {
         nets_[i].reset();
         input_adapter_[i].reset();
     }
+    input_adapter_validation_.reset();
 }
 
 #ifdef INFINIBAND
@@ -476,6 +551,33 @@ int CaffeNet<Dtype>::getMaxIter(int solver_index) {
 }
 
 /**
+ * test iterations to be performed
+ *
+ * @param solver_index index of our solver
+ * @return test iteration
+ */
+template<typename Dtype>
+int CaffeNet<Dtype>::getTestIter(int solver_index) {
+    if (syncs_.size() == 0)
+      return  root_solver_->param().test_iter(0);
+    else {
+        CHECK(syncs_[solver_index]);
+        return syncs_[solver_index]->solver()->param().test_iter(0);
+    }
+}
+
+/**
+ * test interval
+ *
+ * @param solver_index index of our solver
+ * @return test interval
+ */
+template<typename Dtype>
+int CaffeNet<Dtype>::getTestInterval() {
+  return test_interval;
+}
+
+/**
  * prepare the current thread to work with a specified solver
  *
  * this function prepares solver per thread.
@@ -517,13 +619,30 @@ bool CaffeNet<Dtype>::init(int solver_index, bool enableNN) {
         // switch solver count to num_total_devices for correct
         // gradient scaling.
         Caffe::set_solver_count(num_total_devices_);
+        // Check the mode request
+        interleaved = true;
+        if ( getTestInterval() == 0 && getTestIter(0) == 0) {
+          interleaved = false;
+        }
+          
+        if (isTraining_ && interleaved && (solver_index == 0)) {
+          LOG(INFO) << "Interleaved";
+          nets_[solver_index] = solver->test_nets()[0];
+          setInputAdapter(0, nets_[solver_index]->layers()[0], true);  
+          nets_[solver_index] = solver->net();
+        }
+        else if (isTraining_) {
+          LOG(INFO) << "Training only";
+          nets_[solver_index] = solver->net();
+        }
+        else {
+          LOG(INFO) << "Test only";
+          nets_[solver_index] = solver->test_nets()[0];
+        }
+        
+        setInputAdapter(solver_index, nets_[solver_index]->layers()[0], false);
+        
 
-        if (isTraining_)
-            nets_[solver_index] = solver->net();
-        else
-            nets_[solver_index] = solver->test_nets()[0];
-
-        setInputAdapter(solver_index, nets_[solver_index]->layers()[0]);
         CHECK(input_adapter_[solver_index].get());
     }
 
@@ -531,11 +650,14 @@ bool CaffeNet<Dtype>::init(int solver_index, bool enableNN) {
 }
 
 template<typename Dtype>
-void CaffeNet<Dtype>::setInputAdapter(int solver_index, shared_ptr<Layer<Dtype> > layer) {
+void CaffeNet<Dtype>::setInputAdapter(int solver_index, shared_ptr<Layer<Dtype> > layer, bool isValidation) {
     InputAdapter<Dtype>* adapter = InputAdapterRegistry<Dtype>::MakeAdapter(layer, solver_mode_);
     CHECK(adapter != NULL);
+    if (!isValidation)
+      input_adapter_[solver_index].reset(adapter);
+    else
+      input_adapter_validation_.reset(adapter);
 
-    input_adapter_[solver_index].reset(adapter);
 }
 
 /**
@@ -582,7 +704,7 @@ bool CaffeNet<Dtype>::train(int solver_index, vector< Blob<Dtype>* >& input_data
     //connect input data to input adapter
     if (input_adapter_[solver_index].get()==NULL) {
         //initialize the current thread
-        init(solver_index, true);
+      init(solver_index, true);
     }
 
     input_adapter_[solver_index]->feed(input_data);
@@ -615,17 +737,30 @@ int CaffeNet<Dtype>::snapshot() {
  * snapshot the model and state
  */
 template<typename Dtype>
-string CaffeNet<Dtype>::getTestOutputBlobNames() {
-    const shared_ptr<Net<Dtype> >& test_net = root_solver_->test_nets()[0];
-    int num_outputs = test_net->num_outputs();
-    const vector<int> & output_blob_indices = test_net->output_blob_indices();
-    const vector<string>& blob_names = test_net->blob_names();
-    string output_blob_names = blob_names[output_blob_indices[0]];
-    for (int i = 1; i < num_outputs; i++) {
-        output_blob_names += ",";
-        output_blob_names += blob_names[output_blob_indices[i]];
+vector<string> CaffeNet<Dtype>::getValidationOutputBlobNames() {
+    const shared_ptr<Net<Dtype> >& validation_net = root_solver_->test_nets()[validation_net_id_];
+    int num_outputs = validation_net->num_outputs();
+    const vector<int> & output_blob_indices = validation_net->output_blob_indices();
+    const vector<string>& blob_names = validation_net->blob_names();
+    vector<string> output_blob_names;
+    for (int i = 0; i < num_outputs; i++) {
+      output_blob_names.push_back(blob_names[output_blob_indices[i]]);
     }
     return output_blob_names;
+}
+
+template<typename Dtype>
+vector<Blob<Dtype>*> CaffeNet<Dtype>::getValidationOutputBlobs(int length) {
+    const shared_ptr<Net<Dtype> >& validation_net = root_solver_->test_nets()[validation_net_id_];
+    int num_outputs = validation_net->num_outputs();
+    const vector<int> & output_blob_indices = validation_net->output_blob_indices();
+    const vector<string>& blob_names = validation_net->blob_names();
+    vector<Blob<Dtype>*> output_blobs(length);
+    for (int i = 0; i < num_outputs; i++) {
+        string name = blob_names[output_blob_indices[i]];
+        output_blobs[i] = validation_net->blob_by_name(name).get();
+    }
+    return output_blobs;
 }
 
 INSTANTIATE_CLASS(CaffeNet);
