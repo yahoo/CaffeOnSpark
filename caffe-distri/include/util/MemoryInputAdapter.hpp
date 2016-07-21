@@ -17,7 +17,7 @@ class MemoryInputAdapter : public InputAdapter<Dtype> {
     MemoryInputAdapter(shared_ptr<Layer<Dtype> >& layer, int solver_mode) ;
     virtual ~MemoryInputAdapter();
 
-    virtual void feed(vector< Blob<Dtype>* >&  dataBlobs, Dtype* labelBlobPtr);
+    virtual void feed(vector< Blob<Dtype>* >&  dataBlobs);
 };
 
 #endif

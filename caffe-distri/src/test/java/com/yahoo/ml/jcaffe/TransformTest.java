@@ -121,7 +121,7 @@ public class TransformTest {
     nextBatch();
     boolean fail=false;
     try {
-      trans_xform.transform(null, null);
+	trans_xform.transform((MatVector) null, null);
     } catch(Exception e) {
       fail = true;
     }

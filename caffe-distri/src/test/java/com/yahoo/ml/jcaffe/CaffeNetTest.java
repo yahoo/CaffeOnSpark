@@ -78,8 +78,8 @@ public class CaffeNetTest {
     @AfterMethod
     public void tearDown() throws Exception {
         net.deallocate();
-	socket_net.deallocate();
 	test_net.deallocate();
+	socket_net.deallocate();
     }
 
     @Test
@@ -219,7 +219,7 @@ public class CaffeNetTest {
       xform.transform(matVec, data_blob);
       boolean fail = false;
       try {
-	  net.train(0, null, labelblob.cpu_data());
+	  net.train(0, null);
       } catch(Exception e) {
 	  fail = true;
       }
@@ -256,7 +256,7 @@ public class CaffeNetTest {
       boolean fail = false;
       String[] test_features = {"loss"};
       try {
-	  FloatBlob[] top_blobs_vec = net.predict(0, null, labelblob.cpu_data(), test_features);
+	  FloatBlob[] top_blobs_vec = net.predict(0, null, test_features);
       } catch(Exception e) {
 	  fail = true;
       }
@@ -275,13 +275,14 @@ public class CaffeNetTest {
 
         //blob
         MatVector matVec = new MatVector(batch_size);
-        FloatBlob[] dataBlobs = new FloatBlob[1];
+        FloatBlob[] dataBlobs = new FloatBlob[2];
         FloatBlob data_blob = new FloatBlob();
         data_blob.reshape(batch_size, channels, height, width);
         dataBlobs[0] = data_blob;
 
         FloatBlob labelblob = new FloatBlob();
         labelblob.reshape(batch_size, 1, 1, 1);
+	dataBlobs[1] = labelblob;
 
         //transformer
         LayerParameter train_layer_param = net_param.getLayer(0);
@@ -293,8 +294,8 @@ public class CaffeNetTest {
         for (int i=0; i<batchs; i++) {
             System.out.print(".");
             nextBatch(matVec, labelblob);
-	    xform.transform(matVec, data_blob);
-	    assertTrue(net.train(0, dataBlobs, labelblob.cpu_data()));
+	    xform.transform(matVec, dataBlobs[0]);
+	    assertTrue(net.train(0, dataBlobs));
         }
 
         //simplified test
@@ -303,8 +304,8 @@ public class CaffeNetTest {
         for (int i=0; i<batchs; i++) {
             System.out.print(".");
 	    nextBatch(matVec, labelblob);
-            xform.transform(matVec, data_blob);
-            FloatBlob[] top_blobs_vec = net.predict(0, dataBlobs, labelblob.cpu_data(), test_features);
+            xform.transform(matVec, dataBlobs[0]);
+            FloatBlob[] top_blobs_vec = net.predict(0, dataBlobs, test_features);
             //validate test results
             for (int j = 0; j< top_blobs_vec.length; j++) {
 	      FloatArray result_vec = top_blobs_vec[j].cpu_data();

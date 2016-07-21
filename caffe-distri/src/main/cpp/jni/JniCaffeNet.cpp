@@ -269,7 +269,7 @@ JNIEXPORT jboolean JNICALL Java_com_yahoo_ml_jcaffe_CaffeNet_init
  * Signature: (I[Lcom/yahoo/ml/jcaffe/FloatBlob;[Ljava/lang/String;)[Lcom/yahoo/ml/jcaffe/FloatBlob;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_yahoo_ml_jcaffe_CaffeNet_predict
-(JNIEnv *env, jobject object, jint solver_index, jobjectArray input_data, jobject input_labels, jobjectArray output_blobnames) {
+(JNIEnv *env, jobject object, jint solver_index, jobjectArray input_data, jobjectArray output_blobnames) {
   CaffeNet<float>* native_ptr = NULL;
   try {
     native_ptr = (CaffeNet<float>*) GetNativeAddress(env, object);
@@ -309,33 +309,9 @@ JNIEXPORT jobjectArray JNICALL Java_com_yahoo_ml_jcaffe_CaffeNet_predict
     return NULL;
   }
 
-  if (input_labels == NULL) {
-    LOG(ERROR) << "labels is NULL";
-    ThrowCosJavaException((char*)"labels is NULL", env);
-    return NULL;
-  }
-  
-  /* Get a reference to JVM object class */
-  jclass claz = env->GetObjectClass(input_labels);
-  if (claz == NULL || env->ExceptionCheck()) {
-    LOG(ERROR) << "unable to get input_label's class (FloatArray)";
-    return NULL;
-  }
-  /* Getting the field id in the class */
-  jfieldID fieldId = env->GetFieldID(claz, "arrayAddress", "J");
-  if (fieldId == NULL || env->ExceptionCheck()) {
-    LOG(ERROR) << "could not locate field 'arrayAddress'";
-    return NULL;
-  }
-  
-  jfloat* labels = (jfloat*) env->GetLongField(input_labels, fieldId);
-  if (labels==NULL || env->ExceptionCheck()) {
-    LOG(ERROR) << "labels are NULL";
-    return NULL;
-  }
   vector<Blob<float>* > results(length);
   try {
-    native_ptr->predict(solver_index, data_vec, labels, output_blobnames_chars, results);
+    native_ptr->predict(solver_index, data_vec, output_blobnames_chars, results);
   } catch (const std::exception& ex) {
     ThrowJavaException(ex, env);
     return NULL;
@@ -397,7 +373,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_yahoo_ml_jcaffe_CaffeNet_predict
  * Signature: (I[Lcom/yahoo/ml/jcaffe/FloatBlob;)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_yahoo_ml_jcaffe_CaffeNet_train
-(JNIEnv *env, jobject object, jint solver_index, jobjectArray input_data, jobject input_labels) {
+(JNIEnv *env, jobject object, jint solver_index, jobjectArray input_data) {
   CaffeNet<float>* native_ptr = NULL;
   try {
     native_ptr = (CaffeNet<float>*) GetNativeAddress(env, object);
@@ -414,38 +390,13 @@ JNIEXPORT jboolean JNICALL Java_com_yahoo_ml_jcaffe_CaffeNet_train
   
   size_t length = (input_data != NULL? env->GetArrayLength(input_data) : 0);
   vector< Blob<float>* > data_vec(length);
-  /* Get a reference to JVM object class */
-  jclass claz = env->GetObjectClass(input_labels);
-  if (claz == NULL || env->ExceptionCheck()) {
-    LOG(ERROR) << "unable to get input_label's class (FloatArray)";
-    return false;
-  }
-  /* Getting the field id in the class */
-  jfieldID fieldId = env->GetFieldID(claz, "arrayAddress", "J");
-  if (fieldId == NULL || env->ExceptionCheck()) {
-    LOG(ERROR) << "could not locate field 'arrayAddress'";
-    return false;
-  }
-  
-  if (input_labels == NULL) {
-    LOG(ERROR) << "labels is NULL";
-    ThrowCosJavaException((char*)"label is NULL", env);
-    return false;
-  }
-  
-  jfloat* labels = (jfloat*) env->GetLongField(input_labels, fieldId);
-  if (labels==NULL || env->ExceptionCheck()) {
-    LOG(ERROR) << "labels are NULL";
-    return false;
-  }
-  
   if(!GetFloatBlobVector(data_vec, env, input_data, length)) {
     LOG(ERROR) << "Could not retrieve FloatBlobVector";
     return false;
   }
   
   try {
-    native_ptr->train(solver_index, data_vec, labels);
+    native_ptr->train(solver_index, data_vec);
   } catch (const std::exception& ex) {
     ThrowJavaException(ex, env);
     return false;

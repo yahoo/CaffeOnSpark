@@ -95,10 +95,23 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
    * You should extract samples from source queue, parse it and produce a batch.
    * @param sampleIds holder for sample Ids
    * @param data holder for data blob
-   * @param labels holder for label blob
    * @return true if successful
     */
-  def nextBatch(sampleIds: Array[String], data: T2, labels: FloatBlob) : Boolean
+  def nextBatch(sampleIds: Array[String], data: T2) : Boolean
+
+  def useCoSDataLayer(): Boolean = false
+
+  def getNumTops(): Int = 0
+
+  def getTopDataType(index: Int): CoSDataParameter.DataType = null
+
+  def getTopTransformParam(index: Int): TransformationParameter = null
+
+  def getTopHeight(index: Int): Int = 0
+
+  def getTopWidth(index: Int): Int = 0
+
+  def getTopChannel(index: Int): Int = 0
 }
 
 object DataSource extends Serializable {
