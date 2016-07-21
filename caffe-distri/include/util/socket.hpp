@@ -53,7 +53,7 @@ class SocketChannel {
  public:
   SocketChannel();
   ~SocketChannel();
-  void Connect(string peer);
+  bool Connect(string peer);
   int client_fd;
   caffe::BlockingQueue<QueuedMessage*> receive_queue;
   int serving_fd;

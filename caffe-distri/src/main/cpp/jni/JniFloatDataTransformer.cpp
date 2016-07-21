@@ -17,29 +17,53 @@
 JNIEXPORT jboolean JNICALL Java_com_yahoo_ml_jcaffe_FloatDataTransformer_allocate
   (JNIEnv *env, jobject object, jstring xform_param_str, jboolean isTrain) {
 
-    TransformationParameter param;
-    jboolean isCopy = false;
-    const char* xform_chars = env->GetStringUTFChars(xform_param_str, &isCopy);
+  TransformationParameter param;
+  jboolean isCopy = false;
+  const char* xform_chars = env->GetStringUTFChars(xform_param_str, &isCopy);
+  if (env->ExceptionCheck()) {
+    LOG(ERROR) << "GetStringUTFChars failed";
+    return false;
+  }
+  try {
     google::protobuf::TextFormat::ParseFromString(string(xform_chars), &param);
-
-    DataTransformer<float>* xformer = NULL;
+  } catch (const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return false;
+  }
+  
+  DataTransformer<float>* xformer = NULL;
+  try {
     if (isTrain)
-        xformer = new DataTransformer<float>(param, TRAIN);
+      xformer = new DataTransformer<float>(param, TRAIN);
     else
-        xformer = new DataTransformer<float>(param, TEST);
+      xformer = new DataTransformer<float>(param, TEST);
+  } catch (const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return false;
+  }
 
+  if (xformer == NULL) {
+    LOG(ERROR) << "unable to create DataTransformer";
+    return false;
+  }
+  
+  try {
     //initialize randomizer
     xformer->InitRand();
-
-    if (isCopy){
-        env->ReleaseStringUTFChars(xform_param_str, xform_chars);
-	if (env->ExceptionOccurred()) {
-	  LOG(ERROR) << "Unable to release String";
-	  return false;
-	}
+  } catch (const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return false;
+  }
+  
+  if (isCopy){
+    env->ReleaseStringUTFChars(xform_param_str, xform_chars);
+    if (env->ExceptionOccurred()) {
+      LOG(ERROR) << "Unable to release String";
+      return false;
     }
-    /* associate native object with JVM object */
-    return SetNativeAddress(env, object, xformer);
+  }
+  /* associate native object with JVM object */
+  return SetNativeAddress(env, object, xformer);
 }
 
 /*
@@ -49,7 +73,7 @@ JNIEXPORT jboolean JNICALL Java_com_yahoo_ml_jcaffe_FloatDataTransformer_allocat
  */
 JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_FloatDataTransformer_deallocate
   (JNIEnv *env, jobject object, jlong native_ptr) {
-   delete (DataTransformer<float>*) native_ptr;
+  delete (DataTransformer<float>*) native_ptr;
 }
 
 /*
@@ -60,11 +84,22 @@ JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_FloatDataTransformer_deallocate
 JNIEXPORT void JNICALL Java_com_yahoo_ml_jcaffe_FloatDataTransformer_transform
   (JNIEnv *env, jobject object, jobject matVec, jobject transformed_blob) {
 
-    DataTransformer<float>* xformer = (DataTransformer<float>*) GetNativeAddress(env, object);
-
-    vector<cv::Mat>* mat_vector_ptr = (vector<cv::Mat>*) GetNativeAddress(env, matVec);
-
-    Blob<float>* blob_ptr = (Blob<float>*) GetNativeAddress(env, transformed_blob);
-
+  DataTransformer<float>* xformer = NULL;
+  
+  vector<cv::Mat>* mat_vector_ptr = NULL;
+    
+  Blob<float>* blob_ptr = NULL;
+  if (matVec == NULL || transformed_blob == NULL) {
+    ThrowCosJavaException((char*)"NULL object", env);
+    return;
+  }
+  try {
+    xformer = (DataTransformer<float>*) GetNativeAddress(env, object);
+    mat_vector_ptr = (vector<cv::Mat>*) GetNativeAddress(env, matVec);
+    blob_ptr = (Blob<float>*) GetNativeAddress(env, transformed_blob);
     xformer->Transform((* mat_vector_ptr), blob_ptr);
+  } catch (const std::exception& ex) {
+    ThrowJavaException(ex, env);
+    return;
+  }
 }
