@@ -5,7 +5,7 @@
 #
 # This script setup mnist data into lmdb/leveldb format in ${CAFFE_ON_SPARK}/data
 
-cd ${CAFFE_ON_SPARK}/caffe-public/
+cd caffe-public/
 wget https://raw.githubusercontent.com/BVLC/caffe/master/data/mnist/get_mnist.sh
 chmod +x get_mnist.sh
 ./get_mnist.sh
