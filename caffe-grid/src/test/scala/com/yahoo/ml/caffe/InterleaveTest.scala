@@ -28,6 +28,7 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
       val fullPath = getClass.getClassLoader.getResource("log4j.properties").getPath
       fullPath.substring(0, fullPath.indexOf("caffe-grid/"))
     }
+
     val solver_config_path = ROOT_PATH + "caffe-grid/src/test/resources/lenet_memory_solver.prototxt";
     val args = Array("-conf", solver_config_path,
       "-model", "file:"+ROOT_PATH+"caffe-grid/target/mnistmodel")
