@@ -5,6 +5,6 @@
 #
 # This script install Spark locally
 
-wget http://apache.mirrors.tds.net/spark/spark-1.6.0/spark-1.6.0-bin-hadoop2.6.tgz
+wget http://archive.apache.org/dist/spark/spark-1.6.0/spark-1.6.0-bin-hadoop2.6.tgz
 gunzip spark-1.6.0-bin-hadoop2.6.tgz 
 tar -xvf spark-1.6.0-bin-hadoop2.6.tar 
