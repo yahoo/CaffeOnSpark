@@ -33,6 +33,7 @@ import org.apache.hadoop.util._
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 import java.net._
+import java.io._
 
 
 object CaffeOnSpark {
@@ -42,13 +43,19 @@ object CaffeOnSpark {
     val sc_conf = new SparkConf()
     sc_conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.scheduler.minRegisteredResourcesRatio", "1.0")
-    val sc: SparkContext = new SparkContext(sc_conf)
 
+    if (sc_conf.get("spark.scheduler.allocation.file", "").isEmpty) {
+      var temp: File = File.createTempFile("schedulerconf", ".xml", new File("."))
+      var inputStream: InputStream = getClass.getClassLoader.getResourceAsStream("schedulerconf.xml")
+      var inputString = scala.io.Source.fromInputStream(inputStream).mkString
+      scala.tools.nsc.io.File(temp.getAbsolutePath()).writeAll(inputString)
+      sc_conf.set("spark.scheduler.allocation.file", temp.getAbsolutePath())
+      sc_conf.set("spark.scheduler.mode", "FAIR")
+    }
+    val sc: SparkContext = new SparkContext(sc_conf)
     //Caffe-on-Spark configuration
     var conf = new Config(sc, args)
 
-    sc_conf.set("spark.scheduler.allocation.file", getClass().getResource("/schedulerconf.xml").getPath())
-    sc_conf.set("spark.scheduler.mode", "FAIR")
 
     //training if specified
     val caffeSpark = new CaffeOnSpark(sc)
@@ -220,11 +227,11 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     //Phase 6: feed the processor    
     var ThreadTrain = Future {
       log.info("Starting the train thread in CaffeOnSpark")
+      sc.setLocalProperty("spark.scheduler.pool", "train")
       var continuetrain: Boolean = true	
       var i: Int = 0
       while (continuetrain) {
         i += 1
-        sc.setLocalProperty("spark.scheduler.pool", "train")
       	//conduct training with dataRDD
       	continuetrain = trainDataRDD.mapPartitions {
        	  iter => {
@@ -252,14 +259,13 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
 
     var ThreadValidation: Future[Unit] = null    
     if (sources.length > 1) {
-      log.info("Starting the validation thread in CaffeOnSpark")
-
       ThreadValidation = Future {
+        log.info("Starting the validation thread in CaffeOnSpark")
+        sc.setLocalProperty("spark.scheduler.pool", "validation")
         //Do mappartition for collecting the validation executor id
         var validationExecutorId: Array[String] = null
         validationExecutorId = validationDataRDD.mapPartitions {
           iter => {
-            val processor = CaffeProcessor.instance[T1, T2]()
             Iterator(SparkEnv.get.executorId)
           }
         }.collect()
@@ -270,7 +276,6 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
         var j: Int = 0
         while (continuevalidation) {
           j += 1
-          sc.setLocalProperty("spark.scheduler.pool", "validation")
           //conduct validation with dataRDD
           continuevalidation = validationDataRDD.mapPartitions {
             iter => {
