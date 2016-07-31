@@ -421,7 +421,6 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
         tpl = queuePairSet(0).Full.take
         var validationInterval: Int = caffeNet.getTestInterval()
-        log.info("Iteration: "+ it)
         var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) && isValidationExecutor && isRootSolver 
         if (tpl == STOP_MARK)  {
           queuePairSet(0).Free.put(tpl)
