@@ -11,7 +11,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.slf4j.LoggerFactory
 import org.testng.Assert._
-
+import scala.collection.mutable.ArrayBuffer
 import caffe.Caffe._
 import com.yahoo.ml.jcaffe._
 import scala.math.ceil
@@ -41,22 +41,20 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
   test("Interleaving") {
     val caffeSpark = new CaffeOnSpark(sc)
     if (conf.solverParameter.hasTestInterval && conf.solverParameter.getTestIter(0) != 0) {
-      caffeSpark.getResult = true
       log.info("interleave train and validation...")
       val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
       val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
       log.info("SolverParameter:"  + conf.solverParameter.getTestIter(0) + ":" + conf.solverParameter.hasTestInterval())
-      caffeSpark.initSetup(Array(sourceTrain, sourceValidation))
-      caffeSpark.interleave(Array(sourceTrain, sourceValidation))
+      var interleaveResult: ArrayBuffer[ArrayBuffer[Float]] = caffeSpark.interleave(Array(sourceTrain, sourceValidation))
       var finalAccuracy: Float = 0
       var finalLoss: Float = 0
       for(i <- 0 until conf.solverParameter.getTestIter(0)){
-        finalAccuracy += caffeSpark.interleaveResult(i)(0)
-        finalLoss += caffeSpark.interleaveResult(i)(1)
+        finalAccuracy += interleaveResult(i)(0)
+        finalLoss += interleaveResult(i)(1)
       }
       assertTrue(finalAccuracy/conf.solverParameter.getTestIter(0) > 0.8)
       assertTrue(finalLoss/conf.solverParameter.getTestIter(0) < 0.5)
-      assertEquals(caffeSpark.interleaveResult.length, conf.solverParameter.getTestIter(0))
+      assertEquals(interleaveResult.length, conf.solverParameter.getTestIter(0))
       
     }
   }

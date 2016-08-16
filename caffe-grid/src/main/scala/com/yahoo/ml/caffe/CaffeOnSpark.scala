@@ -53,11 +53,9 @@ object CaffeOnSpark {
       if (conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestIter(0) != 0)) {
         val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
         val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
-        caffeSpark.initSetup(Array(sourceTrain, sourceValidation))
         caffeSpark.interleave(Array(sourceTrain, sourceValidation))
       } else {
         val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
-        caffeSpark.initSetup(Array(sourceTrain))
         caffeSpark.train(Array(sourceTrain))
       }
     }
@@ -117,10 +115,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     Vectors.dense(double_features)
   })
 
-  var interleaveResult: ArrayBuffer[ArrayBuffer[Float]] = null
-  var getResult: Boolean = false
-
-  def initSetup[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
+  private def setupTraining[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
     //Phase 1: Gather RDMA addresses from executors
     val conf = sources(0).conf
     if (!conf.snapshotStateFile.isEmpty && conf.snapshotModelFile.isEmpty) {
@@ -180,6 +175,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       return
     }
 
+    setupTraining(sources)
     val conf = sources(0).conf
     //Phase 1: repartition RDD if needed
     val origin_part_count = trainDataRDD.partitions.size
@@ -241,18 +237,18 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     shutdownProcessors(conf)
   }
 
-  def interleave[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
+  def interleave[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): ArrayBuffer[ArrayBuffer[Float]] = {
     log.info("interleave")
     var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data given")
-      return
+      return null
     }
 
     var validationDataRDD: RDD[T1] = sources(1).makeRDD(sc)
     if (validationDataRDD == null) {
       log.info("No validation data given")
-      return
+      return null
     }
 
     val conf = sources(0).conf
@@ -270,16 +266,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     log.info("no_of_records_required_per_partition_train: " + no_of_records_required_per_partition_train)
     if (total_records_train < no_of_records_required_per_partition_train * conf.clusterSize) {
       log.error("Train data is insufficient for the hyperparameters configured. Adjust the train hyperparameters or increase the training data!")
-      shutdownProcessors(conf)
-      return
-    }
-
-    var zippedTrainRDD:RDD[(Long,T1)] = trainDataRDD.zipWithIndex.map{ case (e,i) => (i,e)}
-    var no_of_partitions_train = total_records_train/no_of_records_required_per_partition_train
-    log.info("no_of_partitions_train: " + no_of_partitions_train)
-    var repartitionedTrainRDD = zippedTrainRDD.partitionBy(new FixedSizePartitioner(no_of_partitions_train.toInt+1, no_of_records_required_per_partition_train))
-    if (conf.isRddPersistent) {
-      repartitionedTrainRDD = repartitionedTrainRDD.persist(StorageLevel.DISK_ONLY)
+      return null
     }
 
     val no_of_records_required_per_partition_validation = conf.solverParameter.getTestIter(0) * sources(1).batchSize()
@@ -288,8 +275,16 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     log.info("no_of_records_required_per_partition_validation: " + no_of_records_required_per_partition_validation)
     if (total_records_validation < no_of_records_required_per_partition_validation * conf.clusterSize) {
       log.error("Validation data is insufficient for the hyperparameters configured. Adjust the validation hyperparameters or increase the validation data!")
-      shutdownProcessors(conf)
-      return
+      return null
+    }
+
+    setupTraining(sources)
+    var zippedTrainRDD:RDD[(Long,T1)] = trainDataRDD.zipWithIndex.map{ case (e,i) => (i,e)}
+    var no_of_partitions_train = total_records_train/no_of_records_required_per_partition_train
+    log.info("no_of_partitions_train: " + no_of_partitions_train)
+    var repartitionedTrainRDD = zippedTrainRDD.partitionBy(new FixedSizePartitioner(no_of_partitions_train.toInt+1, no_of_records_required_per_partition_train))
+    if (conf.isRddPersistent) {
+      repartitionedTrainRDD = repartitionedTrainRDD.persist(StorageLevel.DISK_ONLY)
     }
 
     var zippedValidationRDD:RDD[(Long, T1)] = validationDataRDD.zipWithIndex.map{case (e,i) => (i,e)}
@@ -303,13 +298,11 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     var current_partition_count_train = 0
     var current_partition_count_validation = 0
     var interleaveValidationRDD:RDD[(Long,T1)] = null
+    val iter_train = no_of_partitions_train.toInt/conf.clusterSize.toInt
+    val iter_validation = no_of_partitions_validation.toInt/conf.clusterSize.toInt
     while(continue) {
-      log.info("Map partitions for training")
-      log.info("current_partition_count_train: " + current_partition_count_train)
-      var startIndex = current_partition_count_train*conf.clusterSize
-      var endIndex = (current_partition_count_train+1)*conf.clusterSize
       var interleaveTrainRDD = PartitionPruningRDD.create(repartitionedTrainRDD,
-        (index => (index >= startIndex) && (index < endIndex))
+        (index => (index >= current_partition_count_train*conf.clusterSize) && (index < (current_partition_count_train+1)*conf.clusterSize))
       )
       //Proceed with the training
       continue = interleaveTrainRDD.mapPartitions {
@@ -324,16 +317,10 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           Iterator(res)
         }
       }.reduce(_ && _)
-      current_partition_count_train = (current_partition_count_train.toInt + 1) % (no_of_partitions_train.toInt/conf.clusterSize.toInt)
-
-      log.info("Map partitions for validation")
-      log.info("current_partition_count_validation: " + current_partition_count_validation)
-      startIndex = current_partition_count_validation
-      endIndex = current_partition_count_validation+1
 
       //Create the interleaveValidationRDD for the required range
       interleaveValidationRDD = PartitionPruningRDD.create(repartitionedValidationRDD,
-        (index => (index >= startIndex) && (index < endIndex))
+        (index => (index == current_partition_count_validation))
       )
       //Add clustersize partitions to interleaveValidationRDD where each partition is a copy of each other
       var validationRDDRef = interleaveValidationRDD
@@ -354,22 +341,25 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           Iterator(res)
         }
       }.reduce(_ && _)
-      current_partition_count_validation = (current_partition_count_validation.toInt + 1) % (no_of_partitions_validation.toInt/conf.clusterSize.toInt)
+      current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
+      current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
     }
 
     //Do mappartition for collecting the results
-    if(getResult) {
-      var outputResult: Array[ArrayBuffer[ArrayBuffer[Float]]] = null
-      outputResult = interleaveValidationRDD.mapPartitions {
-        iter => {
+    var outputResult: Array[ArrayBuffer[ArrayBuffer[Float]]] = null
+    outputResult = interleaveValidationRDD.mapPartitionsWithIndex {
+      (index, iter) => {
+        if (index==0) {
           val processor = CaffeProcessor.instance[T1, T2]()
           Iterator(processor.validationBlobOutput)
-        }
-      }.collect()
-      interleaveResult = outputResult(0)
-    }
+        } else
+          Iterator(null)
+      }
+    }.collect()
+  
     //shutdown processors
     shutdownProcessors(conf)
+    return outputResult(0)
   }
 
   /**

@@ -418,8 +418,8 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
       val initIter: Int = caffeNet.getInitIter(syncIdx)
       val maxIter: Int = caffeNet.getMaxIter(syncIdx)
       caffeNet.init(syncIdx, true)
+      var validationInterval: Int = caffeNet.getTestInterval()
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
-        var validationInterval: Int = caffeNet.getTestInterval()
         var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) &&  isRootSolver 
         if (validationTime) {
           validationBlobOutput.clear()
@@ -436,19 +436,20 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
         tpl = queuePairSet(0).Full.take
         if (tpl == STOP_MARK)  {
           queuePairSet(0).Free.put(tpl)
-        }
-        var rs : Boolean = false
-        rs = caffeNet.train(syncIdx, tpl._2)
+        } else {
+          var rs : Boolean = false
+          rs = caffeNet.train(syncIdx, tpl._2)
 
-        if (!rs) {
-          log.warn("Failed at training at iteration "+it)
-        }
-        queuePairSet(0).Free.put(tpl)
+          if (!rs) {
+            log.warn("Failed at training at iteration "+it)
+          }
+          queuePairSet(0).Free.put(tpl)
 
-        if ((rank == 0) && isRootSolver && (snapshotInterval > 0) && ((it + 1) % snapshotInterval == 0)) {
-          log.info("Snapshot saving into files at iteration #" + (it + 1))
-          val modelFilename: String = modelFilePrefix + snapshotPrefix + "_iter_" + (it + 1)
-          FSUtils.GenModelOrState(caffeNet, modelFilename, true)
+          if ((rank == 0) && isRootSolver && (snapshotInterval > 0) && ((it + 1) % snapshotInterval == 0)) {
+            log.info("Snapshot saving into files at iteration #" + (it + 1))
+            val modelFilename: String = modelFilePrefix + snapshotPrefix + "_iter_" + (it + 1)
+            FSUtils.GenModelOrState(caffeNet, modelFilename, true)
+          }
         }
       }
 
