@@ -53,7 +53,7 @@ object CaffeOnSpark {
       if (conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestIter(0) != 0)) {
         val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
         val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
-        caffeSpark.interleave(Array(sourceTrain, sourceValidation))
+        caffeSpark.trainWithValidation(Array(sourceTrain, sourceValidation))
       } else {
         val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
         caffeSpark.train(Array(sourceTrain))
@@ -237,7 +237,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     shutdownProcessors(conf)
   }
 
-  def interleave[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): ArrayBuffer[ArrayBuffer[Float]] = {
+  def trainWithValidation[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): ArrayBuffer[ArrayBuffer[Float]] = {
     log.info("interleave")
     var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
     if (trainDataRDD == null) {
@@ -253,12 +253,6 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
 
     val conf = sources(0).conf
     //Create train and test RDDs from parent RDD
-    /* We create each of those RDDs for every interleave run from their source RDDs
-     by extracting a range of records = no._of_records_required_per_partition * no._of_executors
-     no._of_records_required_per_partition = no._of_batches i.e test_interval * batchsize * no._of_gpus
-     no._of_RDDs which can be created from one parentRDD = overall_total_no._of_partitions/no._of_executors
-     overall_total_no._of_partitions = total_no._of_records in source RDD/no._of_records_required_per_partition
-     */ 
     var continue: Boolean = true
     val no_of_records_required_per_partition_train = conf.solverParameter.getTestInterval() * sources(0).batchSize()  * conf.devices
     val total_records_train = trainDataRDD.count()

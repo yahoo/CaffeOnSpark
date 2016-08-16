@@ -51,7 +51,7 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
   val numLocalGPUs: Int = conf.devices
   val numTotalGPUs: Int = numLocalGPUs * conf.clusterSize
   assert(sources != null)
-  val poolSize = numLocalGPUs * (conf.transform_thread_per_device + 1) + conf.transform_thread_per_device 
+  val poolSize = numLocalGPUs * (conf.transform_thread_per_device + 1) + conf.transform_thread_per_device
   implicit val exec = ExecutionContext.fromExecutorService(new ForkJoinPool(poolSize))
   val transformers: ArrayList[Future[_]] = new ArrayList[Future[_]]
   val solvers: ArrayList[Future[_]] = new ArrayList[Future[_]]
