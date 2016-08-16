@@ -28,7 +28,6 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
       val fullPath = getClass.getClassLoader.getResource("log4j.properties").getPath
       fullPath.substring(0, fullPath.indexOf("caffe-grid/"))
     }
-
     val solver_config_path = ROOT_PATH + "caffe-grid/src/test/resources/lenet_memory_solver.prototxt";
     val args = Array("-conf", solver_config_path,
       "-model", "file:"+ROOT_PATH+"caffe-grid/target/mnistmodel")
@@ -47,7 +46,8 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
       val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
       val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
       log.info("SolverParameter:"  + conf.solverParameter.getTestIter(0) + ":" + conf.solverParameter.hasTestInterval())
-      caffeSpark.train(Array(sourceTrain, sourceValidation))
+      caffeSpark.initSetup(Array(sourceTrain, sourceValidation))
+      caffeSpark.interleave(Array(sourceTrain, sourceValidation))
       var finalAccuracy: Float = 0
       var finalLoss: Float = 0
       for(i <- 0 until conf.solverParameter.getTestIter(0)){

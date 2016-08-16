@@ -51,7 +51,7 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
   val numLocalGPUs: Int = conf.devices
   val numTotalGPUs: Int = numLocalGPUs * conf.clusterSize
   assert(sources != null)
-  val poolSize = numLocalGPUs * (conf.transform_thread_per_device + 1) + conf.transform_thread_per_device
+  val poolSize = numLocalGPUs * (conf.transform_thread_per_device + 1) + conf.transform_thread_per_device 
   implicit val exec = ExecutionContext.fromExecutorService(new ForkJoinPool(poolSize))
   val transformers: ArrayList[Future[_]] = new ArrayList[Future[_]]
   val solvers: ArrayList[Future[_]] = new ArrayList[Future[_]]
@@ -419,38 +419,36 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
       val maxIter: Int = caffeNet.getMaxIter(syncIdx)
       caffeNet.init(syncIdx, true)
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
-        tpl = queuePairSet(0).Full.take
         var validationInterval: Int = caffeNet.getTestInterval()
-        var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) && isValidationExecutor && isRootSolver 
+        var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) &&  isRootSolver 
+        if (validationTime) {
+          validationBlobOutput.clear()
+          for (testit <- 0 until caffeNet.getTestIter(0)) {
+            tp2 = queuePairSet(1).Full.take
+            caffeNet.validation(tp2._2)
+            var outputBlobNames: Array[String] = getValidationOutputBlobNames();
+            validationBlobOutput += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
+            queuePairSet(1).Free.put(tp2)
+          }
+          caffeNet.aggregateValidationOutputs()
+        }
+      
+        tpl = queuePairSet(0).Full.take
         if (tpl == STOP_MARK)  {
           queuePairSet(0).Free.put(tpl)
-          if (validationTime) 
-            queuePairSet(1).Free.put(tp2)
-        } else {
-          if (validationTime) {
-            validationBlobOutput.clear()
-            for (testit <- 0 until caffeNet.getTestIter(0)) {
-              tp2 = queuePairSet(1).Full.take
-              caffeNet.validation(tp2._2)
-              var outputBlobNames: Array[String] = getValidationOutputBlobNames();
-              validationBlobOutput += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
-              queuePairSet(1).Free.put(tp2)
-            }
-            caffeNet.aggregateValidationOutputs()
-          }
-          var rs : Boolean = false
-          rs = caffeNet.train(syncIdx, tpl._2)
+        }
+        var rs : Boolean = false
+        rs = caffeNet.train(syncIdx, tpl._2)
 
-          if (!rs) {
-            log.warn("Failed at training at iteration "+it)
-          }
-          queuePairSet(0).Free.put(tpl)
+        if (!rs) {
+          log.warn("Failed at training at iteration "+it)
+        }
+        queuePairSet(0).Free.put(tpl)
 
-          if ((rank == 0) && isRootSolver && (snapshotInterval > 0) && ((it + 1) % snapshotInterval == 0)) {
-            log.info("Snapshot saving into files at iteration #" + (it + 1))
-            val modelFilename: String = modelFilePrefix + snapshotPrefix + "_iter_" + (it + 1)
-            FSUtils.GenModelOrState(caffeNet, modelFilename, true)
-          }
+        if ((rank == 0) && isRootSolver && (snapshotInterval > 0) && ((it + 1) % snapshotInterval == 0)) {
+          log.info("Snapshot saving into files at iteration #" + (it + 1))
+          val modelFilename: String = modelFilePrefix + snapshotPrefix + "_iter_" + (it + 1)
+          FSUtils.GenModelOrState(caffeNet, modelFilename, true)
         }
       }
 

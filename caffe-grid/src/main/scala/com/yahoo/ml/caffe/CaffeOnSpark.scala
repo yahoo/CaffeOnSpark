@@ -33,39 +33,33 @@ import org.apache.hadoop.util._
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 import java.net._
-import java.io._
-
+import org.apache.spark.rdd._
+import scala.reflect.ClassTag
 
 object CaffeOnSpark {
   private val log: Logger = LoggerFactory.getLogger(this.getClass)
-
   def main(args: Array[String]) {
     val sc_conf = new SparkConf()
     sc_conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.scheduler.minRegisteredResourcesRatio", "1.0")
 
-    if (sc_conf.get("spark.scheduler.allocation.file", "").isEmpty) {
-      var temp: File = File.createTempFile("schedulerconf", ".xml", new File("."))
-      var inputStream: InputStream = getClass.getClassLoader.getResourceAsStream("schedulerconf.xml")
-      var inputString = scala.io.Source.fromInputStream(inputStream).mkString
-      scala.tools.nsc.io.File(temp.getAbsolutePath()).writeAll(inputString)
-      sc_conf.set("spark.scheduler.allocation.file", temp.getAbsolutePath())
-      sc_conf.set("spark.scheduler.mode", "FAIR")
-    }
     val sc: SparkContext = new SparkContext(sc_conf)
     //Caffe-on-Spark configuration
     var conf = new Config(sc, args)
 
-
     //training if specified
     val caffeSpark = new CaffeOnSpark(sc)
-    if (conf.isTraining && conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestIter(0) != 0)) {
-      val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
-      val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
-      caffeSpark.train(Array(sourceTrain, sourceValidation))
-    } else {
-      val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
-      caffeSpark.train(Array(sourceTrain))
+    if (conf.isTraining ){
+      if (conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestIter(0) != 0)) {
+        val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
+        val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
+        caffeSpark.initSetup(Array(sourceTrain, sourceValidation))
+        caffeSpark.interleave(Array(sourceTrain, sourceValidation))
+      } else {
+        val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
+        caffeSpark.initSetup(Array(sourceTrain))
+        caffeSpark.train(Array(sourceTrain))
+      }
     }
 
     //feature extraction
@@ -125,29 +119,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
 
   var interleaveResult: ArrayBuffer[ArrayBuffer[Float]] = null
   var getResult: Boolean = false
-  /**
-   * Training with a specific data source
-   * @param source input data source
-   */
-  def train[T1, T2](sources: Array[DataSource[T1, T2]]): Unit = {
-    var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
-    if (trainDataRDD == null) {
-      log.info("No training data is given")
-      return
-    }
-    
-    var validationDataRDD: RDD[T1] = null
-    if (sources.length > 1) {
-      var validationDataMultRDD = sources(1).makeRDD(sc)
-      if (validationDataMultRDD == null) {
-        log.info("No validation data given")
-        return
-      }
-      //Send all validation data to a single executor by coalesce everything in validation RDD
-      //to a single partition
-      validationDataRDD = validationDataMultRDD.coalesce(1)
-    }
- 
+
+  def initSetup[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
     //Phase 1: Gather RDMA addresses from executors
     val conf = sources(0).conf
     if (!conf.snapshotStateFile.isEmpty && conf.snapshotModelFile.isEmpty) {
@@ -194,8 +167,21 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
         processor.start(bcast_addresses.value)
       }
     }.collect()
+  }
 
-    //Phase 4: repartition RDD if needed
+  /**
+   * Training with a specific data source
+   * @param source input data source
+   */
+  def train[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
+    var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
+    if (trainDataRDD == null) {
+      log.info("No training data is given")
+      return
+    }
+
+    val conf = sources(0).conf
+    //Phase 1: repartition RDD if needed
     val origin_part_count = trainDataRDD.partitions.size
     val desired_part_count = (origin_part_count / conf.clusterSize) * conf.clusterSize
     if (origin_part_count != desired_part_count) {
@@ -206,7 +192,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       trainDataRDD = trainDataRDD.persist(StorageLevel.DISK_ONLY)
     }
 
-    //Phase 5: find the minimum size of partitions
+    //Phase 2: find the minimum size of partitions
     var minPartSize = 0
     if (conf.clusterSize > 1) {
       val sizeRDD = trainDataRDD.mapPartitions {
@@ -224,14 +210,9 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       log.info("Partition size: min=" + minPartSize + " max=" + sizeRDD.max())
     }
 
-    //Phase 6: feed the processor    
-    var ThreadTrain = Future {
-      log.info("Starting the train thread in CaffeOnSpark")
-      sc.setLocalProperty("spark.scheduler.pool", "train")
-      var continuetrain: Boolean = true	
-      var i: Int = 0
-      while (continuetrain) {
-        i += 1
+    //Phase 3: feed the processor    
+    var continuetrain: Boolean = true
+    while (continuetrain) {
       	//conduct training with dataRDD
       	continuetrain = trainDataRDD.mapPartitions {
        	  iter => {
@@ -240,8 +221,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
             val processor = CaffeProcessor.instance[T1, T2]()
             if (!processor.solversFinished) {
               if (minPartSize > 0) {
-                var idx = 0 
-                //the entire iterator needs to be consumed, otherwise GC won't be triggered 
+                var idx = 0
+                //the entire iterator needs to be consumed, otherwise GC won't be triggered
                 res = iter.map { sample => {
                   idx += 1
                   if (idx <= minPartSize) processor.feedQueue(0, sample) else true
@@ -255,66 +236,139 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           }
         }.reduce(_ && _)
       }
+    
+    //Phase 4: shutdown processors
+    shutdownProcessors(conf)
+  }
+
+  def interleave[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
+    log.info("interleave")
+    var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
+    if (trainDataRDD == null) {
+      log.info("No training data given")
+      return
     }
 
-    var ThreadValidation: Future[Unit] = null    
-    if (sources.length > 1) {
-      ThreadValidation = Future {
-        log.info("Starting the validation thread in CaffeOnSpark")
-        sc.setLocalProperty("spark.scheduler.pool", "validation")
-        //Do mappartition for collecting the validation executor id
-        var validationExecutorId: Array[String] = null
-        validationExecutorId = validationDataRDD.mapPartitions {
-          iter => {
-            Iterator(SparkEnv.get.executorId)
+    var validationDataRDD: RDD[T1] = sources(1).makeRDD(sc)
+    if (validationDataRDD == null) {
+      log.info("No validation data given")
+      return
+    }
+
+    val conf = sources(0).conf
+    //Create train and test RDDs from parent RDD
+    /* We create each of those RDDs for every interleave run from their source RDDs
+     by extracting a range of records = no._of_records_required_per_partition * no._of_executors
+     no._of_records_required_per_partition = no._of_batches i.e test_interval * batchsize * no._of_gpus
+     no._of_RDDs which can be created from one parentRDD = overall_total_no._of_partitions/no._of_executors
+     overall_total_no._of_partitions = total_no._of_records in source RDD/no._of_records_required_per_partition
+     */ 
+    var continue: Boolean = true
+    val no_of_records_required_per_partition_train = conf.solverParameter.getTestInterval() * sources(0).batchSize()  * conf.devices
+    val total_records_train = trainDataRDD.count()
+    log.info("total_records_train: " + total_records_train)
+    log.info("no_of_records_required_per_partition_train: " + no_of_records_required_per_partition_train)
+    if (total_records_train < no_of_records_required_per_partition_train * conf.clusterSize) {
+      log.error("Train data is insufficient for the hyperparameters configured. Adjust the train hyperparameters or increase the training data!")
+      shutdownProcessors(conf)
+      return
+    }
+
+    var zippedTrainRDD:RDD[(Long,T1)] = trainDataRDD.zipWithIndex.map{ case (e,i) => (i,e)}
+    var no_of_partitions_train = total_records_train/no_of_records_required_per_partition_train
+    log.info("no_of_partitions_train: " + no_of_partitions_train)
+    var repartitionedTrainRDD = zippedTrainRDD.partitionBy(new FixedSizePartitioner(no_of_partitions_train.toInt+1, no_of_records_required_per_partition_train))
+    if (conf.isRddPersistent) {
+      repartitionedTrainRDD = repartitionedTrainRDD.persist(StorageLevel.DISK_ONLY)
+    }
+
+    val no_of_records_required_per_partition_validation = conf.solverParameter.getTestIter(0) * sources(1).batchSize()
+    val total_records_validation = validationDataRDD.count()
+    log.info("total_records_validation: " + total_records_validation)
+    log.info("no_of_records_required_per_partition_validation: " + no_of_records_required_per_partition_validation)
+    if (total_records_validation < no_of_records_required_per_partition_validation * conf.clusterSize) {
+      log.error("Validation data is insufficient for the hyperparameters configured. Adjust the validation hyperparameters or increase the validation data!")
+      shutdownProcessors(conf)
+      return
+    }
+
+    var zippedValidationRDD:RDD[(Long, T1)] = validationDataRDD.zipWithIndex.map{case (e,i) => (i,e)}
+    var no_of_partitions_validation = total_records_validation/no_of_records_required_per_partition_validation
+    log.info("no_of_partitions_validation: " + no_of_partitions_validation)
+    var repartitionedValidationRDD = zippedValidationRDD.partitionBy(new FixedSizePartitioner(no_of_partitions_validation.toInt+1, no_of_records_required_per_partition_validation))
+    if (conf.isRddPersistent) {
+      repartitionedValidationRDD = repartitionedValidationRDD.persist(StorageLevel.DISK_ONLY)
+    }
+
+    var current_partition_count_train = 0
+    var current_partition_count_validation = 0
+    var interleaveValidationRDD:RDD[(Long,T1)] = null
+    while(continue) {
+      log.info("Map partitions for training")
+      log.info("current_partition_count_train: " + current_partition_count_train)
+      var startIndex = current_partition_count_train*conf.clusterSize
+      var endIndex = (current_partition_count_train+1)*conf.clusterSize
+      var interleaveTrainRDD = PartitionPruningRDD.create(repartitionedTrainRDD,
+        (index => (index >= startIndex) && (index < endIndex))
+      )
+      //Proceed with the training
+      continue = interleaveTrainRDD.mapPartitions {
+        iter => {
+          var res = false
+          //feed training data from iterator
+          val processor = CaffeProcessor.instance[T1, T2]()
+          if (!processor.solversFinished) {
+            res = iter.map { sample => processor.feedQueue(0, sample._2) }.reduce(_ && _)
+            processor.solversFinished = !res
           }
-        }.collect()
-        log.info("Validation Executor Id: " + validationExecutorId(0))
-
-        //Feed the validation data to executors
-        var continuevalidation: Boolean = true
-        var j: Int = 0
-        while (continuevalidation) {
-          j += 1
-          //conduct validation with dataRDD
-          continuevalidation = validationDataRDD.mapPartitions {
-            iter => {
-              var res = false
-              //feed validation data from iterator
-              val processor = CaffeProcessor.instance[T1, T2]()
-              if (!processor.solversFinished) {
-                res = iter.map { sample => {
-                  processor.isValidationExecutor = true
-                  processor.feedQueue(1, sample)
-                }
-                }.reduce(_ && _)
-              }
-              processor.solversFinished = !res
-              Iterator(res)
-            }
-          }.reduce(_ && _)
+          Iterator(res)
         }
+      }.reduce(_ && _)
+      current_partition_count_train = (current_partition_count_train.toInt + 1) % (no_of_partitions_train.toInt/conf.clusterSize.toInt)
 
-        //Do mappartition for collecting the results
-        if(getResult) {
-          var outputResult: Array[ArrayBuffer[ArrayBuffer[Float]]] = null
-          outputResult = validationDataRDD.mapPartitions {
-            iter => {
-              val processor = CaffeProcessor.instance[T1, T2]()
-              Iterator(processor.validationBlobOutput)
-            }
-          }.collect()
-          interleaveResult = outputResult(0)
+      log.info("Map partitions for validation")
+      log.info("current_partition_count_validation: " + current_partition_count_validation)
+      startIndex = current_partition_count_validation
+      endIndex = current_partition_count_validation+1
+
+      //Create the interleaveValidationRDD for the required range
+      interleaveValidationRDD = PartitionPruningRDD.create(repartitionedValidationRDD,
+        (index => (index >= startIndex) && (index < endIndex))
+      )
+      //Add clustersize partitions to interleaveValidationRDD where each partition is a copy of each other
+      var validationRDDRef = interleaveValidationRDD
+      for(j <- Range(0,conf.clusterSize-1))
+        interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
+
+      //Proceed with the validation
+      var continueValidation: Boolean = false
+      continueValidation = interleaveValidationRDD.mapPartitions {
+        iter => {
+          var res = false
+          //feed validation data from iterator
+          val processor = CaffeProcessor.instance[T1, T2]()
+          if (!processor.solversFinished) {
+            res = iter.map { sample => processor.feedQueue(1, sample._2)}.reduce(_ && _)
+            processor.solversFinished = !res
+          }
+          Iterator(res)
         }
-      }
+      }.reduce(_ && _)
+      current_partition_count_validation = (current_partition_count_validation.toInt + 1) % (no_of_partitions_validation.toInt/conf.clusterSize.toInt)
     }
 
-    Await.result(ThreadTrain, Duration.Inf)
-    if (sources.length > 1)
-        Await.result(ThreadValidation, Duration.Inf)
-
-    log.info("Shutting down COS")
-    //Phase 7: shutdown processors
+    //Do mappartition for collecting the results
+    if(getResult) {
+      var outputResult: Array[ArrayBuffer[ArrayBuffer[Float]]] = null
+      outputResult = interleaveValidationRDD.mapPartitions {
+        iter => {
+          val processor = CaffeProcessor.instance[T1, T2]()
+          Iterator(processor.validationBlobOutput)
+        }
+      }.collect()
+      interleaveResult = outputResult(0)
+    }
+    //shutdown processors
     shutdownProcessors(conf)
   }
 
