@@ -418,26 +418,25 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
       val initIter: Int = caffeNet.getInitIter(syncIdx)
       val maxIter: Int = caffeNet.getMaxIter(syncIdx)
       caffeNet.init(syncIdx, true)
+      var validationInterval: Int = caffeNet.getTestInterval()
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
+        var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) &&  isRootSolver 
+        if (validationTime) {
+          validationBlobOutput.clear()
+          for (testit <- 0 until caffeNet.getTestIter(0)) {
+            tp2 = queuePairSet(1).Full.take
+            caffeNet.validation(tp2._2)
+            var outputBlobNames: Array[String] = getValidationOutputBlobNames();
+            validationBlobOutput += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
+            queuePairSet(1).Free.put(tp2)
+          }
+          caffeNet.aggregateValidationOutputs()
+        }
+      
         tpl = queuePairSet(0).Full.take
-        var validationInterval: Int = caffeNet.getTestInterval()
-        var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) && isValidationExecutor && isRootSolver 
         if (tpl == STOP_MARK)  {
           queuePairSet(0).Free.put(tpl)
-          if (validationTime) 
-            queuePairSet(1).Free.put(tp2)
         } else {
-          if (validationTime) {
-            validationBlobOutput.clear()
-            for (testit <- 0 until caffeNet.getTestIter(0)) {
-              tp2 = queuePairSet(1).Full.take
-              caffeNet.validation(tp2._2)
-              var outputBlobNames: Array[String] = getValidationOutputBlobNames();
-              validationBlobOutput += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
-              queuePairSet(1).Free.put(tp2)
-            }
-            caffeNet.aggregateValidationOutputs()
-          }
           var rs : Boolean = false
           rs = caffeNet.train(syncIdx, tpl._2)
 
