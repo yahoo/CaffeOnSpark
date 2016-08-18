@@ -21,7 +21,7 @@ object MyMLPipeline {
 
     //perform DL training using the TRAINING source specified in Net prototxt
     val dl_train_source = DataSource.getSource(conf, true)
-    cos.train(Array(dl_train_source))
+    cos.train(dl_train_source)
 
     //apply DL model for feature extraction using the TEST source specified in Net prototxt
     val lr_raw_source = DataSource.getSource(conf, false)
