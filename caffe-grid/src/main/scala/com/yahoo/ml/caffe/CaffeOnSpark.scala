@@ -115,7 +115,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     Vectors.dense(double_features)
   })
 
-  private def setupTraining[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
+  private def setupTraining[T1, T2](sources: Array[DataSource[T1, T2]]): Unit = {
     //Phase 1: Gather RDMA addresses from executors
     val conf = sources(0).conf
     if (!conf.snapshotStateFile.isEmpty && conf.snapshotModelFile.isEmpty) {
@@ -168,7 +168,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * Training with a specific data source
    * @param source input data source
    */
-  def train[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): Unit = {
+  def train[T1, T2](sources: Array[DataSource[T1, T2]]): Unit = {
     var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data is given")
@@ -237,7 +237,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     shutdownProcessors(conf)
   }
 
-  def trainWithValidation[T1:ClassTag, T2:ClassTag](sources: Array[DataSource[T1, T2]]): ArrayBuffer[ArrayBuffer[Float]] = {
+  def trainWithValidation[T1, T2](sources: Array[DataSource[T1, T2]]): ArrayBuffer[ArrayBuffer[Float]] = {
     log.info("interleave")
     var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
     if (trainDataRDD == null) {
@@ -273,6 +273,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     }
 
     setupTraining(sources)
+    implicit val rdd_class_tag : ClassTag[T1] = ClassTag.apply[T1](trainDataRDD.first.getClass)
+
     var zippedTrainRDD:RDD[(Long,T1)] = trainDataRDD.zipWithIndex.map{ case (e,i) => (i,e)}
     var no_of_partitions_train = total_records_train/no_of_records_required_per_partition_train
     log.info("no_of_partitions_train: " + no_of_partitions_train)
