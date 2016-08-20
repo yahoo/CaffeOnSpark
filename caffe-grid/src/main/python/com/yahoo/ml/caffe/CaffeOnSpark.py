@@ -51,5 +51,5 @@ class CaffeOnSpark:
 
         :param DataSource: A list containing the source for training and validation data
         """
-        self.__dict__.get('cos').trainWithValidation(train_validation_source)
+        return self.__dict__.get('cos').trainWithValidation(train_validation_source)
     
