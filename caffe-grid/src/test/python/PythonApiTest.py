@@ -39,7 +39,7 @@ class PythonApiTest(unittest.TestCase):
 
     def testTrainWithValidation(self):
         #TrainWithValidation
-        result=self.cos.trainWithValidation([self.dl_train_source, self.lr_raw_source])
+        result=self.cos.trainWithValidation(self.dl_train_source, self.lr_raw_source)
         self.assertEqual(self.cfg.solverParameter.getTestIter(0),len(result))
         finalAccuracy = 0
         finalLoss = 0
