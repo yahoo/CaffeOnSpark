@@ -1,5 +1,5 @@
 # The train/test net protocol buffer definition
-net: "lenet_memory_train_test.prototxt"
+net: "lenet_memory_train_test_py.prototxt"
 # test_iter specifies how many forward passes the test should carry out.
 test_iter: 2
 # Carry out testing every 500 training iterations.
