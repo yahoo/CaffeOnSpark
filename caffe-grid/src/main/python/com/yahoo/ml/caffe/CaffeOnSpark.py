@@ -46,10 +46,11 @@ class CaffeOnSpark:
         extracted_pydf = DataFrame(extracted_df.javaInstance,self.__dict__.get('sqlcontext'))
         return extracted_pydf
 
-    def trainWithValidation(self,train_validation_source):
+    def trainWithValidation(self,train_source, validation_source):
         """Training with interleaved Validation
 
-        :param DataSource: A list containing the source for training and validation data
+        :param DataSource: source for training data
+        :param DataSource: source for validation data
         """
-        return self.__dict__.get('cos').trainWithValidation(train_validation_source)
+        return self.__dict__.get('cos').trainWithValidation(train_source, validation_source)
     
