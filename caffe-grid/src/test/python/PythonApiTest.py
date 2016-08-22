@@ -15,7 +15,7 @@ from itertools import izip_longest
 from pyspark.sql import SQLContext
 import unittest
 
-conf = SparkConf().setAppName("caffe-on-spark").setMaster("local")
+conf = SparkConf().setAppName("caffe-on-spark").setMaster("local[1]")
 sc = SparkContext(conf=conf)
 sqlContext = SQLContext(sc)
 
