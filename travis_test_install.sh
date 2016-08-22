@@ -1,4 +1,4 @@
-export CAFFE_ON_SPARK=$(pwd)/CaffeOnSpark
+export CAFFE_ON_SPARK=$(pwd)
 ${CAFFE_ON_SPARK}/scripts/local-setup-hadoop.sh
 export HADOOP_HOME=$(pwd)/hadoop-2.6.4
 export PATH=${HADOOP_HOME}/bin:${PATH}
