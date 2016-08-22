@@ -9,3 +9,4 @@ apt-get -y --force-yes update
 rm -rf $CONDA_DIR
 # invoke BVLC caffe scripts
 ./caffe-public/scripts/travis/travis_install.sh
+./travis_test_install.sh
