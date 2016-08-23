@@ -4,6 +4,8 @@
 add-apt-repository -y ppa:kubuntu-ppa/backports
 # for proto2.5
 add-apt-repository -y  ppa:chris-lea/protobuf
+# for boost
+add apt-repository -y ppa:boost-latest/ppa
 apt-get -y --force-yes update
 # remove CONDA directory
 rm -rf $CONDA_DIR
