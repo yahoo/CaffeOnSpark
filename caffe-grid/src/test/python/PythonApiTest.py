@@ -41,8 +41,6 @@ class PythonApiTest(unittest.TestCase):
         self.assertTrue('accuracy' in result.columns)
         self.assertTrue('ip1' in result.columns)
         self.assertTrue('ip2' in result.columns)
-
-    def testTest(self):
         result=self.cos.test(self.validation_source)
         self.assertTrue(result.get('accuracy') > 0.9)
 
