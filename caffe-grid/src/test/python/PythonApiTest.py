@@ -42,7 +42,14 @@ class PythonApiTest(unittest.TestCase):
         self.assertTrue('accuracy' in result.columns)
         self.assertTrue('ip1' in result.columns)
         self.assertTrue('ip2' in result.columns)
-        
+
+    def testTest(self):
+        #Test
+        result=self.cos.test(self.validation_source)
+        self.assertTrue(result.get('accuracy') > 0.9)
+        print result.get('loss')
+        self.assertTrue(result.get('loss') < 0.5)
+
     def testTrainWithValidation(self):
         #TrainWithValidation
         result=self.cos.trainWithValidation(self.train_source, self.validation_source)

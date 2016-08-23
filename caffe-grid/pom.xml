@@ -42,11 +42,6 @@
   </profiles>
   <dependencies>
     <dependency>
-      <groupId>net.sf.py4j</groupId>
-      <artifactId>py4j</artifactId>
-      <version>0.8.1</version>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.ml</groupId>
       <artifactId>caffe-distri</artifactId>
       <version>${version}</version>
