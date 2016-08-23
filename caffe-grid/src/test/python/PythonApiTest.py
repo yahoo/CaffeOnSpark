@@ -12,13 +12,11 @@ from pyspark.mllib.linalg import Vectors
 from pyspark.sql import Row
 from pyspark import SparkConf,SparkContext
 from itertools import izip_longest
-from pyspark.sql import SQLContext
 import unittest
 import os.path
 
 conf = SparkConf().setAppName("caffe-on-spark").setMaster("local[1]")
 sc = SparkContext(conf=conf)
-sqlContext = SQLContext(sc)
 
 class PythonApiTest(unittest.TestCase):
     def grouper(self,iterable, n, fillvalue=None):
@@ -27,7 +25,7 @@ class PythonApiTest(unittest.TestCase):
 
     def setUp(self):
         #Initialize all objects
-        self.cos=CaffeOnSpark(sc,sqlContext)
+        self.cos=CaffeOnSpark(sc)
         cmdargs = conf.get('spark.pythonargs')
         self.args= dict(self.grouper(cmdargs.split(),2))
         self.cfg=Config(sc,self.args)
@@ -41,6 +39,8 @@ class PythonApiTest(unittest.TestCase):
         self.assertTrue('accuracy' in result.columns)
         self.assertTrue('ip1' in result.columns)
         self.assertTrue('ip2' in result.columns)
+        self.assertTrue(result.count() > 100)
+        self.assertTrue(result.first()['SampleID'] == '00000000')
         result=self.cos.test(self.validation_source)
         self.assertTrue(result.get('accuracy') > 0.9)
 

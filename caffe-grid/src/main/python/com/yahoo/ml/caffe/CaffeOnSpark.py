@@ -6,7 +6,7 @@ Please see LICENSE file in the project root for terms.
 
 from ConversionUtil import wrapClass
 from RegisterContext import registerContext
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame,SQLContext
 from pyspark.mllib.linalg import Vectors
 
 class CaffeOnSpark:
@@ -16,12 +16,12 @@ class CaffeOnSpark:
     :ivar SparkContext, SQLContext: The spark and sql context of the current spark session
     """
 
-    def __init__(self,sc,sqlContext):
+    def __init__(self,sc):
         registerContext(sc)
-        self.__dict__['sqlcontext']=sqlContext
         wrapClass("org.apache.spark.sql.DataFrame")
         self.__dict__['caffeonspark']=wrapClass("com.yahoo.ml.caffe.CaffeOnSpark")
         self.__dict__['cos']=self.__dict__.get('caffeonspark')(sc)
+        self.__dict__['sqlcontext']=SQLContext(sc,self.__dict__['cos'].sqlContext)
 
     def train(self,train_source):
         """Training with a specific data source

@@ -22,9 +22,8 @@ def grouper(iterable, n, fillvalue=None):
 
 conf = SparkConf()
 sc = SparkContext(conf=conf)
-sqlContext = SQLContext(sc)
 #Initialize all objects
-cos=CaffeOnSpark(sc,sqlContext)
+cos=CaffeOnSpark(sc)
 cmdargs = conf.get('spark.pythonargs')
 args= dict(grouper(cmdargs.split(),2))
 cfg=Config(sc,args)

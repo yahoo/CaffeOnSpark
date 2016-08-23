@@ -106,6 +106,7 @@ object CaffeOnSpark {
  */
 class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
   @transient private val log: Logger = LoggerFactory.getLogger(this.getClass)
+  @transient val sqlContext = new sql.SQLContext(sc)
   @transient val floatarray2doubleUDF = udf((float_features: Seq[Float]) => {
     float_features(0).toDouble
   })
@@ -485,7 +486,6 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     }
 
     //Phase 4: Create output data frame
-    val sqlContext = new sql.SQLContext(sc)
     sqlContext.createDataFrame(featureRDD, schema).persist(StorageLevel.DISK_ONLY)
   }
 

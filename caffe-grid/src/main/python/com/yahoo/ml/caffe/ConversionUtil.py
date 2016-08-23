@@ -44,9 +44,11 @@ rdd               <===>org.apache.spark.rdd.RDD/org.apache.spark.api.java.JavaRD
 Note: Supported conversion types for RDDs are limited.
 See com.yahoo.ml.caffe.python.RDDConversions.scala for details.
 
-SparkContext      <===>Scala SparkContext/Java SparkContext.
+SparkContext      ===>Scala SparkContext/Java SparkContext.
              
-Future result     <====scala.concurrent.Future    
+SQLContext        ===>Scala SQLContext/Java SQLContext.
+
+Future result     <====scala.concurrent.Future
 
 bytearray         <===>Array[Byte]/byte[]
                   <====java.nio.ByteBuffer
@@ -58,6 +60,7 @@ from GeneralUtil import isPrefix,unCamelCase,getTrailingNumber
 import __builtin__
 from pyspark.serializers import PickleSerializer, AutoBatchedSerializer
 from pyspark import rdd,SparkContext
+from pyspark.sql import SQLContext
 from pyspark.mllib.common import _java2py,_py2java
 from collections import deque
 import traceback
@@ -131,6 +134,7 @@ def _initPythonToScalaConversions():
             dict         : toScalaHashMap,
             tuple        : toScalaTuple,
             set          : toScalaHashSet,
+            SQLContext   : toScalaSQLC,
             SparkContext : toScalaSC}
 
 def _initPythonToJavaConversions():
@@ -142,6 +146,7 @@ def _initPythonToJavaConversions():
             dict         : toJavaHashMap,
             tuple        : toJavaArray,
             set          : toJavaHashSet,
+            SQLContext   : toJavaSQLC,
             SparkContext : toJavaSC}
         
 def _initJavaToPythonConversions():
@@ -378,6 +383,18 @@ Converts a Python SparkContext to a Java SparkContext.
 '''
 def toJavaSC(pySc):
     return pySc._jsc
+
+'''
+Converts a Python SQLContext to a Scala SparkContext.
+'''
+def toScalaSQLC(pySQLc):
+    return pySQLc._scala_SQLContext
+
+'''
+Converts a Python SQLContext to a Java SparkContext.
+'''
+def toJavaSQLC(pySQLc):
+    return pySQLc._scala_SQLContext
 
 '''
 Converts a Java Array to a Python List.
