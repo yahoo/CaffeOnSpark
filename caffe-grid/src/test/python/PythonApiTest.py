@@ -35,7 +35,6 @@ class PythonApiTest(unittest.TestCase):
         self.validation_source = DataSource(sc).getSource(self.cfg,False)
         
     def testTrain(self):
-        #Train
         self.cos.train(self.train_source)
         self.assertTrue(os.path.isfile(self.args.get('-model').split(":")[1][3:]))
         result=self.cos.features(self.validation_source)
@@ -44,12 +43,10 @@ class PythonApiTest(unittest.TestCase):
         self.assertTrue('ip2' in result.columns)
 
     def testTest(self):
-        #Test
         result=self.cos.test(self.validation_source)
         self.assertTrue(result.get('accuracy') > 0.9)
 
     def testTrainWithValidation(self):
-        #TrainWithValidation
         result=self.cos.trainWithValidation(self.train_source, self.validation_source)
         self.assertEqual(self.cfg.solverParameter.getTestIter(0),len(result))
         finalAccuracy = 0
