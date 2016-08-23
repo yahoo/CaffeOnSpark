@@ -37,10 +37,11 @@ class PythonApiTest(unittest.TestCase):
     def testTrain(self):
         #Train
         self.cos.train(self.train_source)
-        self.assertTrue(os.path.isfile(self.args.get('-model')))
+        self.assertTrue(os.path.isfile(self.args.get('-model').split(":")[1][3:]))
         result=self.cos.features(self.validation_source)
-        print dir(result)
-        self.assertEqual(result.accuracy[0],1.0)
+        self.assertTrue('accuracy' in result.columns)
+        self.assertTrue('ip1' in result.columns)
+        self.assertTrue('ip2' in result.columns)
         
     def testTrainWithValidation(self):
         #TrainWithValidation
