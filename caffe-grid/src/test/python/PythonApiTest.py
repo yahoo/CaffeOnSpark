@@ -47,8 +47,6 @@ class PythonApiTest(unittest.TestCase):
         #Test
         result=self.cos.test(self.validation_source)
         self.assertTrue(result.get('accuracy') > 0.9)
-        print result.get('loss')
-        self.assertTrue(result.get('loss') < 0.5)
 
     def testTrainWithValidation(self):
         #TrainWithValidation
