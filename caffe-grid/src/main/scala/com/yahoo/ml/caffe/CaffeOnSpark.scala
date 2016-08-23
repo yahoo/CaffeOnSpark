@@ -238,6 +238,12 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     shutdownProcessors(conf)
   }
 
+  /**
+   * Training interleaved with validation
+   * @param sourceTrain input data source for training
+   * @param sourceValidation input data source for validation
+   * @return Array of validation results
+   */
   def trainWithValidation[T1, T2](sourceTrain: DataSource[T1, T2], sourceValidation: DataSource[T1, T2]): ArrayBuffer[ArrayBuffer[Float]] = {
     log.info("interleave")
     var trainDataRDD: RDD[T1] = sourceTrain.makeRDD(sc)
