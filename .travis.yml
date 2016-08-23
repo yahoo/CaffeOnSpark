@@ -36,6 +36,7 @@ install:
 before_script:
   - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/cuda/lib64:$CONDA_DIR/lib
   - export PATH=$CONDA_DIR/bin:/home/travis/build/yahoo/CaffeOnSpark/spark-1.6.0-bin-hadoop2.6/bin:$PATH
+  - sudo apt-get install libboost-all-dev
   - if ! $WITH_CMAKE; then $SCRIPTS/travis_setup_makefile_config.sh; fi
 
 script: $SCRIPTS/travis_build_and_test.sh
