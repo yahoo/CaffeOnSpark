@@ -53,7 +53,7 @@ object CaffeOnSpark {
       if (conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestIter(0) != 0)) {
         val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
         val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
-        caffeSpark.trainWithValidation(Array(sourceTrain, sourceValidation))
+        caffeSpark.trainWithValidation(sourceTrain, sourceValidation)
       } else {
         val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
         caffeSpark.train(sourceTrain)
@@ -237,24 +237,24 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     shutdownProcessors(conf)
   }
 
-  def trainWithValidation[T1, T2](sources: Array[DataSource[T1, T2]]): ArrayBuffer[ArrayBuffer[Float]] = {
+  def trainWithValidation[T1, T2](sourceTrain: DataSource[T1, T2], sourceValidation: DataSource[T1, T2]): ArrayBuffer[ArrayBuffer[Float]] = {
     log.info("interleave")
-    var trainDataRDD: RDD[T1] = sources(0).makeRDD(sc)
+    var trainDataRDD: RDD[T1] = sourceTrain.makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data given")
       return null
     }
 
-    var validationDataRDD: RDD[T1] = sources(1).makeRDD(sc)
+    var validationDataRDD: RDD[T1] = sourceValidation.makeRDD(sc)
     if (validationDataRDD == null) {
       log.info("No validation data given")
       return null
     }
 
-    val conf = sources(0).conf
+    val conf = sourceTrain.conf
     //Create train and test RDDs from parent RDD
     var continue: Boolean = true
-    val no_of_records_required_per_partition_train = conf.solverParameter.getTestInterval() * sources(0).batchSize()  * conf.devices
+    val no_of_records_required_per_partition_train = conf.solverParameter.getTestInterval() * sourceTrain.batchSize()  * conf.devices
     val total_records_train = trainDataRDD.count()
     log.info("total_records_train: " + total_records_train)
     log.info("no_of_records_required_per_partition_train: " + no_of_records_required_per_partition_train)
@@ -263,7 +263,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       return null
     }
 
-    val no_of_records_required_per_partition_validation = conf.solverParameter.getTestIter(0) * sources(1).batchSize()
+    val no_of_records_required_per_partition_validation = conf.solverParameter.getTestIter(0) * sourceValidation.batchSize()
     val total_records_validation = validationDataRDD.count()
     log.info("total_records_validation: " + total_records_validation)
     log.info("no_of_records_required_per_partition_validation: " + no_of_records_required_per_partition_validation)
@@ -272,7 +272,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       return null
     }
 
-    setupTraining(sources)
+    setupTraining(Array(sourceTrain, sourceValidation))
     implicit val rdd_class_tag : ClassTag[T1] = ClassTag.apply[T1](trainDataRDD.first.getClass)
     var zippedTrainRDD:RDD[(Long, T1)] = trainDataRDD.zipWithIndex.map{ case (e,i) => (i,e)}
     var no_of_partitions_train = total_records_train/no_of_records_required_per_partition_train

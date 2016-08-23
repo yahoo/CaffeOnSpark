@@ -45,7 +45,7 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
       val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
       val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
       log.info("SolverParameter:"  + conf.solverParameter.getTestIter(0) + ":" + conf.solverParameter.hasTestInterval())
-      var interleaveResult: ArrayBuffer[ArrayBuffer[Float]] = caffeSpark.trainWithValidation(Array(sourceTrain, sourceValidation))
+      var interleaveResult: ArrayBuffer[ArrayBuffer[Float]] = caffeSpark.trainWithValidation(sourceTrain, sourceValidation)
       var finalAccuracy: Float = 0
       var finalLoss: Float = 0
       assertEquals(interleaveResult.length, conf.solverParameter.getTestIter(0))

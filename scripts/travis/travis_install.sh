@@ -9,3 +9,6 @@ apt-get -y --force-yes update
 rm -rf $CONDA_DIR
 # invoke BVLC caffe scripts
 ./caffe-public/scripts/travis/travis_install.sh
+export CAFFE_ON_SPARK=$(pwd)
+${CAFFE_ON_SPARK}/scripts/local-setup-spark.sh 2>&1 > /dev/null
+
