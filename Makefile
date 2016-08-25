@@ -1,4 +1,5 @@
 HOME ?=/home/${USER}
+SPARK_HOME ?=/home/y/share/spark
 CAFFE_ON_SPARK ?=$(shell pwd)
 LD_LIBRARY_PATH ?=/home/y/lib64:/home/y/lib64/mkl/intel64
 LD_LIBRARY_PATH2=${LD_LIBRARY_PATH}:${CAFFE_ON_SPARK}/caffe-public/distribute/lib:${CAFFE_ON_SPARK}/caffe-distri/distribute/lib:/usr/lib64:/lib64 
@@ -14,7 +15,7 @@ build:
 	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; mvn -B package
 	cp -r ${CAFFE_ON_SPARK}/caffe-public/python/caffe ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/
 	cd ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/; zip -r caffeonsparkpythonapi  *; mv caffeonsparkpythonapi.zip ${CAFFE_ON_SPARK}/caffe-grid/target/;cd ${CAFFE_ON_SPARK}
-	${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
+	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; export SPARK_HOME="${SPARK_HOME}"; ${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
 buildosx: 
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
 	export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; mvn -B package -DskipTests
@@ -24,7 +25,7 @@ buildosx:
 	export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; mvn -B package
 	cp -r ${CAFFE_ON_SPARK}/caffe-public/python/caffe ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/
 	cd ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/; zip -r caffeonsparkpythonapi  *; mv caffeonsparkpythonapi.zip ${CAFFE_ON_SPARK}/caffe-grid/target/; cd ${CAFFE_ON_SPARK}
-	${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
+	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; export SPARK_HOME="${SPARK_HOME}"; ${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
 update:
 	git submodule init
 	git submodule update --force

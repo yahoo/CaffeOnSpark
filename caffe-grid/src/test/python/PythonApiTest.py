@@ -46,15 +46,25 @@ class PythonApiTest(unittest.TestCase):
 
     def testTrainWithValidation(self):
         result=self.cos.trainWithValidation(self.train_source, self.validation_source)
-        self.assertEqual(self.cfg.solverParameter.getTestIter(0),len(result))
-        finalAccuracy = 0
-        finalLoss = 0
-        for i in range(self.cfg.solverParameter.getTestIter(0)):
-            finalAccuracy += result[i][0]
-            finalLoss += result[i][1]
+        self.assertEqual(result.columns == 2)
+        row_count = result.count()
+        test_iter = self.cfg.solverParameter.getTestIter(0)
+        self.assertTrue(row_count % test_iter == 0)
 
-        self.assertTrue(finalAccuracy/self.cfg.solverParameter.getTestIter(0) > 0.8)
-        self.assertTrue(finalLoss/self.cfg.solverParameter.getTestIter(0) < 0.5)      
+        result_w_index = result.rdd.zipWithIndex()
+        finalAccuracy = result_w_index.map(lambda row, index:
+                 if (index >= (row_count - test_iter))
+                        row.getFloat(0)
+                 else   0.0
+             ).reduce(lambda a, b: a + b)
+        self.assertTrue(finalAccuracy/test_iter > 0.8)
+
+        finalLoss = result_w_index.map(lambda row, index:
+                                     if (index >= (row_count - test_iter))
+                                            row.getFloat(1)
+                                     else   0.0
+             ).reduce(lambda a, b: a + b)
+        self.assertTrue(finalLoss/test_iter < 0.5)
 
 
 unittest.main(verbosity=2)            

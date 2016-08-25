@@ -116,12 +116,12 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     Vectors.dense(double_features)
   })
 
-  private def setupTraining[T1, T2](sources: Array[DataSource[T1, T2]]): Unit = {
+  private def setupTraining[T1, T2](sources: Array[DataSource[T1, T2]]): Array[String] = {
     //Phase 1: Gather RDMA addresses from executors
     val conf = sources(0).conf
     if (!conf.snapshotStateFile.isEmpty && conf.snapshotModelFile.isEmpty) {
       log.error("to resume training, please provide input model file")
-      return
+      throw new IllegalStateException("input model file must be provided for incremental training")
     }
 
     var rank_2_addresses_n_host = sc.parallelize(0 until conf.clusterSize, conf.clusterSize).map {
@@ -156,13 +156,19 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val bcast_addresses = sc.broadcast(rank_2_addresses)
 
     //Phase 3: set up the processors
-    sc.parallelize(0 until conf.clusterSize, conf.clusterSize).map {
+    val validation_blob_names = sc.parallelize(0 until conf.clusterSize, conf.clusterSize).map {
       case rank: Int => {
         val processor = CaffeProcessor.instance[T1, T2]()
         //start processor w/ the given addresses
         processor.start(bcast_addresses.value)
+
+        if (rank==0) processor.getValidationOutputBlobNames()
+        else null
       }
     }.collect()
+
+    //return validation blob names if any
+    if (validation_blob_names.length>1) validation_blob_names.apply(0) else null
   }
 
   /**
@@ -242,9 +248,9 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
    * Training interleaved with validation
    * @param sourceTrain input data source for training
    * @param sourceValidation input data source for validation
-   * @return Array of validation results
+   * @return DataFrame of validation results
    */
-  def trainWithValidation[T1, T2](sourceTrain: DataSource[T1, T2], sourceValidation: DataSource[T1, T2]): ArrayBuffer[ArrayBuffer[Float]] = {
+  def trainWithValidation[T1, T2](sourceTrain: DataSource[T1, T2], sourceValidation: DataSource[T1, T2]): DataFrame = {
     log.info("interleave")
     var trainDataRDD: RDD[T1] = sourceTrain.makeRDD(sc)
     if (trainDataRDD == null) {
@@ -279,7 +285,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       return null
     }
 
-    setupTraining(Array(sourceTrain, sourceValidation))
+    val validationOutputBlobNames = setupTraining(Array(sourceTrain, sourceValidation))
     implicit val rdd_class_tag : ClassTag[T1] = ClassTag.apply[T1](trainDataRDD.first.getClass)
     var zippedTrainRDD:RDD[(Long, T1)] = trainDataRDD.zipWithIndex.map{ case (e,i) => (i,e)}
     var no_of_partitions_train = total_records_train/no_of_records_required_per_partition_train
@@ -302,6 +308,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     var interleaveValidationRDD:RDD[(Long,T1)] = null
     val iter_train = no_of_partitions_train.toInt/conf.clusterSize.toInt
     val iter_validation = no_of_partitions_validation.toInt/conf.clusterSize.toInt
+    var validation_output_rdd : RDD[Row] = null
     while(continue) {
       var interleaveTrainRDD = PartitionPruningRDD.create(repartitionedTrainRDD,
         (index => (index >= current_partition_count_train*conf.clusterSize) && (index < (current_partition_count_train+1)*conf.clusterSize))
@@ -330,9 +337,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
         interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
 
       //Proceed with the validation
-      var continueValidation: Boolean = false
-      continueValidation = interleaveValidationRDD.mapPartitions {
-        iter => {
+      val cur_validation_output : RDD[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
+        (index, iter) => {
           var res = false
           //feed validation data from iterator
           val processor = CaffeProcessor.instance[T1, T2]()
@@ -340,28 +346,28 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
             res = iter.map { sample => processor.feedQueue(1, sample._2)}.reduce(_ && _)
             processor.solversFinished = !res
           }
-          Iterator(res)
+
+          if (index>0)
+            Iterator(null)
+          else
+            processor.validationBlobOutput.map{e => Row.fromSeq(e.toSeq)}.toIterator
         }
-      }.reduce(_ && _)
+      }
+      if (validation_output_rdd == null)
+        validation_output_rdd = cur_validation_output
+      else
+        validation_output_rdd = validation_output_rdd.union(cur_validation_output)
+
       current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
       current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
     }
 
-    //Do mappartition for collecting the results
-    var outputResult: Array[ArrayBuffer[ArrayBuffer[Float]]] = null
-    outputResult = interleaveValidationRDD.mapPartitionsWithIndex {
-      (index, iter) => {
-        if (index==0) {
-          val processor = CaffeProcessor.instance[T1, T2]()
-          Iterator(processor.validationBlobOutput)
-        } else
-          Iterator(null)
-      }
-    }.collect()
-  
     //shutdown processors
     shutdownProcessors(conf)
-    return outputResult(0)
+
+    //dataframe of validation result
+    val schema = new StructType(validationOutputBlobNames.map(name => StructField(name, ArrayType(FloatType), false)))
+    sqlContext.createDataFrame(validation_output_rdd, schema)
   }
 
   /**
