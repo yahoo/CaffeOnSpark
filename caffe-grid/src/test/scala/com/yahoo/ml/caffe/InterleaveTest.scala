@@ -47,6 +47,7 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
       val test_iter = conf.solverParameter.getTestIter(0)
       val total_count = validation_result_df.count()
       assertTrue(total_count > test_iter)
+      assertEquals(total_count % test_iter, 0)
       validation_result_df.show(test_iter)
 
       val (finalAccuracy: Float, finalLoss: Float) = validation_result_df.rdd.zipWithIndex().map{

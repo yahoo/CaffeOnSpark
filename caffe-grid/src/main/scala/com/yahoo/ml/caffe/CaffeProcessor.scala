@@ -15,6 +15,7 @@ import scala.concurrent.{Await, Future, ExecutionContext}
 import org.apache.spark.sql.Row
 import scala.collection.immutable.Map
 import scala.collection.mutable.ArrayBuffer
+import java.util.concurrent.atomic.AtomicReference
 
 private[caffe] object CaffeProcessor {
   var myInstance: CaffeProcessor[_, _] = null
@@ -44,8 +45,7 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
   }
 
-  var isValidationExecutor: Boolean = false;
-  @volatile var validationBlobOutput: ArrayBuffer[Seq[Array[Float]]] = new ArrayBuffer[Seq[Array[Float]]]()
+  val validationResultsQueue: ArrayBlockingQueue[Iterator[Row]] = new ArrayBlockingQueue[Iterator[Row]](2)
   val conf = sources(0).conf
   val solverMode: Int = sources(0).solverParameter.getSolverMode().getNumber()
   val numLocalGPUs: Int = conf.devices
@@ -414,16 +414,18 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
       caffeNet.init(syncIdx, true)
       val validationInterval: Int = caffeNet.getTestInterval()
       val outputBlobNames: Array[String] = getValidationOutputBlobNames();
+      val validation_output: ArrayBuffer[Seq[Array[Float]]] = new ArrayBuffer[Seq[Array[Float]]]()
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
         var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) &&  isRootSolver 
         if (validationTime) {
-          validationBlobOutput.clear()
+          validation_output.clear()
           for (testit <- 0 until caffeNet.getTestIter(0)) {
             tp2 = queuePairSet(1).Full.take
             caffeNet.validation(tp2._2)
-            validationBlobOutput += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
+            validation_output += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
             queuePairSet(1).Free.put(tp2)
           }
+          validationResultsQueue.put(validation_output.map(e => Row.fromSeq(e)).toIterator)
           caffeNet.aggregateValidationOutputs()
         }
       
@@ -447,6 +449,8 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
         }
       }
 
+      if ((sources.length > 1) && (validationInterval > 0) && isRootSolver)
+        validationResultsQueue.put(Iterator(null))
       if ((rank == 0) && isRootSolver) {
         log.info("Model saving into file at the end of training:" + conf.modelPath)
         FSUtils.GenModelOrState(caffeNet, conf.modelPath, false)

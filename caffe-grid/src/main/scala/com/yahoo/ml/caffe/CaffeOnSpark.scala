@@ -327,40 +327,50 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
         }
       }.reduce(_ && _)
 
-      //Create the interleaveValidationRDD for the required range
-      interleaveValidationRDD = PartitionPruningRDD.create(repartitionedValidationRDD,
-        (index => (index == current_partition_count_validation))
-      )
-      //Add clustersize partitions to interleaveValidationRDD where each partition is a copy of each other
-      var validationRDDRef = interleaveValidationRDD
-      for(j <- Range(0,conf.clusterSize-1))
-        interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
+      if (continue) {
+        //Create the interleaveValidationRDD for the required range
+        interleaveValidationRDD = PartitionPruningRDD.create(repartitionedValidationRDD,
+          (index => (index == current_partition_count_validation))
+        )
+        //Add clustersize partitions to interleaveValidationRDD where each partition is a copy of each other
+        var validationRDDRef = interleaveValidationRDD
+        for(j <- Range(0,conf.clusterSize-1))
+          interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
 
-      //Proceed with the validation
-      val current_result_array : Array[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
-        (index, iter) => {
-          var res = false
-          //feed validation data from iterator
-          val processor = CaffeProcessor.instance[T1, T2]()
-          if (!processor.solversFinished) {
-            res = iter.map { sample => processor.feedQueue(1, sample._2)}.reduce(_ && _)
-            processor.solversFinished = !res
+        //Proceed with the validation
+        log.info("*****execute validation step")
+        val current_result_array : Array[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
+          (index, iter) => {
+            //feed validation data from iterator
+            val processor = CaffeProcessor.instance[T1, T2]()
+            if (!processor.solversFinished) {
+              val res = iter.map { sample => processor.feedQueue(1, sample._2)}.reduce(_ && _)
+              processor.solversFinished = !res
+            }
+
+            val validation_result = if (!processor.solversFinished)
+              processor.validationResultsQueue.take()
+            else Iterator(null)
+
+            if (index==0)
+              validation_result
+            else
+              Iterator(null)
           }
+        }.collect()
 
-          if (index==0)
-            processor.validationBlobOutput.map{e => Row.fromSeq(e.toSeq)}.toIterator
+        log.info("*****current_result:"+current_result_array(0))
+        continue = (current_result_array(0)!=null)
+        if (continue) {
+          if (validation_output_rdd == null)
+            validation_output_rdd = sc.parallelize(current_result_array.toSeq, 1)
           else
-            Iterator(null)
-        }
-      }.collect()
-      log.info("**validation result size:"+current_result_array.length)
-      if (validation_output_rdd == null)
-        validation_output_rdd = sc.parallelize(current_result_array.toSeq, 1)
-      else
-        validation_output_rdd = validation_output_rdd.union(sc.parallelize(current_result_array.toSeq, 1))
+            validation_output_rdd = validation_output_rdd.union(sc.parallelize(current_result_array.toSeq, 1))
 
-      current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
-      current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
+          current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
+          current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
+        }
+      }
     }
 
     //shutdown processors

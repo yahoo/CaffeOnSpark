@@ -52,6 +52,7 @@ class PythonApiTest(unittest.TestCase):
         row_count = result.count()
         test_iter = self.cfg.solverParameter.getTestIter(0)
         self.assertTrue(row_count > test_iter)
+        self.assertEqual(row_count % test_iter, 0)
         result.show(test_iter)
 
         result_w_index = result.rdd.zipWithIndex().filter(lambda (row,index): index>=(row_count - test_iter)).persist()
