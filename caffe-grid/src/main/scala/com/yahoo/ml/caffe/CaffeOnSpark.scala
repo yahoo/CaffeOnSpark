@@ -168,7 +168,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     }.collect()
 
     //return validation blob names if any
-    if (validation_blob_names.length>1) validation_blob_names.apply(0) else null
+    if (validation_blob_names.length>=1) validation_blob_names.apply(0) else null
   }
 
   /**
@@ -337,7 +337,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
         interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
 
       //Proceed with the validation
-      val cur_validation_output : RDD[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
+      val current_result_array : Array[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
         (index, iter) => {
           var res = false
           //feed validation data from iterator
@@ -347,16 +347,17 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
             processor.solversFinished = !res
           }
 
-          if (index>0)
-            Iterator(null)
-          else
+          if (index==0)
             processor.validationBlobOutput.map{e => Row.fromSeq(e.toSeq)}.toIterator
+          else
+            Iterator(null)
         }
-      }
+      }.collect()
+      log.info("**validation result size:"+current_result_array.length)
       if (validation_output_rdd == null)
-        validation_output_rdd = cur_validation_output
+        validation_output_rdd = sc.parallelize(current_result_array.toSeq, 1)
       else
-        validation_output_rdd = validation_output_rdd.union(cur_validation_output)
+        validation_output_rdd = validation_output_rdd.union(sc.parallelize(current_result_array.toSeq, 1))
 
       current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
       current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
@@ -367,7 +368,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
 
     //dataframe of validation result
     val schema = new StructType(validationOutputBlobNames.map(name => StructField(name, ArrayType(FloatType), false)))
-    sqlContext.createDataFrame(validation_output_rdd, schema)
+    sqlContext.createDataFrame(validation_output_rdd, schema).persist(StorageLevel.DISK_ONLY)
   }
 
   /**

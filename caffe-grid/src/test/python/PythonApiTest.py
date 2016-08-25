@@ -46,24 +46,18 @@ class PythonApiTest(unittest.TestCase):
 
     def testTrainWithValidation(self):
         result=self.cos.trainWithValidation(self.train_source, self.validation_source)
-        self.assertEqual(result.columns == 2)
+        self.assertEqual(len(result.columns), 2)
+        self.assertEqual(result.columns[0], 'accuracy')
+        self.assertEqual(result.columns[1], 'loss')
         row_count = result.count()
         test_iter = self.cfg.solverParameter.getTestIter(0)
-        self.assertTrue(row_count % test_iter == 0)
+        self.assertTrue(row_count > test_iter)
+        result.show(test_iter)
 
-        result_w_index = result.rdd.zipWithIndex()
-        finalAccuracy = result_w_index.map(lambda row, index:
-                 if (index >= (row_count - test_iter))
-                        row.getFloat(0)
-                 else   0.0
-             ).reduce(lambda a, b: a + b)
+        result_w_index = result.rdd.zipWithIndex().filter(lambda (row,index): index>=(row_count - test_iter)).persist()
+        finalAccuracy = result_w_index.map(lambda (row,index): row[0][0]).reduce(lambda a, b: a + b)
         self.assertTrue(finalAccuracy/test_iter > 0.8)
-
-        finalLoss = result_w_index.map(lambda row, index:
-                                     if (index >= (row_count - test_iter))
-                                            row.getFloat(1)
-                                     else   0.0
-             ).reduce(lambda a, b: a + b)
+        finalLoss = result_w_index.map(lambda (row,index): row[1][0]).reduce(lambda a, b: a + b)
         self.assertTrue(finalLoss/test_iter < 0.5)
 
 

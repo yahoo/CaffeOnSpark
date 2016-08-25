@@ -40,15 +40,19 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
       val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
       val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
       log.info("SolverParameter:"  + conf.solverParameter.getTestIter(0) + ":" + conf.solverParameter.hasTestInterval())
-      val interleaveResult : DataFrame = caffeSpark.trainWithValidation(sourceTrain, sourceValidation)
-      assertEquals(interleaveResult.columns, 2)
+      val validation_result_df : DataFrame = caffeSpark.trainWithValidation(sourceTrain, sourceValidation)
+      assertEquals(validation_result_df.columns.length, 2)
+      assertEquals(validation_result_df.columns(0), "accuracy")
+      assertEquals(validation_result_df.columns(1), "loss")
       val test_iter = conf.solverParameter.getTestIter(0)
-      assertEquals(interleaveResult.count() % test_iter, 0)
+      val total_count = validation_result_df.count()
+      assertTrue(total_count > test_iter)
+      validation_result_df.show(test_iter)
 
-      val (finalAccuracy: Float, finalLoss: Float) = interleaveResult.rdd.zipWithIndex().map{
+      val (finalAccuracy: Float, finalLoss: Float) = validation_result_df.rdd.zipWithIndex().map{
         case (row:Row, index:Long) => {
-          if (index >= (interleaveResult.count() - test_iter))
-            (row.getFloat(0), row.getFloat(1))
+          if (index >= (total_count - test_iter))
+            (row.getSeq[Float](0)(0), row.getSeq[Float](1)(0))
           else
             (0.0F, 0.0F)
         }

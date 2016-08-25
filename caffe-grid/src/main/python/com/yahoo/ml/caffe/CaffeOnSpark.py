@@ -53,6 +53,6 @@ class CaffeOnSpark:
         :param DataSource: source for validation data
         """
         validation_df = self.__dict__.get('cos').trainWithValidation(train_source, validation_source)
-        validation_pydf = DataFrame(extracted_df.javaInstance,self.__dict__.get('sqlcontext'))
+        validation_pydf = DataFrame(validation_df.javaInstance,self.__dict__.get('sqlcontext'))
         return validation_pydf
     
