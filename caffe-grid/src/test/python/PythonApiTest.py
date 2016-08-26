@@ -12,13 +12,11 @@ from pyspark.mllib.linalg import Vectors
 from pyspark.sql import Row
 from pyspark import SparkConf,SparkContext
 from itertools import izip_longest
-from pyspark.sql import SQLContext
 import unittest
 import os.path
 
 conf = SparkConf().setAppName("caffe-on-spark").setMaster("local[1]")
 sc = SparkContext(conf=conf)
-sqlContext = SQLContext(sc)
 
 class PythonApiTest(unittest.TestCase):
     def grouper(self,iterable, n, fillvalue=None):
@@ -27,7 +25,7 @@ class PythonApiTest(unittest.TestCase):
 
     def setUp(self):
         #Initialize all objects
-        self.cos=CaffeOnSpark(sc,sqlContext)
+        self.cos=CaffeOnSpark(sc)
         cmdargs = conf.get('spark.pythonargs')
         self.args= dict(self.grouper(cmdargs.split(),2))
         self.cfg=Config(sc,self.args)
@@ -41,20 +39,27 @@ class PythonApiTest(unittest.TestCase):
         self.assertTrue('accuracy' in result.columns)
         self.assertTrue('ip1' in result.columns)
         self.assertTrue('ip2' in result.columns)
+        self.assertTrue(result.count() > 100)
+        self.assertTrue(result.first()['SampleID'] == '00000000')
         result=self.cos.test(self.validation_source)
         self.assertTrue(result.get('accuracy') > 0.9)
 
     def testTrainWithValidation(self):
         result=self.cos.trainWithValidation(self.train_source, self.validation_source)
-        self.assertEqual(self.cfg.solverParameter.getTestIter(0),len(result))
-        finalAccuracy = 0
-        finalLoss = 0
-        for i in range(self.cfg.solverParameter.getTestIter(0)):
-            finalAccuracy += result[i][0]
-            finalLoss += result[i][1]
+        self.assertEqual(len(result.columns), 2)
+        self.assertEqual(result.columns[0], 'accuracy')
+        self.assertEqual(result.columns[1], 'loss')
+        row_count = result.count()
+        test_iter = self.cfg.solverParameter.getTestIter(0)
+        self.assertTrue(row_count > test_iter)
+        self.assertEqual(row_count % test_iter, 0)
+        result.show(test_iter)
 
-        self.assertTrue(finalAccuracy/self.cfg.solverParameter.getTestIter(0) > 0.8)
-        self.assertTrue(finalLoss/self.cfg.solverParameter.getTestIter(0) < 0.5)      
+        result_w_index = result.rdd.zipWithIndex().filter(lambda (row,index): index>=(row_count - test_iter)).persist()
+        finalAccuracy = result_w_index.map(lambda (row,index): row[0][0]).reduce(lambda a, b: a + b)
+        self.assertTrue(finalAccuracy/test_iter > 0.8)
+        finalLoss = result_w_index.map(lambda (row,index): row[1][0]).reduce(lambda a, b: a + b)
+        self.assertTrue(finalLoss/test_iter < 0.5)
 
 
 unittest.main(verbosity=2)            

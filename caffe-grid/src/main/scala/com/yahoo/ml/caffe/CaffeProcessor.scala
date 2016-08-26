@@ -15,6 +15,7 @@ import scala.concurrent.{Await, Future, ExecutionContext}
 import org.apache.spark.sql.Row
 import scala.collection.immutable.Map
 import scala.collection.mutable.ArrayBuffer
+import java.util.concurrent.atomic.AtomicReference
 
 private[caffe] object CaffeProcessor {
   var myInstance: CaffeProcessor[_, _] = null
@@ -44,8 +45,7 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
   }
 
-  var isValidationExecutor: Boolean = false;
-  var validationBlobOutput: ArrayBuffer[ArrayBuffer[Float]] = new ArrayBuffer[ArrayBuffer[Float]]()
+  val validationResultsQueue: ArrayBlockingQueue[Iterator[Row]] = new ArrayBlockingQueue[Iterator[Row]](2)
   val conf = sources(0).conf
   val solverMode: Int = sources(0).solverParameter.getSolverMode().getNumber()
   val numLocalGPUs: Int = conf.devices
@@ -60,8 +60,8 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
   val objectHolder: ConcurrentHashMap[Object, Object] = new ConcurrentHashMap[Object, Object]()
   val snapshotInterval =  sources(0).solverParameter.getSnapshot()
   var STOP_MARK: (Array[String], Array[FloatBlob]) =  (Array[String](), Array())
-  var results: ArrayList[Row] = new ArrayList[Row]
-  var solversFinished = false
+  @volatile var results: ArrayList[Row] = new ArrayList[Row]
+  @volatile var solversFinished = false
   val localModelPath : String = {
     if (sources(0).isTrain) ""
     else FSUtils.GetLocalFileName(conf.modelPath, "model.tmp")
@@ -381,26 +381,20 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
   }
 
-  private def getValidationOutputBlobs(length: Int, batchSize: Int): ArrayBuffer[Float] = {
+  private def getValidationOutputBlobs(length: Int, batchSize: Int): Seq[Array[Float]] = {
     val top_vec = caffeNetList(0).getValidationOutputBlobs(length)
     val dim_features: Seq[Int] = (0 until length).map{i => top_vec(i).count/batchSize}
-    var outputArray = new ArrayBuffer[Float]()
-    for (i <- 0 until batchSize) {
-      // processing the result row by row
-      // first item is the SampleID
-      for (j <- 0 until length) {
-        val blob = top_vec(j)
-        val offset:Int = dim_features(j) * i
-        // If dim_feature(j) == 0, the layer does aggregation.
-        // We repeat the feature values for individual samples in the batch.
-        // To avoid this, batch size = 1 is recommended.
-        val featureSize = if (dim_features(j) > 0) dim_features(j) else blob.count
-        val fv = new Array[Float](featureSize)
-        for (k <- 0 until featureSize) {
-          fv(k) = blob.cpu_data().get(k + offset)
-          outputArray += fv(k)
-        }
-      }
+    var outputArray = new Array[Array[Float]](length)
+    // processing the result row by row
+    for (j <- 0 until length) {
+      val blob = top_vec(j)
+      // If dim_feature(j) == 0, the layer does aggregation.
+      val featureSize = if (dim_features(j) > 0) dim_features(j) else blob.count
+      val fv = new Array[Float](featureSize)
+      for (i <- 0 until batchSize)
+        for (k <- 0 until featureSize)
+          fv(k) += blob.cpu_data().get(k+dim_features(j) * i)/batchSize
+      outputArray(j) = fv
     }
     outputArray
   }
@@ -418,18 +412,20 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
       val initIter: Int = caffeNet.getInitIter(syncIdx)
       val maxIter: Int = caffeNet.getMaxIter(syncIdx)
       caffeNet.init(syncIdx, true)
-      var validationInterval: Int = caffeNet.getTestInterval()
+      val validationInterval: Int = caffeNet.getTestInterval()
+      val outputBlobNames: Array[String] = getValidationOutputBlobNames();
+      val validation_output: ArrayBuffer[Seq[Array[Float]]] = new ArrayBuffer[Seq[Array[Float]]]()
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
         var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) &&  isRootSolver 
         if (validationTime) {
-          validationBlobOutput.clear()
+          validation_output.clear()
           for (testit <- 0 until caffeNet.getTestIter(0)) {
             tp2 = queuePairSet(1).Full.take
             caffeNet.validation(tp2._2)
-            var outputBlobNames: Array[String] = getValidationOutputBlobNames();
-            validationBlobOutput += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
+            validation_output += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
             queuePairSet(1).Free.put(tp2)
           }
+          validationResultsQueue.put(validation_output.map(e => Row.fromSeq(e)).toIterator)
           caffeNet.aggregateValidationOutputs()
         }
       
@@ -453,6 +449,8 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
         }
       }
 
+      if ((sources.length > 1) && (validationInterval > 0) && isRootSolver)
+        validationResultsQueue.put(Iterator(null))
       if ((rank == 0) && isRootSolver) {
         log.info("Model saving into file at the end of training:" + conf.modelPath)
         FSUtils.GenModelOrState(caffeNet, conf.modelPath, false)
