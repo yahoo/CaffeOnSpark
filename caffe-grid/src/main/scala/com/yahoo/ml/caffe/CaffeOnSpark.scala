@@ -338,7 +338,6 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
 
         //Proceed with the validation
-        log.info("*****execute validation step")
         val current_result_array : Array[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
           (index, iter) => {
             //feed validation data from iterator
@@ -359,7 +358,6 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           }
         }.collect()
 
-        log.info("*****current_result:"+current_result_array(0))
         continue = (current_result_array(0)!=null)
         if (continue) {
           if (validation_output_rdd == null)
