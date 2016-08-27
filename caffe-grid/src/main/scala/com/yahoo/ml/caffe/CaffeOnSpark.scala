@@ -50,7 +50,7 @@ object CaffeOnSpark {
     //training if specified
     val caffeSpark = new CaffeOnSpark(sc)
     if (conf.isTraining ){
-      if (conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestIter(0) != 0)) {
+      if (conf.solverParameter.hasTestInterval && (conf.solverParameter.getTestInterval() != 0) && (conf.solverParameter.getTestIter(0) != 0)) {
         val sourceTrain: DataSource[Any,Any] = DataSource.getSource(conf, true).asInstanceOf[DataSource[Any, Any]]
         val sourceValidation: DataSource[Any,Any] = DataSource.getSource(conf, false).asInstanceOf[DataSource[Any, Any]]
         caffeSpark.trainWithValidation(sourceTrain, sourceValidation)
@@ -179,7 +179,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     var trainDataRDD: RDD[T1] = source.makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data is given")
-      return
+      throw new IllegalStateException("No training data is given")
     }
 
     setupTraining(Array(source))
@@ -255,13 +255,13 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     var trainDataRDD: RDD[T1] = sourceTrain.makeRDD(sc)
     if (trainDataRDD == null) {
       log.info("No training data given")
-      return null
+      throw new IllegalStateException("No training data given")
     }
 
     var validationDataRDD: RDD[T1] = sourceValidation.makeRDD(sc)
     if (validationDataRDD == null) {
       log.info("No validation data given")
-      return null
+      throw new IllegalStateException("No validation data given")
     }
 
     val conf = sourceTrain.conf
@@ -273,7 +273,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     log.info("no_of_records_required_per_partition_train: " + no_of_records_required_per_partition_train)
     if (total_records_train < no_of_records_required_per_partition_train * conf.clusterSize) {
       log.error("Train data is insufficient for the hyperparameters configured. Adjust the train hyperparameters or increase the training data!")
-      return null
+      throw new IllegalStateException("Train data is insufficient for the hyperparameters configured. Adjust the train hyperparameters or increase the training data!")
     }
 
     val no_of_records_required_per_partition_validation = conf.solverParameter.getTestIter(0) * sourceValidation.batchSize()
@@ -282,7 +282,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     log.info("no_of_records_required_per_partition_validation: " + no_of_records_required_per_partition_validation)
     if (total_records_validation < no_of_records_required_per_partition_validation * conf.clusterSize) {
       log.error("Validation data is insufficient for the hyperparameters configured. Adjust the validation hyperparameters or increase the validation data!")
-      return null
+      throw new IllegalStateException("Validation data is insufficient for the hyperparameters configured. Adjust the validation hyperparameters or increase the validation data!")
     }
 
     val validationOutputBlobNames = setupTraining(Array(sourceTrain, sourceValidation))
