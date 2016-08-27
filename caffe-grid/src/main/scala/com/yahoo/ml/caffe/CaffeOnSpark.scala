@@ -308,7 +308,6 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     var interleaveValidationRDD:RDD[(Long,T1)] = null
     val iter_train = no_of_partitions_train.toInt/conf.clusterSize.toInt
     val iter_validation = no_of_partitions_validation.toInt/conf.clusterSize.toInt
-    var validation_output_rdd : RDD[Row] = null
     while(continue) {
       var interleaveTrainRDD = PartitionPruningRDD.create(repartitionedTrainRDD,
         (index => (index >= current_partition_count_train*conf.clusterSize) && (index < (current_partition_count_train+1)*conf.clusterSize))
@@ -338,8 +337,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
 
         //Proceed with the validation
-        val current_result_array : Array[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
-          (index, iter) => {
+        interleaveValidationRDD.mapPartitions {
+          iter => {
             //feed validation data from iterator
             val processor = CaffeProcessor.instance[T1, T2]()
             if (!processor.solversFinished) {
@@ -347,36 +346,30 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
               processor.solversFinished = !res
             }
 
-            val validation_result = if (!processor.solversFinished)
-              processor.validationResultsQueue.take()
-            else Iterator(null)
-
-            if (index==0)
-              validation_result
-            else
-              Iterator(null)
+            Iterator(1)
           }
         }.collect()
 
-        continue = (current_result_array(0)!=null)
-        if (continue) {
-          if (validation_output_rdd == null)
-            validation_output_rdd = sc.parallelize(current_result_array.toSeq, 1)
-          else
-            validation_output_rdd = validation_output_rdd.union(sc.parallelize(current_result_array.toSeq, 1))
-
-          current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
-          current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
-        }
+        current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
+        current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
       }
     }
+
+    //Do mappartition for collecting the results
+    val validation_output: Array[Row] = sc.parallelize(1 to 1, 1).mapPartitions{
+      _ => {
+          val processor = CaffeProcessor.instance[T1, T2]()
+          processor.validationResults.toIterator
+      }
+    }.collect()
 
     //shutdown processors
     shutdownProcessors(conf)
 
     //dataframe of validation result
+    import scala.collection.JavaConverters._
     val schema = new StructType(validationOutputBlobNames.map(name => StructField(name, ArrayType(FloatType), false)))
-    sqlContext.createDataFrame(validation_output_rdd, schema).persist(StorageLevel.DISK_ONLY)
+    sqlContext.createDataFrame(validation_output.toList.asJava, schema).persist(StorageLevel.DISK_ONLY)
   }
 
   /**

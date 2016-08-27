@@ -1,9 +1,9 @@
 # The train/test net protocol buffer definition
 net: "lenet_memory_train_test.prototxt"
 # test_iter specifies how many forward passes the test should carry out.
-test_iter: 1
-# Carry out testing every 500 training iterations.
-test_interval: 500
+test_iter: 10
+# Carry out testing every 100 training iterations.
+test_interval: 100
 # The base learning rate, momentum and the weight decay of the network.
 base_lr: 0.01
 momentum: 0.9
@@ -20,4 +20,4 @@ max_iter: 10000
 snapshot: 5000
 snapshot_prefix: "mnist_lenet"
 # solver mode: CPU or GPU
-solver_mode: CPU
+solver_mode: GPU

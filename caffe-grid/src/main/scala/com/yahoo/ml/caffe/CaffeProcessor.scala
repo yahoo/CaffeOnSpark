@@ -45,7 +45,7 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
   }
 
-  val validationResultsQueue: ArrayBlockingQueue[Iterator[Row]] = new ArrayBlockingQueue[Iterator[Row]](2)
+  @volatile var validationResults: ArrayBuffer[Row] = new ArrayBuffer[Row]()
   val conf = sources(0).conf
   val solverMode: Int = sources(0).solverParameter.getSolverMode().getNumber()
   val numLocalGPUs: Int = conf.devices
@@ -381,22 +381,32 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
   }
 
-  private def getValidationOutputBlobs(length: Int, batchSize: Int): Seq[Array[Float]] = {
+  /*
+  aggregate the validation result of a current iteration into a result array
+   */
+  private def updateValidationReport(input: Array[Array[Float]], batchSize: Int, testIters: Int): Array[Array[Float]] = {
+    var output = input
+
+    val length = output.length
     val top_vec = caffeNetList(0).getValidationOutputBlobs(length)
     val dim_features: Seq[Int] = (0 until length).map{i => top_vec(i).count/batchSize}
-    var outputArray = new Array[Array[Float]](length)
-    // processing the result row by row
+    // processing the result blob by blob
     for (j <- 0 until length) {
       val blob = top_vec(j)
       // If dim_feature(j) == 0, the layer does aggregation.
       val featureSize = if (dim_features(j) > 0) dim_features(j) else blob.count
-      val fv = new Array[Float](featureSize)
-      for (i <- 0 until batchSize)
+      //initialize this blob's array
+      if (output(j)==null)
+        output(j) = Array.fill[Float](featureSize)(0.0f)
+      //aggregate validation result within a batch
+      for (i <- 0 until batchSize) {
+        val offset = dim_features(j) * i
         for (k <- 0 until featureSize)
-          fv(k) += blob.cpu_data().get(k+dim_features(j) * i)/batchSize
-      outputArray(j) = fv
+          output(j)(k) += blob.cpu_data().get(k + offset) / (batchSize * testIters)
+      }
     }
-    outputArray
+
+    output
   }
 
   private def doTrain(caffeNet: CaffeNet, syncIdx: Int,
@@ -414,18 +424,17 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
       caffeNet.init(syncIdx, true)
       val validationInterval: Int = caffeNet.getTestInterval()
       val outputBlobNames: Array[String] = getValidationOutputBlobNames();
-      val validation_output: ArrayBuffer[Seq[Array[Float]]] = new ArrayBuffer[Seq[Array[Float]]]()
       for (it <- initIter until maxIter if (tpl != STOP_MARK)) {
-        var validationTime: Boolean = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) &&  isRootSolver 
+        var validationTime = sources.length > 1 && (validationInterval > 0) && (it % validationInterval == 0) && (it > 0) &&  isRootSolver
         if (validationTime) {
-          validation_output.clear()
+          var validationLine = new Array[Array[Float]](outputBlobNames.length)
           for (testit <- 0 until caffeNet.getTestIter(0)) {
             tp2 = queuePairSet(1).Full.take
             caffeNet.validation(tp2._2)
-            validation_output += getValidationOutputBlobs(outputBlobNames.length, sources(1).batchSize)
+            validationLine = updateValidationReport(validationLine, sources(1).batchSize, caffeNet.getTestIter(0))
             queuePairSet(1).Free.put(tp2)
           }
-          validationResultsQueue.put(validation_output.map(e => Row.fromSeq(e)).toIterator)
+          validationResults += Row.fromSeq(validationLine.toSeq)
           caffeNet.aggregateValidationOutputs()
         }
       
@@ -449,8 +458,6 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
         }
       }
 
-      if ((sources.length > 1) && (validationInterval > 0) && isRootSolver)
-        validationResultsQueue.put(Iterator(null))
       if ((rank == 0) && isRootSolver) {
         log.info("Model saving into file at the end of training:" + conf.modelPath)
         FSUtils.GenModelOrState(caffeNet, conf.modelPath, false)
@@ -514,3 +521,5 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
   }
 }
+
+
