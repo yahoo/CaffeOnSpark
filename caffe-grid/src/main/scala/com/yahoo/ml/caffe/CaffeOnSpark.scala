@@ -280,7 +280,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val repartitionedTrainRDD = partitionRddWithFixedSize(trainDataRDD, rdd_class_tag,
       no_of_records_required_per_partition_train, no_of_partitions_train, conf.isRddPersistent)
     val repartitionedValidationRDD = partitionRddWithFixedSize(validationDataRDD, rdd_class_tag,
-      num_records_per_validation_partition, num_parts_validation, conf.isRddPersistent)
+      num_records_per_validation_partition, num_parts_validation, false)
 
     var current_partition_count_train = 0
     var current_partition_count_validation = 0
@@ -332,7 +332,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       }
     }
 
-    //Do mappartition for collecting the results
+    //collect validation result from one processor
     val validation_output: Array[Row] = sc.parallelize(1 to 1, 1).mapPartitions{
       _ => {
           val processor = CaffeProcessor.instance[T1, T2]()
@@ -357,9 +357,14 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     implicit val rdd_class_tag : ClassTag[T1] = class_tag_for_rdd
 
     val partitioner = new FixedSizePartitioner(num_parts+1, part_len)
-    val partitioned_rdd = rdd.zipWithIndex.map{case (e,i) => (i,e)}.partitionBy(partitioner)
+    var partitioned_rdd = rdd.zipWithIndex.map{case (e,i) => (i,e)}.partitionBy(partitioner)
 
-    if (persistent) partitioned_rdd.persist(StorageLevel.DISK_ONLY) else partitioned_rdd
+    if (persistent) {
+      partitioned_rdd = partitioned_rdd.persist(StorageLevel.DISK_ONLY)
+      rdd.unpersist()
+    }
+
+    partitioned_rdd
   }
 
   /**
