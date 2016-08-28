@@ -1,14 +1,13 @@
+// Copyright 2016 Yahoo Inc.
+// Licensed under the terms of the Apache 2.0 license.
+// Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe
 
 import org.apache.spark.Partitioner
 
-private class FixedSizePartitioner[V](partitions: Int, part_size: Int, dups: Int) extends Partitioner {
+private class FixedSizePartitioner[V](partitions: Int, part_size: Int) extends Partitioner {
     def getPartition(key: Any): Int = {
-      val key_long = key.asInstanceOf[Long]
-      if (dups<=1)
-        (key_long / part_size).toInt
-      else
-        (key_long / (part_size*dups)).toInt * dups + (key_long % dups).toInt
+      (key.asInstanceOf[Long] / part_size).toInt
     }
 
     def numPartitions: Int = partitions

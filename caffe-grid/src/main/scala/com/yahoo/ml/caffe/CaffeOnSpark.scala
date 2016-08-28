@@ -277,10 +277,10 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val validationOutputBlobNames = setupTraining(Array(sourceTrain, sourceValidation))
 
     implicit val rdd_class_tag : ClassTag[T1] = ClassTag.apply[T1](trainDataRDD.first.getClass)
-    val repartitionedTrainRDD = partitionRddWithDuplicate(trainDataRDD, rdd_class_tag,
-      no_of_records_required_per_partition_train, no_of_partitions_train, conf.isRddPersistent, 1)
-    val repartitionedValidationRDD = partitionRddWithDuplicate(validationDataRDD, rdd_class_tag,
-      num_records_per_validation_partition, num_parts_validation, conf.isRddPersistent, conf.clusterSize)
+    val repartitionedTrainRDD = partitionRddWithFixedSize(trainDataRDD, rdd_class_tag,
+      no_of_records_required_per_partition_train, no_of_partitions_train, conf.isRddPersistent)
+    val repartitionedValidationRDD = partitionRddWithFixedSize(validationDataRDD, rdd_class_tag,
+      num_records_per_validation_partition, num_parts_validation, conf.isRddPersistent)
 
     var current_partition_count_train = 0
     var current_partition_count_validation = 0
@@ -309,9 +309,9 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       if (continue) {
         //Create the interleaveValidationRDD for the required range
         interleaveValidationRDD = PartitionPruningRDD.create(repartitionedValidationRDD,
-          (index => (index >= current_partition_count_validation*conf.clusterSize)
-            && (index < (current_partition_count_validation+1)*conf.clusterSize))
-        )
+          (_ == current_partition_count_validation))
+        if (conf.clusterSize>1)
+          interleaveValidationRDD = new UnionRDDNoPrefLocs(sc, Array.fill(conf.clusterSize)(interleaveValidationRDD))
 
         //Proceed with the validation
         interleaveValidationRDD.mapPartitions {
@@ -350,19 +350,14 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
   }
 
   /*
-  construct a new RDD with fixed size partitions (with duplicated if dups>1) from a given RDD.
+  construct a new RDD with fixed size partitions from a given RDD.
    */
-  private def partitionRddWithDuplicate[T1](rdd:RDD[T1], class_tag_for_rdd: ClassTag[T1],
-                                    part_len: Int, num_parts: Int, persistent:Boolean, dups: Int) : RDD[(Long,T1)] = {
-    implicit val rdd_class_tag = class_tag_for_rdd
+  private def partitionRddWithFixedSize[T1](rdd:RDD[T1], class_tag_for_rdd: ClassTag[T1],
+                                    part_len: Int, num_parts: Int, persistent:Boolean) : RDD[(Long,T1)] = {
+    implicit val rdd_class_tag : ClassTag[T1] = class_tag_for_rdd
 
-    //duplicate every element of a RDD
-    val dupRDD = if (dups==1) rdd else rdd.flatMap(e => Array.fill[T1](dups)(e))
-
-    //partition the RDD so that all partitions {P_{dups*j}, P_{dups*j+1}, ..., P_{dups*(j+1}-1}
-    //will have identical values in their corresponding elements
-    val partitioner = new FixedSizePartitioner((num_parts+1)*dups, part_len, dups)
-    val partitioned_rdd = dupRDD.zipWithIndex.map{case (e,i) => (i,e)}.partitionBy(partitioner)
+    val partitioner = new FixedSizePartitioner(num_parts+1, part_len)
+    val partitioned_rdd = rdd.zipWithIndex.map{case (e,i) => (i,e)}.partitionBy(partitioner)
 
     if (persistent) partitioned_rdd.persist(StorageLevel.DISK_ONLY) else partitioned_rdd
   }
