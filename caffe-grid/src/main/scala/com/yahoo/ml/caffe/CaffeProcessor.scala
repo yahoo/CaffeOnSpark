@@ -113,8 +113,13 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
 
     //clear the source queue
-    for (source <- sources)
-      source.sourceQueue.clear()
+    for (i <- 0 until sources.length) {
+      if (i > 0)
+        //This capacity limit will force validation data to even distributed across executors
+        sources(i).resetQueue((sources(i).batchSize() * sources(i).solverParameter.getTestIter(0) * 0.99).toInt)
+      else
+        sources(i).resetQueue()
+    }
 
     //start worker threads
     startThreads()
@@ -192,7 +197,7 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
   def feedQueue(sourceId: Int, item: T1): Boolean = {
     var offer_status = false
     while (!solvers.get(0).isCompleted && !offer_status) {
-      offer_status = sources(sourceId).sourceQueue.offer(item)
+      offer_status = sources(sourceId).offer(item)
     }
     !solvers.get(0).isCompleted
   }

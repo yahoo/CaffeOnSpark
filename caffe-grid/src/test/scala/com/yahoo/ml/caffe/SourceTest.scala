@@ -67,6 +67,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     assertTrue(source.init())
     assertTrue(source.batchSize() > 0)
     assertTrue(source.isTrain)
+    source.resetQueue()
 
     //RDD
     val rdd = source.makeRDD(sc).persist()
@@ -91,7 +92,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     log.info("SourceTest train:")
     for (i <- 0 until 5) {
         //feed training data to source queue
-        var res = rdd.take(source.batchSize()).map(source.sourceQueue.offer(_)).reduce(_ && _)
+        var res = rdd.take(source.batchSize()).map(source.offer(_)).reduce(_ && _)
         assertTrue(res)
 
         //next batch
@@ -130,6 +131,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     assertTrue(source.init())
     assertTrue(source.batchSize() > 0)
     assertTrue(!source.isTrain)
+    source.resetQueue()
 
     //RDD
     val rdd = source.makeRDD(sc)
@@ -152,7 +154,7 @@ class SourceTest extends FunSuite with BeforeAndAfterAll {
     assertNotNull(transformer)
 
     //feed training data to source queue
-    var res = rdd.take(source.batchSize()).map(source.sourceQueue.offer(_)).reduce(_ && _)
+    var res = rdd.take(source.batchSize()).map(source.offer(_)).reduce(_ && _)
     assertTrue(res)
 
     //next batch
