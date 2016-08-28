@@ -10,5 +10,5 @@ import scala.reflect.ClassTag
 
 private class UnionRDDNoPrefLocs[T:ClassTag](sc: SparkContext, rdds: Seq[RDD[T]])
   extends UnionRDD[T](sc, rdds) {
-  override def getPreferredLocations(s: Partition): Seq[String] = null
+  override def getPreferredLocations(s: Partition): Seq[String] = Nil
 }
