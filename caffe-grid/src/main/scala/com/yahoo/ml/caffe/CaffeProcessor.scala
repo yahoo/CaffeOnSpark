@@ -113,13 +113,8 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
     }
 
     //clear the source queue
-    for (i <- 0 until sources.length) {
-      if (i > 0)
-        //This capacity limit will force validation data to even distributed across executors
-        sources(i).resetQueue((sources(i).batchSize() * sources(i).solverParameter.getTestIter(0) * 0.99).toInt)
-      else
-        sources(i).resetQueue()
-    }
+    for (source <- sources)
+      source.resetQueue()
 
     //start worker threads
     startThreads()

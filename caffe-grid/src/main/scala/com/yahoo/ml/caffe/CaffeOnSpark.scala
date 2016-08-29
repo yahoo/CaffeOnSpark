@@ -277,9 +277,9 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val validationOutputBlobNames = setupTraining(Array(sourceTrain, sourceValidation))
 
     implicit val rdd_class_tag : ClassTag[T1] = ClassTag.apply[T1](trainDataRDD.first.getClass)
-    val repartitionedTrainRDD = partitionRddWithFixedSize(trainDataRDD, rdd_class_tag,
+    val repartitionedTrainRDD = partitionRddWithFixedSize(trainDataRDD,
       no_of_records_required_per_partition_train, no_of_partitions_train, conf.isRddPersistent)
-    val repartitionedValidationRDD = partitionRddWithFixedSize(validationDataRDD, rdd_class_tag,
+    val repartitionedValidationRDD = partitionRddWithFixedSize(validationDataRDD,
       num_records_per_validation_partition, num_parts_validation, false)
 
     var current_partition_count_train = 0
@@ -299,6 +299,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           //feed training data from iterator
           val processor = CaffeProcessor.instance[T1, T2]()
           if (!processor.solversFinished) {
+            processor.sync()
             res = iter.map { sample => processor.feedQueue(0, sample._2) }.reduce(_ && _)
             processor.solversFinished = !res
           }
@@ -319,6 +320,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
             //feed validation data from iterator
             val processor = CaffeProcessor.instance[T1, T2]()
             if (!processor.solversFinished) {
+              processor.sync()
               val res = iter.map { sample => processor.feedQueue(1, sample._2)}.reduce(_ && _)
               processor.solversFinished = !res
             }
@@ -352,15 +354,14 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
   /*
   construct a new RDD with fixed size partitions from a given RDD.
    */
-  private def partitionRddWithFixedSize[T1](rdd:RDD[T1], class_tag_for_rdd: ClassTag[T1],
-                                    part_len: Int, num_parts: Int, persistent:Boolean) : RDD[(Long,T1)] = {
-    implicit val rdd_class_tag : ClassTag[T1] = class_tag_for_rdd
-
+  private def partitionRddWithFixedSize[T1:ClassTag](rdd:RDD[T1],
+                 part_len: Int, num_parts: Int, persistent:Boolean): RDD[(Long,T1)] = {
     val partitioner = new FixedSizePartitioner(num_parts+1, part_len)
     var partitioned_rdd = rdd.zipWithIndex.map{case (e,i) => (i,e)}.partitionBy(partitioner)
 
     if (persistent) {
       partitioned_rdd = partitioned_rdd.persist(StorageLevel.DISK_ONLY)
+      //unpersist the original RDD
       rdd.unpersist()
     }
 
