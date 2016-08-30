@@ -20,7 +20,9 @@ SocketSyncCPU<Dtype>::SocketSyncCPU(shared_ptr<Solver<Dtype> > root_solver,
     data_send_(peers.size()),
     data_recv_(peers.size()),
     diff_send_(peers.size()),
-    diff_recv_(peers.size()) {
+    diff_recv_(peers.size()),
+    ctrl_send_(peers.size()),
+    ctrl_recv_(peers.size()) {
 
   chunk(rank_, &own_offs_, &own_size_);
   for (int peer = 0; peer < peers_.size(); ++peer) {
@@ -65,6 +67,7 @@ void SocketSyncCPU<Dtype>::CreateMasterBuffers(int peer) {
   buffer = reinterpret_cast<uint8_t*>(malloc(size));
   diff_recv_[peer].reset(new SocketBuffer(this->rank_, channel, NULL,
                                           size, buffer));
+  ctrl_send_[peer].reset(new SocketBuffer(this->rank_, channel, NULL, 0, NULL));
 }
 
 template<typename Dtype>
@@ -83,6 +86,7 @@ void SocketSyncCPU<Dtype>::CreateWorkerBuffers(int peer) {
   uint8_t* diff = reinterpret_cast<uint8_t*>(diff_ + offs);
   diff_send_[peer].reset(new SocketBuffer(this->rank_, channel,
                                           diff, size, NULL));
+  ctrl_recv_[peer].reset(new SocketBuffer(this->rank_, channel, NULL, 0, NULL));
 }
 
 template<typename Dtype>
@@ -97,7 +101,7 @@ SocketSyncCPU<Dtype>::~SocketSyncCPU() {
 template<typename Dtype>
 void SocketSyncCPU<Dtype>::on_start() {
   // Send weights to each node
-  sync();
+  sync(true);
 }
 
 template<typename Dtype>
@@ -110,7 +114,7 @@ void SocketSyncCPU<Dtype>::on_gradients_ready() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    diff_send_[peer]->Write();
+    diff_send_[peer]->Write(true);
     peer++;
   }
   // Sum gradients as they are received
@@ -119,7 +123,7 @@ void SocketSyncCPU<Dtype>::on_gradients_ready() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    SocketBuffer * buffer = diff_recv_[peer]->Read();
+    SocketBuffer * buffer = diff_recv_[peer]->Read(true);
     Dtype* src = reinterpret_cast<Dtype*>(buffer->addr());
     Dtype* dst = diff_ + own_offs_;
     caffe_add(own_size_, src, dst, dst);
@@ -128,7 +132,7 @@ void SocketSyncCPU<Dtype>::on_gradients_ready() {
 }
 
 template<typename Dtype>
-void SocketSyncCPU<Dtype>::sync() {
+void SocketSyncCPU<Dtype>::sync(bool data) {
   // Send weights to each peer
   int peer = rank_ + 1;  // To avoid all sending to same peer at
   // the same time
@@ -136,7 +140,11 @@ void SocketSyncCPU<Dtype>::sync() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    data_send_[peer]->Write();
+    if(data)
+      data_send_[peer]->Write(data);
+    else
+      ctrl_send_[peer]->Write(data);
+
     peer++;
   }
 
@@ -145,7 +153,11 @@ void SocketSyncCPU<Dtype>::sync() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    data_recv_[peer]->Read();
+    if(data)
+      data_recv_[peer]->Read(data);
+    else
+      ctrl_recv_[peer]->Read(data);
+
     peer++;
   }
 }

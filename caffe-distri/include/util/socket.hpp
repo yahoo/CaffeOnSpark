@@ -37,7 +37,7 @@ class SocketAdapter {
   }
 };
 
-enum message_type {DIFF, DATA};
+  enum message_type {DIFF, DATA, SYNC};
 class QueuedMessage {
  public:
   message_type type;
@@ -56,6 +56,7 @@ class SocketChannel {
   bool Connect(string peer);
   int client_fd;
   caffe::BlockingQueue<QueuedMessage*> receive_queue;
+  caffe::BlockingQueue<QueuedMessage*> receive_queue_sync;
   int serving_fd;
   int port_no;
   string peer_name;
@@ -76,8 +77,8 @@ class SocketBuffer {
     return size_;
   }
   // Synchronously writes content to remote peer
-  void Write();
-  SocketBuffer* Read();
+  void Write(bool data=true);
+  SocketBuffer* Read(bool data=true);
  protected:
   SocketChannel* channel_;
   uint8_t* addr_;

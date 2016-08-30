@@ -33,6 +33,8 @@ void SetCaffeMode(int solver_mode) {
 
 template<typename Dtype>
 void CaffeNet<Dtype>::aggregateValidationOutputs() {
+  LOG(INFO) << "Iteration " << root_solver_->iter()
+            << ", Testing net (#" << validation_net_id_ << ")";
   const shared_ptr<Net<Dtype> >& validation_net = root_solver_->test_nets()[validation_net_id_];
   if(root_solver_->param().test_compute_loss()){
     loss /= root_solver_->param().test_iter(validation_net_id_);
@@ -496,9 +498,9 @@ template<typename Dtype>
 void SocketCaffeNet<Dtype>::sync()  {
     if (this->cluster_size_ > 1)
 #ifndef CPU_ONLY
-        boost::static_pointer_cast<SocketSync<Dtype> >(this->syncs_[0])->sync();
+        boost::static_pointer_cast<SocketSync<Dtype> >(this->syncs_[0])->sync(false);
 #else
-        boost::static_pointer_cast<SocketSyncCPU<Dtype> >(this->syncs_[0])->sync();
+        boost::static_pointer_cast<SocketSyncCPU<Dtype> >(this->syncs_[0])->sync(false);
 #endif
 }
 
