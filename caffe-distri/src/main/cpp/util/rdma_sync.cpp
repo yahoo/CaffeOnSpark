@@ -21,7 +21,9 @@ RDMASync<Dtype>::RDMASync(shared_ptr<Solver<Dtype> > root_solver,
       data_send_(peers.size()),
       data_recv_(peers.size()),
       diff_send_(peers.size()),
-      diff_recv_(peers.size()) {
+      diff_recv_(peers.size()),
+      ctrl_send_(peers.size()),
+      ctrl_recv_(peers.size()) {
 
 #ifndef CPU_ONLY
   int initial_device;
@@ -73,6 +75,11 @@ void RDMASync<Dtype>::CreateMasterBuffers(int peer) {
   uint8_t* buffer;
   CUDA_CHECK(cudaMalloc(&buffer, size));
   diff_recv_[peer].reset(new RDMABuffer(channel, buffer, size));
+
+  // Send ctrl from local (rank_) to remote (peer)
+  uint8_t* ctrl;
+  CUDA_CHECK(cudaMalloc(&ctrl, CTRL_BUF_SIZE));
+  ctrl_send_[peer].reset(new RDMABuffer(channel, ctrl, CTRL_BUF_SIZE));
 }
 
 template<typename Dtype>
@@ -89,6 +96,11 @@ void RDMASync<Dtype>::CreateWorkerBuffers(int peer) {
   // Send diff from local (rank_) to remote (peer)
   uint8_t* diff = reinterpret_cast<uint8_t*>(diff_ + offs);
   diff_send_[peer].reset(new RDMABuffer(channel, diff, size));
+
+  // Recv ctrl from remote (peer) to local (rank_)
+  uint8_t* ctrl;
+  CUDA_CHECK(cudaMalloc(&ctrl, CTRL_BUF_SIZE));
+  ctrl_recv_[peer].reset(new RDMABuffer(channel, ctrl, CTRL_BUF_SIZE));
 }
 
 template<typename Dtype>
@@ -96,6 +108,8 @@ RDMASync<Dtype>::~RDMASync() {
   for (int i = 0; i < peers_.size(); ++i) {
     if (i != rank_) {
       CUDA_CHECK(cudaFree(diff_recv_[i]->addr()));
+      CUDA_CHECK(cudaFree(ctrl_send_[i]->addr()));
+      CUDA_CHECK(cudaFree(ctrl_recv_[i]->addr()));
     }
   }
 }
@@ -144,29 +158,46 @@ void RDMASync<Dtype>::on_gradients_ready() {
 }
 
 template<typename Dtype>
-void RDMASync<Dtype>::sync() {
+void RDMASync<Dtype>::sync(bool data) {
   // Send weights to each peer
   int peer = rank_ + 1;  // To avoid all sending to same peer at the same time
   for (int n = 0; n < peers_.size() - 1; ++n) {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    data_send_[peer]->Write();
+    if (data) {
+      data_send_[peer]->Write();
+    } else {
+      ctrl_send_[peer]->Write(data);
+    }
     peer++;
   }
 
   for (int n = 0; n < peers_.size() - 1; ++n) {
 #ifdef DEBUG
-    RDMABuffer* buffer = adapter_.received().pop();
+    BlockingQueue<RDMABuffer*> * bq = NULL;
+    vector<shared_ptr<RDMABuffer> > * recvd = NULL; 
+    if (data) {
+      bq = &adapter_.received();
+      recvd = &data_recv_;
+    } else {
+      bq = &adapter_.ctrl_received();
+      recvd = &ctrl_recv_;
+    }
+    RDMABuffer* buffer = (*bq).pop();
     bool ok = false;
-    for (int i = 0; i < data_recv_.size(); ++i) {
-      if (buffer == data_recv_[i].get()) {
+    for (int i = 0; i < (*recvd).size(); ++i) {
+      if (buffer == (*recvd)[i].get()) {
         ok = true;
       }
     }
     CHECK(ok);
 #else
-    adapter_.received().pop();
+    if (data) {
+      adapter_.received().pop();
+    } else {
+      adapter_.ctrl_received().pop();
+    }
 #endif
   }
 }

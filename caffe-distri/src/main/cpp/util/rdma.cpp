@@ -90,7 +90,13 @@ void RDMAAdapter::InternalThreadEntry() {
         RDMAChannel* channel = reinterpret_cast<RDMAChannel*>(wc_[i].wr_id);
         channel->recv();
         int id = wc_[i].imm_data;
-        received_.push(channel->buffers_[id]);
+        if (id >= CTRL_ID_OFFSET) {
+        // ctrl signal
+          ctrl_received_.push(channel->buffers_[id - CTRL_ID_OFFSET]);
+        } else {
+        // data
+          received_.push(channel->buffers_[id]);
+        }
       } else {
         if (wc_[i].opcode & IBV_WC_RECV) {
           // Buffer connection message
@@ -329,7 +335,7 @@ RDMABuffer::~RDMABuffer() {
   CHECK(!ibv_dereg_mr(self_));
 }
 
-void RDMABuffer::Write() {
+void RDMABuffer::Write(bool data) {
   struct ibv_sge list;
   list.addr = (uint64_t) addr_;
   list.length = size_;
@@ -343,11 +349,18 @@ void RDMABuffer::Write() {
   wr.opcode = IBV_WR_RDMA_WRITE_WITH_IMM;
   wr.send_flags = IBV_SEND_SIGNALED;
   wr.imm_data = id_;
+  if (!data) {
+  // ctrl signal
+    wr.imm_data += CTRL_ID_OFFSET;
+  }
 
   wr.wr.rdma.remote_addr = (uint64_t) peer_->addr;
   wr.wr.rdma.rkey = peer_->rkey;
 
   struct ibv_send_wr *bad_wr;
+
+  // lock the channel since there may be multiple threads calling write()
+  boost::mutex::scoped_lock lock(channel_->mutex_);
   CHECK(!ibv_post_send(channel_->qp_, &wr, &bad_wr)) << "Failed to post send";
 
   // TODO poll only every N writes to improve performance
@@ -355,7 +368,8 @@ void RDMABuffer::Write() {
     ibv_wc wc;
     int ne = ibv_poll_cq(channel_->write_cq_, 1, &wc);
     CHECK_GE(ne, 0);
-    if (ne && wc.wr_id == (uint64_t) this) {
+    if (ne) {
+      CHECK(wc.wr_id == (uint64_t)this) << "Oops. Polled a Work Completion belongs to a different buffer";
       break;
     }
   }

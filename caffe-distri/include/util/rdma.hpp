@@ -7,10 +7,14 @@
 #ifdef INFINIBAND
 #include <infiniband/verbs.h>
 
-#include<string>
-#include<vector>
+#include <boost/thread.hpp>
+#include <string>
+#include <vector>
 
 #include "caffe/common.hpp"
+
+// a large number to distinguish ctrl buffer ids from data buffer ids.
+#define CTRL_ID_OFFSET (1<<16)
 
 /**
  * Minimal wrapper on top of ibverbs. We avoided MPI for now to simplify
@@ -47,10 +51,16 @@ class RDMAAdapter : InternalThread {
     return received_;
   }
 
+  BlockingQueue<RDMABuffer*>& ctrl_received() const {
+    return ctrl_received_;
+  }
+
  protected:
   void InternalThreadEntry();
 
   mutable BlockingQueue<RDMABuffer*> received_;
+
+  mutable BlockingQueue<RDMABuffer*> ctrl_received_;
 
   static const int MAX_CONCURRENT_WRITES = 256;
 
@@ -91,11 +101,13 @@ class RDMAChannel {
   string address() const;
   void Connect(const string& address);
 
+  mutable boost::mutex mutex_;
+
  protected:
   const RDMAAdapter& adapter_;
   mutable vector<RDMABuffer*> buffers_;
 
-  static const int MAX_BUFFERS = 32;
+  static const int MAX_BUFFERS = 64;
 
   // Allows exchanging memory regions representing buffers over the channel,
   // instead of requiring user to exchange manually like channel addresses.
@@ -144,7 +156,7 @@ class RDMABuffer {
   }
 
   // Asynchronously writes content to remote peer
-  void Write();
+  void Write(bool data=true);
 
  protected:
   RDMAChannel* channel_;
