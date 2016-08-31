@@ -12,6 +12,8 @@
 #include "caffe/solver.hpp"
 #include "util/rdma.hpp"
 
+#define CTRL_BUF_SIZE 1
+
 namespace caffe {
 
 /**
@@ -48,7 +50,7 @@ class RDMASync : public P2PSync<Dtype> {
   RDMASync(shared_ptr<Solver<Dtype> > solver,
            const vector<shared_ptr<RDMAChannel> >& peers, int rank);
   virtual ~RDMASync();
-  void sync();
+  void sync(bool data=true);
 
  protected:
   void chunk(int peer, size_t* offs, size_t* size);
@@ -70,6 +72,9 @@ class RDMASync : public P2PSync<Dtype> {
   vector<shared_ptr<RDMABuffer> > data_recv_;
   vector<shared_ptr<RDMABuffer> > diff_send_;
   vector<shared_ptr<RDMABuffer> > diff_recv_;
+  // RDMA control signal for sync purpose
+  vector<shared_ptr<RDMABuffer> > ctrl_send_;
+  vector<shared_ptr<RDMABuffer> > ctrl_recv_;
 
   // Weights and gradients buffers and size
   using Params<Dtype>::size_;
