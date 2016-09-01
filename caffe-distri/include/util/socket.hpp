@@ -56,7 +56,7 @@ class SocketChannel {
   bool Connect(string peer);
   int client_fd;
   caffe::BlockingQueue<QueuedMessage*> receive_queue;
-  caffe::BlockingQueue<QueuedMessage*> receive_queue_sync;
+  caffe::BlockingQueue<QueuedMessage*> receive_queue_ctrl;
   int serving_fd;
   int port_no;
   string peer_name;

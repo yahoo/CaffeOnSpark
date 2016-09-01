@@ -45,26 +45,20 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   int len = sizeof(mh);
   while (len > 0) {
     nsent = write(sockfd, buffer, len);
-    if (nsent == -1) {
-      LOG(ERROR) << "ERROR: Sending message header!";
-      return false;
-    }
+    CHECK_EQ (nsent == -1) << "ERROR: Sending message header!";
     buffer += nsent;
     len -= nsent;
   }
   return true;
 }
-
+  
 void receive_message_header(int sockfd, message_header * mh) {
   uint8_t* buffer = reinterpret_cast<uint8_t*>(mh);
   int nread = 0;
   int len = sizeof(*mh);
   while(len > 0) {
     nread = read(sockfd, buffer, len);
-    if (nread == -1) {
-      LOG(ERROR) << "ERROR: Reading message header!";
-      exit(1);
-    }
+    CHECK_EQ (nread == -1) << "ERROR: Reading message header!";
     buffer += nread;
     len -= nread;
   }
@@ -126,7 +120,7 @@ void *client_connection_handler(void *metadata) {
     if(mh.type == DIFF)
       sc->receive_queue.push(mq);
     else
-      sc->receive_queue_sync.push(mq);
+      sc->receive_queue_ctrl.push(mq);
   }
   return NULL;
 }
@@ -203,10 +197,8 @@ void *sockt_srvr(void *metadata) {
       continue;
     }
   }
-  if (serving_fd < 0) {
-    LOG(ERROR) << "ERROR: Could not accept incoming "
-               << "connection to socket server";
-  }
+  CHECK (serving_fd > 0) << "ERROR: Could not accept incoming "
+                         << "connection to socket server";
   // FIXME: Write threads and socket server exit/cleanup logic
   return NULL;
 }
@@ -243,6 +235,7 @@ void SocketAdapter::start_sockt_srvr() {
   if (pthread_create(&thread_id, NULL, sockt_srvr,
                      reinterpret_cast<void*>(this)) < 0) {
     LOG(ERROR) << "ERROR: Could not start the socket server";
+    return;
   }
 }
 
@@ -371,11 +364,8 @@ void SocketBuffer::Write(bool data) {
 
   boost::mutex::scoped_lock lock(this->channel_->mutex_);
   
-  if (!send_message_header(channel_->client_fd,
-                           this->rank, mt, size)) {
-    LOG(ERROR) << "ERROR: Sending message header from client";
-    exit(1);
-  }
+  CHECK (send_message_header(channel_->client_fd,
+                              this->rank, mt, size)) << "ERROR: Sending message header from client";
   int cur_cnt = 0;
   int max_buff = 0;
   while (cur_cnt < size) {
@@ -385,10 +375,7 @@ void SocketBuffer::Write(bool data) {
       max_buff = size - cur_cnt;
 
     int n = write(channel_->client_fd, marker, max_buff);
-    if(n < 0) {
-      LOG(ERROR) << "ERROR:Sending data from client";
-      exit(1);
-    }
+    CHECK(n > 0) << "ERROR:Sending data from client";
     marker = marker + n;
     cur_cnt = cur_cnt + n;
   }
@@ -410,7 +397,7 @@ SocketBuffer* SocketBuffer::Read(bool data) {
 #endif
   } else {
     qm = reinterpret_cast<QueuedMessage*>
-      (this->channel_->receive_queue_sync.pop());
+      (this->channel_->receive_queue_ctrl.pop());
   }
   // Free up the buffer and the wrapper object
   if(data)

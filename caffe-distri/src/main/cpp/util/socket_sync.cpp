@@ -162,7 +162,7 @@ void SocketSync<Dtype>::sync(bool data) {
       peer = 0;
     }
     if(data)
-      data_send_[peer]->Write(data);
+      data_send_[peer]->Write();
     else
       ctrl_send_[peer]->Write(data);
 
@@ -175,7 +175,7 @@ void SocketSync<Dtype>::sync(bool data) {
       peer = 0;
     }
     if(data)
-      data_recv_[peer]->Read(data);
+      data_recv_[peer]->Read();
     else
       ctrl_recv_[peer]->Read(data);
 
