@@ -233,11 +233,9 @@ void SocketAdapter::start_sockt_srvr() {
   pthread_t thread_id;
   // Start the socket server in it's own thread as accept
   // is a blocking call
-  if (pthread_create(&thread_id, NULL, sockt_srvr,
-                     reinterpret_cast<void*>(this)) < 0) {
-    LOG(ERROR) << "ERROR: Could not start the socket server";
-    return;
-  }
+  CHECK (pthread_create(&thread_id, NULL, sockt_srvr,
+                     reinterpret_cast<void*>(this)) >= 0) 
+    << "ERROR: Could not start the socket server";
 }
 
 // Connect called by client with inbuilt support for retries
