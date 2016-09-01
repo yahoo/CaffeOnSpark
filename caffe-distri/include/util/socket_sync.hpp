@@ -45,7 +45,7 @@ class SocketSync : public P2PSync<Dtype> {
   SocketSync(shared_ptr<Solver<Dtype> > solver,
              const vector<shared_ptr<SocketChannel> >& peers, int rank);
   virtual ~SocketSync();
-  void sync();
+  void sync(bool data=true);
 
  protected:
   void chunk(int peer, size_t* offs, size_t* size);
@@ -66,6 +66,8 @@ class SocketSync : public P2PSync<Dtype> {
   vector<shared_ptr<SocketBuffer> > data_recv_;
   vector<shared_ptr<SocketBuffer> > diff_send_;
   vector<shared_ptr<SocketBuffer> > diff_recv_;
+  vector<shared_ptr<SocketBuffer> > ctrl_send_;
+  vector<shared_ptr<SocketBuffer> > ctrl_recv_;
 
   // Weights and gradients buffers and size
   using Params<Dtype>::size_;

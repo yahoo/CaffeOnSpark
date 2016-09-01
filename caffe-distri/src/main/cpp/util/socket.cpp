@@ -45,31 +45,25 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   int len = sizeof(mh);
   while (len > 0) {
     nsent = write(sockfd, buffer, len);
-    if (nsent == -1) {
-      LOG(ERROR) << "ERROR: Sending message header!";
-	  return false;
-	}
+    CHECK (nsent >= 0) << "ERROR: Sending message header!";
     buffer += nsent;
     len -= nsent;
   }
   return true;
 }
-
+  
 void receive_message_header(int sockfd, message_header * mh) {
   uint8_t* buffer = reinterpret_cast<uint8_t*>(mh);
   int nread = 0;
   int len = sizeof(*mh);
   while(len > 0) {
-	nread = read(sockfd, buffer, len);
-    if (nread == -1) {
-      LOG(ERROR) << "ERROR: Reading message header!";
-      exit(1);
-    }
+    nread = read(sockfd, buffer, len);
+    CHECK (nread >= 0) << "ERROR: Reading message header!";
     buffer += nread;
     len -= nread;
   }
 }
-
+  
 struct connection_details {
   int serving_fd;
   SocketAdapter* sa;
@@ -115,6 +109,7 @@ void *client_connection_handler(void *metadata) {
         max_buff = mh.size - cur_cnt;
 
       int n = read(sc->serving_fd, marker, max_buff);
+      CHECK(n >= 0) << "ERROR: Reading data from client";
       marker = marker + n;
       cur_cnt = cur_cnt + n;
     }
@@ -123,7 +118,10 @@ void *client_connection_handler(void *metadata) {
     // SocketChannel
     QueuedMessage* mq = new QueuedMessage(mh.type,
                                           mh.size, read_buffer);
-    sc->receive_queue.push(mq);
+    if(mh.type == DIFF)
+      sc->receive_queue.push(mq);
+    else
+      sc->receive_queue_ctrl.push(mq);
   }
   return NULL;
 }
@@ -200,10 +198,8 @@ void *sockt_srvr(void *metadata) {
       continue;
     }
   }
-  if (serving_fd < 0) {
-    LOG(ERROR) << "ERROR: Could not accept incoming "
-               << "connection to socket server";
-  }
+  CHECK (serving_fd > 0) << "ERROR: Could not accept incoming "
+                         << "connection to socket server";
   // FIXME: Write threads and socket server exit/cleanup logic
   return NULL;
 }
@@ -237,10 +233,9 @@ void SocketAdapter::start_sockt_srvr() {
   pthread_t thread_id;
   // Start the socket server in it's own thread as accept
   // is a blocking call
-  if (pthread_create(&thread_id, NULL, sockt_srvr,
-                     reinterpret_cast<void*>(this)) < 0) {
-    LOG(ERROR) << "ERROR: Could not start the socket server";
-  }
+  CHECK (pthread_create(&thread_id, NULL, sockt_srvr,
+                     reinterpret_cast<void*>(this)) >= 0) 
+    << "ERROR: Could not start the socket server";
 }
 
 // Connect called by client with inbuilt support for retries
@@ -257,11 +252,11 @@ bool SocketChannel::Connect(string peer) {
       string peername = name_port.at(0).c_str();;
       string portnumber;
       if (name_port.size() > 1) 
-	portnumber = name_port.at(1).c_str();
+        portnumber = name_port.at(1).c_str();
       
       LOG(INFO) << "Trying to connect with ...["
-		<< peername <<":"
-		<< portnumber << "]";
+                << peername <<":"
+                << portnumber << "]";
       client_fd = connect_to_peer(peername,
                                   portnumber);
       if (!client_fd) {
@@ -350,46 +345,62 @@ SocketBuffer::SocketBuffer(int rank, SocketChannel* channel,
   this->addr_ = addr;
 }
 
-void SocketBuffer::Write() {
+void SocketBuffer::Write(bool data) {
+  uint8_t* marker = NULL;
+  size_t size = 0;
+  message_type mt = CTRL;
+
+  if (data) {
 #ifndef CPU_ONLY
     // Copy the buffer to be sent from GPU
     cudaMemcpy(this->buffer_, this->addr_, this->size_,  // NOLINT(caffe/alt_fn)
                cudaMemcpyDeviceToHost);  // NOLINT(caffe/alt_fn)
 #endif
-  uint8_t* marker = reinterpret_cast<uint8_t*>(this->buffer());
-  if (!send_message_header(channel_->client_fd,
-                           this->rank, DIFF, this->size_)) {
-    LOG(ERROR) << "ERROR: Sending data from client";
-    return;
-  }
+    marker = reinterpret_cast<uint8_t*>(this->buffer());
+    size = this->size_;
+    mt = DIFF;
+  } 
+
+  boost::mutex::scoped_lock lock(this->channel_->mutex_);
+  
+  CHECK (send_message_header(channel_->client_fd,
+                              this->rank, mt, size)) << "ERROR: Sending message header from client";
   int cur_cnt = 0;
   int max_buff = 0;
-  while (cur_cnt < this->size_) {
-    if ((this->size_ - cur_cnt) > 256)
+  while (cur_cnt < size) {
+    if ((size - cur_cnt) > 256)
       max_buff = 256;
     else
-      max_buff = this->size_ - cur_cnt;
+      max_buff = size - cur_cnt;
 
     int n = write(channel_->client_fd, marker, max_buff);
+    CHECK(n >= 0) << "ERROR:Sending data from client";
     marker = marker + n;
     cur_cnt = cur_cnt + n;
   }
 }
 
-SocketBuffer* SocketBuffer::Read() {
+SocketBuffer* SocketBuffer::Read(bool data) {
   // Pop the message from local queue
-  QueuedMessage* qm = reinterpret_cast<QueuedMessage*>
-    (this->channel_->receive_queue.pop());
+  QueuedMessage* qm = NULL;
+  if(data) {
+    qm = reinterpret_cast<QueuedMessage*>
+      (this->channel_->receive_queue.pop());
 #ifndef CPU_ONLY
     // Copy the received buffer to GPU memory
     CUDA_CHECK(cudaMemcpy(this->addr(), qm->buffer,  // NOLINT(caffe/alt_fn)
-                qm->size, cudaMemcpyHostToDevice));  // NOLINT(caffe/alt_fn)
+               qm->size, cudaMemcpyHostToDevice));  // NOLINT(caffe/alt_fn)
 #else
     //caffe_copy(qm->size, qm->buffer, this->addr_);
     memcpy(this->addr_, qm->buffer, qm->size);
 #endif
+  } else {
+    qm = reinterpret_cast<QueuedMessage*>
+      (this->channel_->receive_queue_ctrl.pop());
+  }
   // Free up the buffer and the wrapper object
-  delete qm->buffer;
+  if(data)
+    delete qm->buffer;
   delete qm;
   return this;
 }

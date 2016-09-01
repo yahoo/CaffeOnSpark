@@ -20,7 +20,9 @@ SocketSync<Dtype>::SocketSync(shared_ptr<Solver<Dtype> > root_solver,
     data_send_(peers.size()),
     data_recv_(peers.size()),
     diff_send_(peers.size()),
-    diff_recv_(peers.size()) {
+    diff_recv_(peers.size()),
+    ctrl_send_(peers.size()),
+    ctrl_recv_(peers.size()) {
 #ifndef CPU_ONLY
   int initial_device;
   CUDA_CHECK(cudaGetDevice(&initial_device));
@@ -75,6 +77,7 @@ void SocketSync<Dtype>::CreateMasterBuffers(int peer) {
 #endif
   diff_recv_[peer].reset(new SocketBuffer(this->rank_, channel, NULL,
                                           size, buffer));
+  ctrl_send_[peer].reset(new SocketBuffer(this->rank_, channel, NULL, 0, NULL));
 }
 
 template<typename Dtype>
@@ -94,6 +97,7 @@ void SocketSync<Dtype>::CreateWorkerBuffers(int peer) {
   uint8_t* dst_diff = reinterpret_cast<uint8_t*>(malloc(size));
   diff_send_[peer].reset(new SocketBuffer(this->rank_, channel,
                                           dst_diff, size, diff));
+  ctrl_recv_[peer].reset(new SocketBuffer(this->rank_, channel, NULL, 0, NULL));
 }
 
 template<typename Dtype>
@@ -112,7 +116,7 @@ SocketSync<Dtype>::~SocketSync() {
 template<typename Dtype>
 void SocketSync<Dtype>::on_start() {
   // Send weights to each node
-  sync();
+  sync(true);
   // Send weights to local GPUs
   P2PSync<Dtype>::on_start();
 }
@@ -149,7 +153,7 @@ void SocketSync<Dtype>::on_gradients_ready() {
 }
 
 template<typename Dtype>
-void SocketSync<Dtype>::sync() {
+void SocketSync<Dtype>::sync(bool data) {
   // Send weights to each peer
   int peer = rank_ + 1;  // To avoid all sending to same peer at
   // the same time
@@ -157,7 +161,11 @@ void SocketSync<Dtype>::sync() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    data_send_[peer]->Write();
+    if(data)
+      data_send_[peer]->Write();
+    else
+      ctrl_send_[peer]->Write(data);
+
     peer++;
   }
 
@@ -166,7 +174,11 @@ void SocketSync<Dtype>::sync() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    data_recv_[peer]->Read();
+    if(data)
+      data_recv_[peer]->Read();
+    else
+      ctrl_recv_[peer]->Read(data);
+
     peer++;
   }
 }

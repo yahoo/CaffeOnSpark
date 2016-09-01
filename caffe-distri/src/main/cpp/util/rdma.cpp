@@ -168,7 +168,9 @@ RDMAChannel::RDMAChannel(const RDMAAdapter& adapter)
     RecvMR(i);
   }
 
-  // Create initial recv request
+  // Create initial recv request for data. 
+  recv();
+  // Create initial recv request for ctrl signals.
   recv();
 }
 
