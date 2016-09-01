@@ -40,30 +40,36 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   mh.rank = rank;
   mh.type = mt;
   mh.size = ms;
-  int n = write(sockfd, &mh, sizeof(mh));
-  if (n < 0) {
-    LOG(ERROR) << "ERROR: Sending message header!";    return false;
-  } else if (n < sizeof(mh)) {
-    LOG(ERROR) << "ERROR: Sending partial message header!";
-    return false;
+  uint8_t* buffer = reinterpret_cast<uint8_t*>(&mh);
+  int nsent = 0;
+  int len = sizeof(mh);
+  while (len > 0) {
+    nsent = write(sockfd, buffer, len);
+    if (nsent == -1) {
+      LOG(ERROR) << "ERROR: Sending message header!";
+      return false;
+    }
+    buffer += nsent;
+    len -= nsent;
   }
   return true;
 }
-
-void receive_message_header(int sockfd,message_header * mh) {
   
-  int n = read(sockfd, mh, sizeof(*mh));
-  if (n < 0) {
-    LOG(ERROR) << "ERROR: Reading message header!";
-    pthread_exit(NULL);
-  }
-  else if (n < sizeof(*mh)) {
-    LOG(ERROR) << "ERROR: Read partial messageheader ["
-               << n <<" of " << sizeof(*mh) << "]";
-    pthread_exit(NULL);
+void receive_message_header(int sockfd, message_header * mh) {
+  uint8_t* buffer = reinterpret_cast<uint8_t*>(mh);
+  int nread = 0;
+  int len = sizeof(*mh);
+  while(len > 0) {
+    nread = read(sockfd, buffer, len);
+    if (nread == -1) {
+      LOG(ERROR) << "ERROR: Reading message header!";
+      exit(1);
+    }
+    buffer += nread;
+    len -= nread;
   }
 }
-
+  
 struct connection_details {
   int serving_fd;
   SocketAdapter* sa;
@@ -347,13 +353,12 @@ SocketBuffer::SocketBuffer(int rank, SocketChannel* channel,
   this->addr_ = addr;
 }
 
-void SocketBuffer::Write(bool sync_data) {
-  char dummy_buffer[] = "SYNC BUFFER";
-  uint8_t* marker = reinterpret_cast<uint8_t*>(dummy_buffer);
-  size_t size = sizeof(dummy_buffer);
-  message_type mt = SYNC;
+void SocketBuffer::Write(bool data) {
+  uint8_t* marker = NULL;
+  size_t size = 0;
+  message_type mt = CTRL;
 
-  if (sync_data) {
+  if (data) {
 #ifndef CPU_ONLY
     // Copy the buffer to be sent from GPU
     cudaMemcpy(this->buffer_, this->addr_, this->size_,  // NOLINT(caffe/alt_fn)
@@ -364,10 +369,12 @@ void SocketBuffer::Write(bool sync_data) {
     mt = DIFF;
   } 
 
+  boost::mutex::scoped_lock lock(this->channel_->mutex_);
+  
   if (!send_message_header(channel_->client_fd,
                            this->rank, mt, size)) {
-    LOG(ERROR) << "ERROR: Sending data from client";
-    return;
+    LOG(ERROR) << "ERROR: Sending message header from client";
+    exit(1);
   }
   int cur_cnt = 0;
   int max_buff = 0;
@@ -378,15 +385,19 @@ void SocketBuffer::Write(bool sync_data) {
       max_buff = size - cur_cnt;
 
     int n = write(channel_->client_fd, marker, max_buff);
+    if(n < 0) {
+      LOG(ERROR) << "ERROR:Sending data from client";
+      exit(1);
+    }
     marker = marker + n;
     cur_cnt = cur_cnt + n;
   }
 }
 
-SocketBuffer* SocketBuffer::Read(bool sync_data) {
+SocketBuffer* SocketBuffer::Read(bool data) {
   // Pop the message from local queue
   QueuedMessage* qm = NULL;
-  if(sync_data) {
+  if(data) {
     qm = reinterpret_cast<QueuedMessage*>
       (this->channel_->receive_queue.pop());
 #ifndef CPU_ONLY
@@ -402,7 +413,8 @@ SocketBuffer* SocketBuffer::Read(bool sync_data) {
       (this->channel_->receive_queue_sync.pop());
   }
   // Free up the buffer and the wrapper object
-  delete qm->buffer;
+  if(data)
+    delete qm->buffer;
   delete qm;
   return this;
 }

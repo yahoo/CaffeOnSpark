@@ -11,7 +11,7 @@
 #include "caffe/caffe.hpp"
 #include "caffe/common.hpp"
 #include "caffe/util/blocking_queue.hpp"
-
+#include <boost/thread.hpp>
 
 using std::vector;
 using std::map;
@@ -37,7 +37,7 @@ class SocketAdapter {
   }
 };
 
-  enum message_type {DIFF, DATA, SYNC};
+enum message_type {DIFF, DATA, CTRL};
 class QueuedMessage {
  public:
   message_type type;
@@ -61,6 +61,7 @@ class SocketChannel {
   int port_no;
   string peer_name;
   size_t size;
+  mutable boost::mutex mutex_;
 };
 
 class SocketBuffer {

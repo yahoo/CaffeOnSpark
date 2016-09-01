@@ -114,7 +114,7 @@ void SocketSyncCPU<Dtype>::on_gradients_ready() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    diff_send_[peer]->Write(true);
+    diff_send_[peer]->Write();
     peer++;
   }
   // Sum gradients as they are received
@@ -123,7 +123,7 @@ void SocketSyncCPU<Dtype>::on_gradients_ready() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    SocketBuffer * buffer = diff_recv_[peer]->Read(true);
+    SocketBuffer * buffer = diff_recv_[peer]->Read();
     Dtype* src = reinterpret_cast<Dtype*>(buffer->addr());
     Dtype* dst = diff_ + own_offs_;
     caffe_add(own_size_, src, dst, dst);

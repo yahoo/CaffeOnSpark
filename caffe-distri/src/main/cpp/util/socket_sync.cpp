@@ -131,7 +131,7 @@ void SocketSync<Dtype>::on_gradients_ready() {
     if (peer == peers_.size()) {
       peer = 0;
     }
-    diff_send_[peer]->Write(true);
+    diff_send_[peer]->Write();
     peer++;
   }
   // Sum gradients as they are received
@@ -141,12 +141,12 @@ void SocketSync<Dtype>::on_gradients_ready() {
       peer = 0;
     }
 #ifndef CPU_ONLY
-    SocketBuffer * buffer = diff_recv_[peer]->Read(true);
+    SocketBuffer * buffer = diff_recv_[peer]->Read();
     Dtype* src = reinterpret_cast<Dtype*>(buffer->addr());
     Dtype* dst = diff_ + own_offs_;
     caffe_gpu_add(own_size_, src, dst, dst);
 #else
-    diff_recv_[peer]->Read(true);
+    diff_recv_[peer]->Read();
 #endif
     peer++;
   }
