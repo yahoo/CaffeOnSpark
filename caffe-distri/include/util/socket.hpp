@@ -11,7 +11,7 @@
 #include "caffe/caffe.hpp"
 #include "caffe/common.hpp"
 #include "caffe/util/blocking_queue.hpp"
-
+#include <boost/thread.hpp>
 
 using std::vector;
 using std::map;
@@ -37,7 +37,7 @@ class SocketAdapter {
   }
 };
 
-enum message_type {DIFF, DATA};
+enum message_type {DIFF, DATA, CTRL};
 class QueuedMessage {
  public:
   message_type type;
@@ -56,10 +56,12 @@ class SocketChannel {
   bool Connect(string peer);
   int client_fd;
   caffe::BlockingQueue<QueuedMessage*> receive_queue;
+  caffe::BlockingQueue<QueuedMessage*> receive_queue_ctrl;
   int serving_fd;
   int port_no;
   string peer_name;
   size_t size;
+  mutable boost::mutex mutex_;
 };
 
 class SocketBuffer {
@@ -76,8 +78,8 @@ class SocketBuffer {
     return size_;
   }
   // Synchronously writes content to remote peer
-  void Write();
-  SocketBuffer* Read();
+  void Write(bool data=true);
+  SocketBuffer* Read(bool data=true);
  protected:
   SocketChannel* channel_;
   uint8_t* addr_;
