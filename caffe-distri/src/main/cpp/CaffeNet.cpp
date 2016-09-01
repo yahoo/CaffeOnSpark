@@ -464,7 +464,6 @@ bool SocketCaffeNet<Dtype>::connect(vector<const char*>& peer_addresses) {
         }
 
 #ifndef CPU_ONLY
-    if(this->solver_mode_== Caffe::GPU) {
     //set up syncs[0 ... (local_devices_-1)]
     this->syncs_[0].reset(new SocketSync<Dtype>(this->root_solver_,
                                                 sockt_channels_,
@@ -472,15 +471,10 @@ bool SocketCaffeNet<Dtype>::connect(vector<const char*>& peer_addresses) {
     // Pair devices for map-reduce synchronization
     this->syncs_[0]->Prepare(this->local_devices_,
                              &this->syncs_);
-    } else {
-        this->syncs_[0].reset(new SocketSyncCPU<Dtype>(this->root_solver_,
-                                                    sockt_channels_,
-                                                    this->node_rank_));
-    }
 #else
     this->syncs_[0].reset(new SocketSyncCPU<Dtype>(this->root_solver_,
-                                                sockt_channels_,
-                                                this->node_rank_));
+						   sockt_channels_,
+						   this->node_rank_));
 #endif
     return true;
 }
