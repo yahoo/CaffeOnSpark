@@ -54,7 +54,7 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   }
   return true;
 }
-  
+
 void receive_message_header(int sockfd, message_header * mh) {
   uint8_t* buffer = reinterpret_cast<uint8_t*>(mh);
   int nread = 0;

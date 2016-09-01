@@ -494,7 +494,7 @@ bool SocketCaffeNet<Dtype>::connect(vector<const char*>& peer_addresses) {
 template<typename Dtype>
 void RDMACaffeNet<Dtype>::sync()  {
     if (this->cluster_size_ > 1)
-        boost::static_pointer_cast<RDMASync<Dtype> >(this->syncs_[0])->sync();
+        boost::static_pointer_cast<RDMASync<Dtype> >(this->syncs_[0])->sync(false);
 }
 #endif
 
