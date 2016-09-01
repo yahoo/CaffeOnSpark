@@ -45,7 +45,7 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   int len = sizeof(mh);
   while (len > 0) {
     nsent = write(sockfd, buffer, len);
-    CHECK_EQ (nsent,-1) << "ERROR: Sending message header!";
+    CHECK (nsent >= 0) << "ERROR: Sending message header!";
     buffer += nsent;
     len -= nsent;
   }
@@ -58,7 +58,7 @@ void receive_message_header(int sockfd, message_header * mh) {
   int len = sizeof(*mh);
   while(len > 0) {
     nread = read(sockfd, buffer, len);
-    CHECK_EQ (nread,-1) << "ERROR: Reading message header!";
+    CHECK (nread >= 0) << "ERROR: Reading message header!";
     buffer += nread;
     len -= nread;
   }
@@ -109,6 +109,7 @@ void *client_connection_handler(void *metadata) {
         max_buff = mh.size - cur_cnt;
 
       int n = read(sc->serving_fd, marker, max_buff);
+      CHECK(n >= 0) << "ERROR: Reading data from client";
       marker = marker + n;
       cur_cnt = cur_cnt + n;
     }
@@ -375,7 +376,7 @@ void SocketBuffer::Write(bool data) {
       max_buff = size - cur_cnt;
 
     int n = write(channel_->client_fd, marker, max_buff);
-    CHECK(n > 0) << "ERROR:Sending data from client";
+    CHECK(n >= 0) << "ERROR:Sending data from client";
     marker = marker + n;
     cur_cnt = cur_cnt + n;
   }
