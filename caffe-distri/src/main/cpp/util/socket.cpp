@@ -45,7 +45,7 @@ bool send_message_header(int sockfd, int rank, message_type mt, int ms) {
   int len = sizeof(mh);
   while (len > 0) {
     nsent = write(sockfd, buffer, len);
-    CHECK_EQ (nsent == -1) << "ERROR: Sending message header!";
+    CHECK_EQ (nsent,-1) << "ERROR: Sending message header!";
     buffer += nsent;
     len -= nsent;
   }
@@ -58,7 +58,7 @@ void receive_message_header(int sockfd, message_header * mh) {
   int len = sizeof(*mh);
   while(len > 0) {
     nread = read(sockfd, buffer, len);
-    CHECK_EQ (nread == -1) << "ERROR: Reading message header!";
+    CHECK_EQ (nread,-1) << "ERROR: Reading message header!";
     buffer += nread;
     len -= nread;
   }
