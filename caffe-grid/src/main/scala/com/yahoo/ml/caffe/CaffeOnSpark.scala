@@ -329,8 +329,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           }
         }.collect()
 
-        current_partition_count_train = (current_partition_count_train + 1) % iter_train
-        current_partition_count_validation = (current_partition_count_validation + 1) % iter_validation
+        current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
+        current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
       }
     }
 
