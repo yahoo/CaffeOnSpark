@@ -271,8 +271,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     if (total_records_validation < num_records_per_validation_partition) {
       throw new IllegalStateException("Insufficient validation data. Please adjust hyperparameters or increase dataset.")
     }
-    val num_parts_validation = (total_records_validation/num_records_per_validation_partition).toInt
-    log.info("num of validation partitions: " + num_parts_validation)
+    val num_validation_parts = (total_records_validation/num_records_per_validation_partition).toInt
+    log.info("num of validation partitions: " + num_validation_parts)
 
     val validationOutputBlobNames = setupTraining(Array(sourceTrain, sourceValidation))
 
@@ -280,20 +280,31 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     val repartitionedTrainRDD = partitionRddWithFixedSize(trainDataRDD,
       no_of_records_required_per_partition_train, no_of_partitions_train, conf.isRddPersistent)
     val repartitionedValidationRDD = partitionRddWithFixedSize(validationDataRDD,
-      num_records_per_validation_partition, num_parts_validation, false)
+      num_records_per_validation_partition, num_validation_parts, false)
 
-    var current_partition_count_train = 0
-    var current_partition_count_validation = 0
-    var interleaveValidationRDD:RDD[(Long,T1)] = null
-    val iter_train = no_of_partitions_train/conf.clusterSize
-    val iter_validation = num_parts_validation/conf.clusterSize
+    //interleaved training RDDs
+    val num_train_iters = no_of_partitions_train/conf.clusterSize
+    val interleaveTrainRDDs:Array[RDD[(Long,T1)]] = new Array[RDD[(Long,T1)]](num_train_iters)
+    for (i <- 0 until num_train_iters)
+      interleaveTrainRDDs(i) = PartitionPruningRDD.create(repartitionedTrainRDD,
+        (index => (index >= i*conf.clusterSize) && (index < (i+1)*conf.clusterSize)))
+
+    //interleaved validation RDDs
+    val interleaveValidationRDDs:Array[RDD[(Long,T1)]] = new Array[RDD[(Long,T1)]](num_validation_parts)
+    for (i <- 0 until num_validation_parts) {
+      //Create the interleaveValidationRDD for the required range
+      interleaveValidationRDDs(i) = PartitionPruningRDD.create(repartitionedValidationRDD, (_ == i))
+      if (conf.clusterSize>1)
+        interleaveValidationRDDs(i) = new UnionRDDNoPrefLocs(sc, Array.fill(conf.clusterSize)(interleaveValidationRDDs(i)))
+      if (conf.isRddPersistent)
+        interleaveValidationRDDs(i).persist(StorageLevel.DISK_ONLY)
+    }
+
+    var current_train_iter = 0
+    var current_validation_iter = 0
     while(continue) {
-      var interleaveTrainRDD = PartitionPruningRDD.create(repartitionedTrainRDD,
-        (index => (index >= current_partition_count_train*conf.clusterSize)
-          && (index < (current_partition_count_train+1)*conf.clusterSize))
-      )
       //Proceed with the training
-      continue = interleaveTrainRDD.mapPartitions {
+      continue = interleaveTrainRDDs(current_train_iter).mapPartitions {
         iter => {
           var res = false
           //feed training data from iterator
@@ -308,14 +319,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       }.reduce(_ && _)
 
       if (continue) {
-        //Create the interleaveValidationRDD for the required range
-        interleaveValidationRDD = PartitionPruningRDD.create(repartitionedValidationRDD,
-          (_ == current_partition_count_validation))
-        if (conf.clusterSize>1)
-          interleaveValidationRDD = new UnionRDDNoPrefLocs(sc, Array.fill(conf.clusterSize)(interleaveValidationRDD))
-
         //Proceed with the validation
-        interleaveValidationRDD.mapPartitions {
+        interleaveValidationRDDs(current_validation_iter).mapPartitions {
           iter => {
             //feed validation data from iterator
             val processor = CaffeProcessor.instance[T1, T2]()
@@ -329,8 +334,8 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           }
         }.collect()
 
-        current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
-        current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
+        current_train_iter = (current_train_iter + 1) % num_train_iters
+        current_validation_iter = (current_validation_iter + 1) % num_validation_parts
       }
     }
 
