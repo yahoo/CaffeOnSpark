@@ -44,22 +44,15 @@ class InterleaveTest extends FunSuite with BeforeAndAfterAll {
       assertEquals(validation_result_df.columns.length, 2)
       assertEquals(validation_result_df.columns(0), "accuracy")
       assertEquals(validation_result_df.columns(1), "loss")
-      val test_iter = conf.solverParameter.getTestIter(0)
-      val total_count = validation_result_df.count()
-      assertTrue(total_count > test_iter)
-      assertEquals(total_count % test_iter, 0)
-      validation_result_df.show(test_iter)
+      validation_result_df.show(2)
 
-      val (finalAccuracy: Float, finalLoss: Float) = validation_result_df.rdd.zipWithIndex().map{
-        case (row:Row, index:Long) => {
-          if (index >= (total_count - test_iter))
-            (row.getSeq[Float](0)(0), row.getSeq[Float](1)(0))
-          else
-            (0.0F, 0.0F)
-        }
-      }.reduce{(x,y) => (x._1 + y._1, x._2 + y._2)}
-      assertTrue(finalAccuracy/test_iter > 0.8)
-      assertTrue(finalLoss/test_iter < 0.5)
+      val total_count = validation_result_df.count()
+      val lastRow = validation_result_df.rdd.zipWithIndex()
+        .filter{ case (row:Row, index:Long) => (index == total_count-1) }.collect().head._1
+      //final accuracy
+      assertTrue(lastRow.getSeq[Float](0)(0) > 0.8)
+      //final loss
+      assertTrue(lastRow.getSeq[Float](1)(0) < 0.5)
     }
   }
 }

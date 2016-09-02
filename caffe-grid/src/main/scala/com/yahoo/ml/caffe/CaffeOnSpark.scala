@@ -13,26 +13,13 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.sql
 import org.apache.spark.sql.types.{FloatType, StructField, StructType, ArrayType, StringType}
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.functions.udf
 
 import org.slf4j.{LoggerFactory, Logger}
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future, ExecutionContext}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
 import scala.collection.immutable.Map
-import scala.collection.mutable.ArrayBuffer
-import org.apache.spark._
-import org.apache.hadoop.fs._
-import org.apache.hadoop.conf._
-import org.apache.hadoop.io._
-import org.apache.hadoop.mapred._
-import org.apache.hadoop.util._
-import java.io.BufferedWriter
-import java.io.OutputStreamWriter
-import java.net._
 import org.apache.spark.rdd._
 import scala.reflect.ClassTag
 
@@ -272,46 +259,38 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
     log.info("total_records_train: " + total_records_train)
     log.info("no_of_records_required_per_partition_train: " + no_of_records_required_per_partition_train)
     if (total_records_train < no_of_records_required_per_partition_train * conf.clusterSize) {
-      log.error("Train data is insufficient for the hyperparameters configured. Adjust the train hyperparameters or increase the training data!")
-      throw new IllegalStateException("Train data is insufficient for the hyperparameters configured. Adjust the train hyperparameters or increase the training data!")
+      throw new IllegalStateException("Insufficient training data. Please adjust hyperparameters or increase dataset.")
     }
+    val no_of_partitions_train = (total_records_train/no_of_records_required_per_partition_train).toInt
+    log.info("num of training partitions: " + no_of_partitions_train)
 
-    val no_of_records_required_per_partition_validation = conf.solverParameter.getTestIter(0) * sourceValidation.batchSize()
+    val num_records_per_validation_partition = conf.solverParameter.getTestIter(0) * sourceValidation.batchSize()
     val total_records_validation = validationDataRDD.count()
     log.info("total_records_validation: " + total_records_validation)
-    log.info("no_of_records_required_per_partition_validation: " + no_of_records_required_per_partition_validation)
-    if (total_records_validation < no_of_records_required_per_partition_validation * conf.clusterSize) {
-      log.error("Validation data is insufficient for the hyperparameters configured. Adjust the validation hyperparameters or increase the validation data!")
-      throw new IllegalStateException("Validation data is insufficient for the hyperparameters configured. Adjust the validation hyperparameters or increase the validation data!")
+    log.info("num_records_per_validation_partition: " + num_records_per_validation_partition)
+    if (total_records_validation < num_records_per_validation_partition) {
+      throw new IllegalStateException("Insufficient validation data. Please adjust hyperparameters or increase dataset.")
     }
+    val num_parts_validation = (total_records_validation/num_records_per_validation_partition).toInt
+    log.info("num of validation partitions: " + num_parts_validation)
 
     val validationOutputBlobNames = setupTraining(Array(sourceTrain, sourceValidation))
-    implicit val rdd_class_tag : ClassTag[T1] = ClassTag.apply[T1](trainDataRDD.first.getClass)
-    var zippedTrainRDD:RDD[(Long, T1)] = trainDataRDD.zipWithIndex.map{ case (e,i) => (i,e)}
-    var no_of_partitions_train = total_records_train/no_of_records_required_per_partition_train
-    log.info("no_of_partitions_train: " + no_of_partitions_train)
-    var repartitionedTrainRDD = zippedTrainRDD.partitionBy(new FixedSizePartitioner(no_of_partitions_train.toInt+1, no_of_records_required_per_partition_train))
-    if (conf.isRddPersistent) {
-      repartitionedTrainRDD = repartitionedTrainRDD.persist(StorageLevel.DISK_ONLY)
-    }
 
-    var zippedValidationRDD:RDD[(Long, T1)] = validationDataRDD.zipWithIndex.map{case (e,i) => (i,e)}
-    var no_of_partitions_validation = total_records_validation/no_of_records_required_per_partition_validation
-    log.info("no_of_partitions_validation: " + no_of_partitions_validation)
-    var repartitionedValidationRDD = zippedValidationRDD.partitionBy(new FixedSizePartitioner(no_of_partitions_validation.toInt+1, no_of_records_required_per_partition_validation))
-    if (conf.isRddPersistent) {
-      repartitionedValidationRDD = repartitionedValidationRDD.persist(StorageLevel.DISK_ONLY)
-    }
+    implicit val rdd_class_tag : ClassTag[T1] = ClassTag.apply[T1](trainDataRDD.first.getClass)
+    val repartitionedTrainRDD = partitionRddWithFixedSize(trainDataRDD,
+      no_of_records_required_per_partition_train, no_of_partitions_train, conf.isRddPersistent)
+    val repartitionedValidationRDD = partitionRddWithFixedSize(validationDataRDD,
+      num_records_per_validation_partition, num_parts_validation, false)
 
     var current_partition_count_train = 0
     var current_partition_count_validation = 0
     var interleaveValidationRDD:RDD[(Long,T1)] = null
-    val iter_train = no_of_partitions_train.toInt/conf.clusterSize.toInt
-    val iter_validation = no_of_partitions_validation.toInt/conf.clusterSize.toInt
-    var validation_output_rdd : RDD[Row] = null
+    val iter_train = no_of_partitions_train/conf.clusterSize
+    val iter_validation = num_parts_validation/conf.clusterSize
     while(continue) {
       var interleaveTrainRDD = PartitionPruningRDD.create(repartitionedTrainRDD,
-        (index => (index >= current_partition_count_train*conf.clusterSize) && (index < (current_partition_count_train+1)*conf.clusterSize))
+        (index => (index >= current_partition_count_train*conf.clusterSize)
+          && (index < (current_partition_count_train+1)*conf.clusterSize))
       )
       //Proceed with the training
       continue = interleaveTrainRDD.mapPartitions {
@@ -320,6 +299,7 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
           //feed training data from iterator
           val processor = CaffeProcessor.instance[T1, T2]()
           if (!processor.solversFinished) {
+            processor.sync()
             res = iter.map { sample => processor.feedQueue(0, sample._2) }.reduce(_ && _)
             processor.solversFinished = !res
           }
@@ -330,53 +310,62 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       if (continue) {
         //Create the interleaveValidationRDD for the required range
         interleaveValidationRDD = PartitionPruningRDD.create(repartitionedValidationRDD,
-          (index => (index == current_partition_count_validation))
-        )
-        //Add clustersize partitions to interleaveValidationRDD where each partition is a copy of each other
-        var validationRDDRef = interleaveValidationRDD
-        for(j <- Range(0,conf.clusterSize-1))
-          interleaveValidationRDD = interleaveValidationRDD.union(validationRDDRef)
+          (_ == current_partition_count_validation))
+        if (conf.clusterSize>1)
+          interleaveValidationRDD = new UnionRDDNoPrefLocs(sc, Array.fill(conf.clusterSize)(interleaveValidationRDD))
 
         //Proceed with the validation
-        val current_result_array : Array[Row] = interleaveValidationRDD.mapPartitionsWithIndex {
-          (index, iter) => {
+        interleaveValidationRDD.mapPartitions {
+          iter => {
             //feed validation data from iterator
             val processor = CaffeProcessor.instance[T1, T2]()
             if (!processor.solversFinished) {
+              processor.sync()
               val res = iter.map { sample => processor.feedQueue(1, sample._2)}.reduce(_ && _)
               processor.solversFinished = !res
             }
 
-            val validation_result = if (!processor.solversFinished)
-              processor.validationResultsQueue.take()
-            else Iterator(null)
-
-            if (index==0)
-              validation_result
-            else
-              Iterator(null)
+            Iterator(1)
           }
         }.collect()
 
-        continue = (current_result_array(0)!=null)
-        if (continue) {
-          if (validation_output_rdd == null)
-            validation_output_rdd = sc.parallelize(current_result_array.toSeq, 1)
-          else
-            validation_output_rdd = validation_output_rdd.union(sc.parallelize(current_result_array.toSeq, 1))
-
-          current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
-          current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
-        }
+        current_partition_count_train = (current_partition_count_train.toInt + 1) % iter_train
+        current_partition_count_validation = (current_partition_count_validation.toInt + 1) % iter_validation
       }
     }
+
+    //collect validation result from one processor
+    val validation_output: Array[Row] = sc.parallelize(1 to 1, 1).mapPartitions{
+      _ => {
+          val processor = CaffeProcessor.instance[T1, T2]()
+          processor.validationResults.toIterator
+      }
+    }.collect()
 
     //shutdown processors
     shutdownProcessors(conf)
 
     //dataframe of validation result
+    import scala.collection.JavaConverters._
     val schema = new StructType(validationOutputBlobNames.map(name => StructField(name, ArrayType(FloatType), false)))
-    sqlContext.createDataFrame(validation_output_rdd, schema).persist(StorageLevel.DISK_ONLY)
+    sqlContext.createDataFrame(validation_output.toList.asJava, schema).persist(StorageLevel.DISK_ONLY)
+  }
+
+  /*
+  construct a new RDD with fixed size partitions from a given RDD.
+   */
+  private def partitionRddWithFixedSize[T1:ClassTag](rdd:RDD[T1],
+                 part_len: Int, num_parts: Int, persistent:Boolean): RDD[(Long,T1)] = {
+    val partitioner = new FixedSizePartitioner(num_parts+1, part_len)
+    var partitioned_rdd = rdd.zipWithIndex.map{case (e,i) => (i,e)}.partitionBy(partitioner)
+
+    if (persistent) {
+      partitioned_rdd = partitioned_rdd.persist(StorageLevel.DISK_ONLY)
+      //unpersist the original RDD
+      rdd.unpersist()
+    }
+
+    partitioned_rdd
   }
 
   /**

@@ -49,17 +49,14 @@ class PythonApiTest(unittest.TestCase):
         self.assertEqual(len(result.columns), 2)
         self.assertEqual(result.columns[0], 'accuracy')
         self.assertEqual(result.columns[1], 'loss')
-        row_count = result.count()
-        test_iter = self.cfg.solverParameter.getTestIter(0)
-        self.assertTrue(row_count > test_iter)
-        self.assertEqual(row_count % test_iter, 0)
-        result.show(test_iter)
+        result.show(2)
 
-        result_w_index = result.rdd.zipWithIndex().filter(lambda (row,index): index>=(row_count - test_iter)).persist()
-        finalAccuracy = result_w_index.map(lambda (row,index): row[0][0]).reduce(lambda a, b: a + b)
-        self.assertTrue(finalAccuracy/test_iter > 0.8)
-        finalLoss = result_w_index.map(lambda (row,index): row[1][0]).reduce(lambda a, b: a + b)
-        self.assertTrue(finalLoss/test_iter < 0.5)
+        row_count = result.count()
+        last_row = result.rdd.zipWithIndex().filter(lambda (row,index): index==(row_count - 1)).collect()[0][0]
+        finalAccuracy = last_row[0][0]
+        self.assertTrue(finalAccuracy > 0.8)
+        finalLoss = last_row[1][0]
+        self.assertTrue(finalLoss < 0.5)
 
 
 unittest.main(verbosity=2)            

@@ -29,7 +29,7 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
   @transient private[caffe] var solverParameter: SolverParameter = null
   @transient private[caffe] var layerParameter: LayerParameter = null
   @transient private[caffe] var transformationParameter:TransformationParameter = null
-  @transient var sourceQueue: ArrayBlockingQueue[T1] = null
+  @transient protected var sourceQueue: ArrayBlockingQueue[T1] = null
   @transient protected var sourceFilePath : String = null
   @transient protected var batchSize_ : Int = -1
   @transient protected var solverMode: Int = -1
@@ -57,10 +57,22 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
     //transformer parameter
     transformationParameter = layerParameter.getTransformParam()
 
-    //source queue
-    sourceQueue = new ArrayBlockingQueue[T1](1024)
-
     true
+  }
+
+  /**
+   * set up source queue with appropriate capacity.
+   * This method should be invoked after init() and before all other invocations (ex. feed queue)
+   */
+  private[caffe] def resetQueue(capacity_limit: Int = 0) : Unit = {
+    if (sourceQueue == null || (capacity_limit >= 0 && sourceQueue.size() != capacity_limit)) {
+      if (capacity_limit <= 0 || capacity_limit > 1024)
+        sourceQueue = new ArrayBlockingQueue[T1](1024)
+      else
+        sourceQueue = new ArrayBlockingQueue[T1](capacity_limit)
+    } else {
+      sourceQueue.clear()
+    }
   }
 
   /**
@@ -87,6 +99,13 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
    * @return a dummy data blob
    */
   def dummyDataBlobs() : Array[FloatBlob]
+
+  /**
+   * feed an sample to source queue
+   * @param sample an sample to be fed
+   * @return true if success, false if failed
+   */
+  def offer(sample: T1) : Boolean = sourceQueue.offer(sample)
 
   /**
    * create a batch of samples extracted from source queue
