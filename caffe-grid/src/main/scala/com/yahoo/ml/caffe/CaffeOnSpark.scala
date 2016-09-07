@@ -3,15 +3,14 @@
 // Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe
 
-import java.io.{FileReader, PrintWriter}
+import java.io.PrintWriter
 import java.net.InetAddress
 
 import caffe.Caffe._
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkContext, SparkConf}
-import org.apache.spark.sql
+import org.apache.spark.{SparkEnv, SparkContext, SparkConf, sql}
 import org.apache.spark.sql.types.{FloatType, StructField, StructType, ArrayType, StringType}
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.mllib.linalg.Vectors
@@ -289,15 +288,17 @@ class CaffeOnSpark(@transient val sc: SparkContext) extends Serializable {
       interleaveTrainRDDs(i) = PartitionPruningRDD.create(repartitionedTrainRDD,
         (index => (index >= i*conf.clusterSize) && (index < (i+1)*conf.clusterSize)))
 
+
     //interleaved validation RDDs
     val interleaveValidationRDDs:Array[RDD[(Long,T1)]] = new Array[RDD[(Long,T1)]](num_validation_parts)
+    val executorLocs = Util.executorLocations(sc, conf.clusterSize)
     for (i <- 0 until num_validation_parts) {
       //Create the interleaveValidationRDD for the required range
       interleaveValidationRDDs(i) = PartitionPruningRDD.create(repartitionedValidationRDD, (_ == i))
       if (conf.clusterSize>1)
-        interleaveValidationRDDs(i) = new UnionRDDNoPrefLocs(sc, Array.fill(conf.clusterSize)(interleaveValidationRDDs(i)))
-      if (conf.isRddPersistent)
-        interleaveValidationRDDs(i).persist(StorageLevel.DISK_ONLY)
+        interleaveValidationRDDs(i) = new UnionRDDWLocsSpecified(sc,
+          Array.fill(conf.clusterSize)(interleaveValidationRDDs(i)),
+          executorLocs)
     }
 
     var current_train_iter = 0
