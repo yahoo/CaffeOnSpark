@@ -8,11 +8,11 @@ import java.io.{FilenameFilter, File}
 import caffe.Caffe.Datum
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, SparkFiles, TaskContext}
 import org.fusesource.lmdbjni.{Transaction, Database, Entry, Env}
 import org.slf4j.{LoggerFactory, Logger}
-import Logging._
 
 import scala.collection.mutable
 
@@ -41,8 +41,10 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
-    if (!lmdb_path.startsWith(FSUtils.localfsPrefix))
+    if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
+      SparkHadoopUtil.get.conf.setBoolean("spark.files.overwrite", true)
       sc.addFile(lmdb_path, true)
+    }
 
     openDB()
 
