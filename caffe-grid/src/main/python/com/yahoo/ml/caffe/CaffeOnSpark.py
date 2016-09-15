@@ -17,7 +17,11 @@ class CaffeOnSpark:
 
     def __init__(self,sc):
         registerContext(sc)
-        wrapClass("org.apache.spark.sql.Dataset")
+        spark_major_version = int(sc.version.split(' ')[0])
+        if spark_major_version == 2:
+            wrapClass("org.apache.spark.sql.Dataset")
+        else:
+            wrapClass("org.apache.spark.sql.DataFrame")
         self.__dict__['caffeonspark']=wrapClass("com.yahoo.ml.caffe.CaffeOnSpark")
         self.__dict__['cos']=self.__dict__.get('caffeonspark')(sc)
         self.__dict__['sqlcontext']=SQLContext(sc,self.__dict__['cos'].sqlContext)
