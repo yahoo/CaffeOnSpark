@@ -13,7 +13,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, SparkFiles, TaskContext}
 import org.fusesource.lmdbjni.{Transaction, Database, Entry, Env}
 import org.slf4j.{LoggerFactory, Logger}
-import Logging._
 
 import scala.collection.mutable
 
