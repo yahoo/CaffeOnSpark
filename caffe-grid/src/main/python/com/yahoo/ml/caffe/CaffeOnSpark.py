@@ -7,7 +7,6 @@ Please see LICENSE file in the project root for terms.
 from ConversionUtil import wrapClass
 from RegisterContext import registerContext
 from pyspark.sql import DataFrame,SQLContext
-from pyspark.mllib.linalg import Vectors
 
 class CaffeOnSpark:
     """CaffeOnSpark is the main class for distributed deep learning. 
@@ -18,7 +17,7 @@ class CaffeOnSpark:
 
     def __init__(self,sc):
         registerContext(sc)
-        wrapClass("org.apache.spark.sql.DataFrame")
+        wrapClass("org.apache.spark.sql.Dataset")
         self.__dict__['caffeonspark']=wrapClass("com.yahoo.ml.caffe.CaffeOnSpark")
         self.__dict__['cos']=self.__dict__.get('caffeonspark')(sc)
         self.__dict__['sqlcontext']=SQLContext(sc,self.__dict__['cos'].sqlContext)

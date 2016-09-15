@@ -105,7 +105,7 @@ class DataFrameSource(conf: Config, layerId: Int, isTrain: Boolean)
     val has_id : Boolean = columnNames.contains("id")
 
     //mapping each row to RDD tuple
-    df.map(row => {
+    df.rdd.map(row => {
       val id: String = if (!has_id) "" else row.getAs[String]("id")
       val sample = new Array[Any](numTops)
       (0 until numTops).map(i => sample(i) = row.getAs[Any](topNames(i)))

@@ -35,8 +35,7 @@
         <hadoop.version>2.7.1</hadoop.version>
         <scala.version>2.11.7</scala.version>
         <scala.major.version>2.11</scala.major.version>
-        <slf4j.version>1.6.6</slf4j.version>
-        <spark.version>2.0.0-SNAPSHOT</spark.version>
+        <spark.version>2.0.0</spark.version>
       </properties>
     </profile>
   </profiles>
