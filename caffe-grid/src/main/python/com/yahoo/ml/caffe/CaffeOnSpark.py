@@ -18,7 +18,7 @@ class CaffeOnSpark:
     def __init__(self,sc):
         registerContext(sc)
         spark_major_version = int(sc.version.split(' ')[0])
-        if spark_major_version == 2:
+        if spark_major_version >= 2:
             wrapClass("org.apache.spark.sql.Dataset")
         else:
             wrapClass("org.apache.spark.sql.DataFrame")
