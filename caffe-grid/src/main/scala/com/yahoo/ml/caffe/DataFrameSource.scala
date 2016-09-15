@@ -105,7 +105,7 @@ class DataFrameSource(conf: Config, layerId: Int, isTrain: Boolean)
     val has_id : Boolean = columnNames.contains("id")
 
     //mapping each row to RDD tuple
-    df.map(row => {
+    df.rdd.map(row => {
       val id: String = if (!has_id) "" else row.getAs[String]("id")
       val sample = new Array[Any](numTops)
       (0 until numTops).map(i => sample(i) = row.getAs[Any](topNames(i)))
@@ -136,16 +136,16 @@ class DataFrameSource(conf: Config, layerId: Int, isTrain: Boolean)
     val imageWidth = tops(topidx).width_
     val imageChannels = tops(topidx).channels_
     if (encoded) {
-       mat = new Mat(data)
-       imageChannels match {
-          case 1 => mat.decode(Mat.CV_LOAD_IMAGE_GRAYSCALE)
-          case 3 => mat.decode(Mat.CV_LOAD_IMAGE_COLOR)
-          case _ => mat.decode(Mat.CV_LOAD_IMAGE_UNCHANGED)
-        }
+      mat = new Mat(data)
+      imageChannels match {
+        case 1 => mat.decode(Mat.CV_LOAD_IMAGE_GRAYSCALE)
+        case 3 => mat.decode(Mat.CV_LOAD_IMAGE_COLOR)
+        case _ => mat.decode(Mat.CV_LOAD_IMAGE_UNCHANGED)
+      }
 
       if (mat.width() == 0) {
-      	log.warn("Skip image at top#" + topidx + ", index#" + offset)
-    	mat = null
+        log.warn("Skip image at top#" + topidx + ", index#" + offset)
+        mat = null
       }
     } else {
       mat = new Mat(imageChannels, imageHeight, imageWidth, data)
