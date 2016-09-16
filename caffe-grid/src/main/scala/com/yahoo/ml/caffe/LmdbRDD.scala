@@ -6,9 +6,7 @@ package com.yahoo.ml.caffe
 import java.io.{FilenameFilter, File}
 
 import caffe.Caffe.Datum
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, SparkFiles, TaskContext}
 import org.fusesource.lmdbjni.{Transaction, Database, Entry, Env}
@@ -42,8 +40,14 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
     if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
-      SparkHadoopUtil.get.conf.setBoolean("spark.files.overwrite", true)
+      val conf = sc.getConf
+      val old_val = conf.getBoolean("spark.files.overwrite", false)
+      //temporarily enable file overrite
+      conf.set("spark.files.overwrite", "true")
       sc.addFile(lmdb_path, true)
+      //change back config value
+      if (old_val==false)
+        conf.set("spark.files.overwrite", "false")
     }
 
     openDB()
