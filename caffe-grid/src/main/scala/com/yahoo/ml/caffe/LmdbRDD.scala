@@ -39,8 +39,11 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
-    if (!lmdb_path.startsWith(FSUtils.localfsPrefix))
-      sc.addFile(lmdb_path, true)
+    if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
+      //add only once per application
+      if (!new File(SparkFiles.get(lmdb_path)).exists())
+        sc.addFile(lmdb_path, true)
+    }
 
     openDB()
 
