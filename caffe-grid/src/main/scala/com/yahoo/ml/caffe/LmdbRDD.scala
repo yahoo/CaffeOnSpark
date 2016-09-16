@@ -3,7 +3,8 @@
 // Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe
 
-import java.io.{FilenameFilter, File}
+import java.io.{File, FilenameFilter}
+import java.util.concurrent.ConcurrentHashMap
 
 import caffe.Caffe.Datum
 import org.apache.hadoop.fs.Path
@@ -39,16 +40,7 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
-    if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
-      val conf = sc.getConf
-      val old_val = conf.getBoolean("spark.files.overwrite", false)
-      //temporarily enable file overrite
-      conf.set("spark.files.overwrite", "true")
-      sc.addFile(lmdb_path, true)
-      //change back config value
-      if (old_val==false)
-        conf.set("spark.files.overwrite", "false")
-    }
+    LmdbRDD.DistributeLMDBFilesIfNeeded(sc, lmdb_path)
 
     openDB()
 
@@ -242,6 +234,7 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 private[caffe] object LmdbRDD {
   private val log: Logger = LoggerFactory.getLogger(this.getClass)
   private var libLoaded: Boolean = false
+  private val lmdb_paths = new ConcurrentHashMap[String,Int]()
 
   //load lmdbjni
   private def loadLibrary(): Unit = {
@@ -252,6 +245,15 @@ private[caffe] object LmdbRDD {
         log.debug("System load liblmdbjni.so successed")
         libLoaded = true
       }
+    }
+  }
+
+  //make sourceFilePath downloaded to all nodes
+  private def DistributeLMDBFilesIfNeeded(sc: SparkContext, lmdb_path: String) : Unit = {
+    if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
+      //add only once per application
+      if (lmdb_paths.putIfAbsent(lmdb_path, 1) == null)
+        sc.addFile(lmdb_path, true)
     }
   }
 
