@@ -3,7 +3,7 @@
 // Please see LICENSE file in the project root for terms.
 package com.yahoo.ml.caffe
 
-import java.io.{FilenameFilter, File}
+import java.io.{File, FilenameFilter}
 
 import caffe.Caffe.Datum
 import org.apache.hadoop.fs.Path
@@ -39,16 +39,8 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
-    if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
-      val conf = sc.getConf
-      val old_val = conf.getBoolean("spark.files.overwrite", false)
-      //temporarily enable file overrite
-      conf.set("spark.files.overwrite", "true")
+    if (!lmdb_path.startsWith(FSUtils.localfsPrefix))
       sc.addFile(lmdb_path, true)
-      //change back config value
-      if (old_val==false)
-        conf.set("spark.files.overwrite", "false")
-    }
 
     openDB()
 
