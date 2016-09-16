@@ -4,6 +4,7 @@
 package com.yahoo.ml.caffe
 
 import java.io.{File, FilenameFilter}
+import java.util.concurrent.ConcurrentHashMap
 
 import caffe.Caffe.Datum
 import org.apache.hadoop.fs.Path
@@ -39,11 +40,7 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 
   override def getPartitions: Array[Partition] = {
     //make sourceFilePath downloaded to all nodes
-    if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
-      //add only once per application
-      if (!new File(SparkFiles.get(lmdb_path)).exists())
-        sc.addFile(lmdb_path, true)
-    }
+    LmdbRDD.DistributeLMDBFilesIfNeeded(sc, lmdb_path)
 
     openDB()
 
@@ -237,6 +234,7 @@ class LmdbRDD(@transient val sc: SparkContext, val lmdb_path: String, val numPar
 private[caffe] object LmdbRDD {
   private val log: Logger = LoggerFactory.getLogger(this.getClass)
   private var libLoaded: Boolean = false
+  private val lmdb_paths = new ConcurrentHashMap[String,Int]()
 
   //load lmdbjni
   private def loadLibrary(): Unit = {
@@ -247,6 +245,15 @@ private[caffe] object LmdbRDD {
         log.debug("System load liblmdbjni.so successed")
         libLoaded = true
       }
+    }
+  }
+
+  //make sourceFilePath downloaded to all nodes
+  private def DistributeLMDBFilesIfNeeded(sc: SparkContext, lmdb_path: String) : Unit = {
+    if (!lmdb_path.startsWith(FSUtils.localfsPrefix)) {
+      //add only once per application
+      if (lmdb_paths.putIfAbsent(lmdb_path, 1) == null)
+        sc.addFile(lmdb_path, true)
     }
   }
 
