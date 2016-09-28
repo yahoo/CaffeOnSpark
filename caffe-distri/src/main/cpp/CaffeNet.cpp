@@ -531,7 +531,10 @@ int CaffeNet<Dtype>::getInitIter(int solver_index) {
         return root_solver_->iter();
     else {
         CHECK(syncs_[solver_index]);
-        return syncs_[solver_index]->solver()->iter();
+	if (solver_index == 0)
+	    return root_solver_->iter();
+	else
+            return syncs_[solver_index]->initial_iter();
     }
 }
 
