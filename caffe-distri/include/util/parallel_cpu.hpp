@@ -43,11 +43,9 @@ class P2PSyncCPU : public CPUParams<Dtype>, public Solver<Dtype>::Callback {
                    P2PSyncCPU<Dtype>* parent, const SolverParameter& param);
   virtual ~P2PSyncCPU();
 
-  inline const shared_ptr<Solver<Dtype> >& solver() const {
-    return solver_;
-  }
+  inline const shared_ptr<Solver<Dtype> >& solver() const { return solver_; }
 
-  inline const int GetInitIter() const { return initial_iter_; }
+  inline const int initial_iter() const { return initial_iter_; }
 
  protected:
   void on_start();
