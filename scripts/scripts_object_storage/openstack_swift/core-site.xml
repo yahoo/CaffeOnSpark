@@ -1,0 +1,42 @@
+<configuration>
+	  <property>
+	    <name>fs.defaultFS</name>
+	    <value>hdfs://localhost:9000</value>
+	  </property>
+		<property>
+			<name>fs.swift.impl</name>
+			<value>org.apache.hadoop.fs.swift.snative.SwiftNativeFileSystem</value>
+		</property>
+		<property>
+			<name>fs.swift.service.PROVIDER.auth.url</name>
+			<value>AUTH URL</value>
+		</property>
+		<property>
+			<name>fs.swift.service.PROVIDER.username</name>
+			<value>USERNAME</value>
+		</property>
+		<property>
+			<name>fs.swift.service.PROVIDER.region</name>
+			<value>REGION</value>
+		</property>
+		<property>
+			<name>fs.swift.service.PROVIDER.public</name>
+			<value>true</value>
+		</property>
+		<property>
+			<name>fs.swift.service.PROVIDER.password</name>
+			<value>PASSWORD</value>
+		</property>
+			<property>
+			<name>fs.swift.service.PROVIDER.tenant</name>
+			<value>TENANT NAME</value>
+		</property>
+		<property>
+			<name>fs.swift.service.PROVIDER.https.port</name>
+			<value>HTTPS PORT</value>
+		</property>
+		<property>
+			<name>fs.swift.service.PROVIDER.auth.endpoint.prefix</name>
+			<value>/AUTH_</value>
+		</property>
+</configuration>
