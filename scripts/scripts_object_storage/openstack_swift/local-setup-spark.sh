@@ -5,6 +5,6 @@
 #
 # This script install Spark locally
 
-wget http://archive.apache.org/dist/spark/spark-2.0.1/spark-2.0.1-bin-hadoop2.7.tgz
-gunzip spark-2.0.1-bin-hadoop2.7.tgz
-tar -xvf spark-2.0.1-bin-hadoop2.7.tar
+wget http://archive.apache.org/dist/spark/spark-2.0.0/spark-2.0.0-bin-hadoop2.7.tgz
+gunzip spark-2.0.0-bin-hadoop2.7.tgz
+tar -xvf spark-2.0.0-bin-hadoop2.7.tar
