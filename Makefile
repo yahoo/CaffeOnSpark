@@ -13,6 +13,7 @@ endif
 ifeq (${object_storage}, 1)
     export MVN_SPARK_FLAG=-Dspark2 -Dobject_storage
 endif
+
 build:
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
 	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; mvn ${MVN_SPARK_FLAG} -B package -DskipTests
