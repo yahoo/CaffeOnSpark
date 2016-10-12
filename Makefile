@@ -1,5 +1,9 @@
 HOME ?=/home/${USER}
-SPARK_HOME ?=/home/y/share/spark
+ifeq ($(shell which spark-submit), "")
+     SPARK_HOME ?=/home/y/share/spark
+else
+     SPARK_HOME ?=$(shell which spark-submit 2>&1 | sed 's/\/bin\/spark-submit//g')
+endif
 CAFFE_ON_SPARK ?=$(shell pwd)
 LD_LIBRARY_PATH ?=/home/y/lib64:/home/y/lib64/mkl/intel64
 LD_LIBRARY_PATH2=${LD_LIBRARY_PATH}:${CAFFE_ON_SPARK}/caffe-public/distribute/lib:${CAFFE_ON_SPARK}/caffe-distri/distribute/lib:/usr/lib64:/lib64 
