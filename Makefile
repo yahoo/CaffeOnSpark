@@ -10,7 +10,7 @@ LD_LIBRARY_PATH2=${LD_LIBRARY_PATH}:${CAFFE_ON_SPARK}/caffe-public/distribute/li
 DYLD_LIBRARY_PATH ?=/home/y/lib64:/home/y/lib64/mkl/intel64
 DYLD_LIBRARY_PATH2=${DYLD_LIBRARY_PATH}:${CAFFE_ON_SPARK}/caffe-public/distribute/lib:${CAFFE_ON_SPARK}/caffe-distri/distribute/lib:/usr/lib64:/lib64 
 
-export SPARK_VERSION=$(shell ${SPARK_HOME}/bin/spark-submit --version 2>&1 | grep version | awk '{print $$5}' | cut -d'.' -f1)
+export SPARK_VERSION=$(shell ${SPARK_HOME}/bin/spark-submit --version 2>&1 | grep version | cut -d' ' -f10 | cut -d'.' -f1)
 ifeq (${SPARK_VERSION}, 2)
     export MVN_SPARK_FLAG=-Dspark2
 endif
