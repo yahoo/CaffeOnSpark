@@ -38,21 +38,6 @@
         <spark.version>2.0.0</spark.version>
       </properties>
     </profile>
-    <profile>
-    <id>object_storage</id>
-      <activation>
-        <property>
-          <name>object_storage</name>
-        </property>
-      </activation>
-    <dependencies>
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-openstack</artifactId>
-        <version>2.7.1</version>
-      </dependency>
-    </dependencies>
-  </profile>
   </profiles>
   <dependencies>
     <dependency>
