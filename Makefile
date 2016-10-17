@@ -1,5 +1,5 @@
 HOME ?=/home/${USER}
-ifeq ($(shell which spark-submit), "")
+ifeq ($(shell which spark-submit),)
      SPARK_HOME ?=/home/y/share/spark
 else
      SPARK_HOME ?=$(shell which spark-submit 2>&1 | sed 's/\/bin\/spark-submit//g')
