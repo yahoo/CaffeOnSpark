@@ -125,12 +125,6 @@ abstract class DataSource[T1, T2](val conf: Config, val layerId : Int, val isTra
   def getTopDataType(index: Int): CoSDataParameter.DataType = null
 
   def getTopTransformParam(index: Int): TransformationParameter = null
-
-  def getTopHeight(index: Int): Int = 0
-
-  def getTopWidth(index: Int): Int = 0
-
-  def getTopChannel(index: Int): Int = 0
 }
 
 object DataSource extends Serializable {

@@ -44,6 +44,7 @@ class CoSDataLayer : public Layer<Dtype> {
   vector<int> channels_;
   vector<int> height_;
   vector<int> width_;
+  vector<int> sample_num_axes_;
   vector<Dtype*> data_;
 };
 
