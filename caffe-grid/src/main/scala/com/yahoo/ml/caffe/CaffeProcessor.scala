@@ -300,7 +300,8 @@ private[caffe] class CaffeProcessor[T1, T2](val sources: Array[DataSource[T1, T2
                 }
 
                 case CoSDataParameter.DataType.RAW_IMAGE |
-                     CoSDataParameter.DataType.ENCODED_IMAGE => {
+                     CoSDataParameter.DataType.ENCODED_IMAGE |
+                     CoSDataParameter.DataType.ENCODED_IMAGE_WITH_DIM=> {
                   if (transformers(i) != null) {
                     transformers(i).transform(dataArray(i).asInstanceOf[MatVector], data(i))
                   } else {
