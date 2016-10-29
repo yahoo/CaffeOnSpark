@@ -4,6 +4,7 @@ from IPython.display import HTML
 import numpy as np
 from base64 import b64encode
 from google.protobuf import text_format
+import array
 
 import caffe
 import caffe.draw
@@ -11,6 +12,10 @@ from caffe.proto import caffe_pb2
 
 def get_np_array(row):
     return np.frombuffer(row.data, 'uint8').reshape((row.height,row.width))
+
+def get_image(image):
+    bytes = array.array('b', image)
+    return "<img src='data:image/png;base64," + b64encode(bytes) + "' />"
 
 def image_tag(np_array): 
     im = Image.fromarray(np_array, 'L')
@@ -20,7 +25,6 @@ def image_tag(np_array):
 
 def show_df(df, nrows=10):
     """Displays a table of labels with their images, inline in html
-
         :param DataFrame df: A python dataframe
         :param int nrows: First n rows to display from the dataframe
     """
@@ -35,6 +39,26 @@ def show_df(df, nrows=10):
         html += "</tr>"
     html += "</table>"
     return HTML(html)
+
+def show_captions(df, nrows=10):
+    """Displays a table of captions(both original as well as predictions) with their images, inline in html
+
+        :param DataFrame df: A python dataframe
+        :param int nrows: First n rows to display from the dataframe
+    """
+    data = df.take(nrows)
+    html = "<table><tr><th>Image Id</th><th>Image</th><th>Prediction</th>"
+    for i in range(nrows):
+        row = data[i]
+        html += "<tr>"
+        html += "<td>%s</td>" % row.id
+        html += "<td>%s</td>" % get_image(row.data.image)
+        html += "<td>%s</td>" % row.prediction
+        html += "</tr>"
+    html += "</table>"
+    return HTML(html)
+
+
 
 def show_network(input_net_proto_file, rankdir):
     """Show the network graph in inline html, for the input prototxt file

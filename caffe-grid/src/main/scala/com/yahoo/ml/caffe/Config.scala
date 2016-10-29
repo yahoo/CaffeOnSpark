@@ -37,6 +37,12 @@ class Config(sc: SparkContext) extends Serializable {
   private var _imageRoot = ""
   private var _labelFile = ""
   private var _lmdb_partitions = 0
+  private var _imageCaptionDFDir = ""
+  private var _vocabDir = ""
+  private var _embeddingDFDir = ""
+  private var _captionFile = ""
+  private var _captionLength = 20
+  private var _vocabSize = -1
   @transient private var _solverParameter: SolverParameter = null
   @transient private var _netParam: NetParameter = null
 
@@ -316,6 +322,67 @@ class Config(sc: SparkContext) extends Serializable {
   def lmdb_partitions_=(value: Int) = _lmdb_partitions = value
 
   /**
+    * Get the input caption file
+    */
+  def captionFile = _captionFile
+
+  /**
+    * Set the input caption file
+    */
+  def captionFile_=(value: String) = _captionFile = value
+
+  /**
+    * Get the input caption file
+    */
+  def captionLength = _captionLength
+
+  /**
+    * Set the input caption file
+    */
+  def captionLength_=(value: Int) = _captionLength = value
+
+  /**
+    * Get the input caption file
+    */
+  def vocabSize = _vocabSize
+
+  /**
+    * Set the input caption file
+    */
+  def vocabSize_=(value: Int) = _vocabSize = value
+
+  /**
+    * Get image caption dataframe directory
+    */
+  def imageCaptionDFDir = _imageCaptionDFDir
+
+  /**
+    * Set image caption dataframe directory
+    */
+  def imageCaptionDFDir_=(value: String) = _imageCaptionDFDir = value
+
+
+  /**
+    * Get vocab  directory
+    */
+  def vocabDir = _vocabDir
+
+  /**
+    * Set vocab directory
+    */
+  def vocabDir_=(value: String) = _vocabDir = value
+
+  /**
+    * Get embedding dataframe directory
+    */
+  def embeddingDFDir = _embeddingDFDir
+
+  /**
+    * Set embedding dataframe directory
+    */
+  def embeddingDFDir_=(value: String) = _embeddingDFDir = value
+
+  /**
    * Solver parameter
    */
   def solverParameter = {
@@ -360,6 +427,12 @@ class Config(sc: SparkContext) extends Serializable {
       //used for dev purpose only
       options.addOption("imageRoot", "imageRoot", true, "image files' root")
       options.addOption("labelFile", "labelFile", true, "label file")
+      options.addOption("captionFile", "captionFile", true, "caption file path")
+      options.addOption("captionLength", "captionLength", true, "caption vector length")
+      options.addOption("vocabSize", "vocabSize", true, "vocabulary size")
+      options.addOption("imageCaptionDFDir", "imageCaptionDFDir", true, "Output Image Caption DataFrame Directory")
+      options.addOption("vocabDir", "vocabDir", true, "Output Vocabulary Directory")
+      options.addOption("embeddingDFDir", "embeddingDFDir", true, "Output Embedded DataFrame Directory")
       new BasicParser().parse(options, args)
     }
 
@@ -416,6 +489,13 @@ class Config(sc: SparkContext) extends Serializable {
 
     imageRoot = if (cmd.hasOption("imageRoot")) cmd.getOptionValue("imageRoot") else null
     labelFile = if (cmd.hasOption("labelFile")) cmd.getOptionValue("labelFile") else null
+    imageCaptionDFDir = if (cmd.hasOption("imageCaptionDFDir")) cmd.getOptionValue("imageCaptionDFDir") else ""
+    vocabDir = if (cmd.hasOption("vocabDir")) cmd.getOptionValue("vocabDir") else ""
+    embeddingDFDir = if (cmd.hasOption("embeddingDFDir")) cmd.getOptionValue("embeddingDFDir") else ""
+    captionFile = if (cmd.hasOption("captionFile")) cmd.getOptionValue("captionFile") else ""
+    captionLength = if (cmd.hasOption("captionLength")) Integer.parseInt(cmd.getOptionValue("captionLength")) else 20
+    vocabSize = if (cmd.hasOption("vocabSize")) Integer.parseInt(cmd.getOptionValue("vocabSize")) else -1
+
   }
 
   override def toString(): String = {
@@ -438,6 +518,12 @@ class Config(sc: SparkContext) extends Serializable {
     buildr.append("train_data_layer_id:").append(train_data_layer_id).append("\n")
     buildr.append("test_data_layer_id:").append(test_data_layer_id).append("\n")
     buildr.append("transform_thread_per_device:").append(transform_thread_per_device).append("\n")
+    buildr.append("captionFile:").append(captionFile).append("\n")
+    buildr.append("captionLength:").append(captionLength).append("\n")
+    buildr.append("vocabSize:").append(vocabSize).append("\n")
+    buildr.append("imageCaptionDFDir:").append(imageCaptionDFDir).append("\n")
+    buildr.append("vocabDir:").append(vocabDir).append("\n")
+    buildr.append("embeddingDFDir:").append(embeddingDFDir).append("\n")
     buildr.toString()
   }
 }

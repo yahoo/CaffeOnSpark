@@ -62,6 +62,7 @@ layer {
     bias_filler {
       type: "constant"
     }
+    engine: CAFFE
   }
 }
 layer {
@@ -73,6 +74,7 @@ layer {
     pool: MAX
     kernel_size: 2
     stride: 2
+    engine: CAFFE
   }
 }
 layer {
@@ -96,6 +98,7 @@ layer {
     bias_filler {
       type: "constant"
     }
+    engine: CAFFE
   }
 }
 layer {
@@ -107,6 +110,7 @@ layer {
     pool: MAX
     kernel_size: 2
     stride: 2
+    engine: CAFFE
   }
 }
 layer {
@@ -135,6 +139,9 @@ layer {
   type: "ReLU"
   bottom: "ip1"
   top: "ip1"
+  relu_param {
+    engine: CAFFE
+  }
 }
 layer {
   name: "ip2"
@@ -173,4 +180,7 @@ layer {
   bottom: "ip2"
   bottom: "label"
   top: "loss"
+  softmax_param {
+    engine: CAFFE
+  }
 }
