@@ -115,5 +115,7 @@ Steps to run the COCO dataset for Image Captioning
     	    --conf spark.driver.extraLibraryPath="${DYLD_LIBRARY_PATH}:Python2.7.10/lib" \
 	    --conf spark.executorEnv.LD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:Python2.7.10/lib" \
 	    --files "${CAFFE_ON_SPARK}/data/deploy.prototxt,${CAFFE_ON_SPARK}/data/vocab.txt,${CAFFE_ON_SPARK}/data/lrcn_word_to_preds.deploy.prototxt,${CAFFE_ON_SPARK}/data/caffe/_caffe.so" \
-	    --py-files "${CAFFE_ON_SPARK}/caffe-grid/target/caffeonsparkpythonapi.zip"
-    
+	    --py-files "${CAFFE_ON_SPARK}/caffe-grid/target/caffeonsparkpythonapi.zip" \
+	    --jars "${CAFFE_ON_SPARK}/caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar" \
+	    --driver-library-path "${CAFFE_ON_SPARK}/caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar" \
+	    --driver-class-path "${CAFFE_ON_SPARK}/caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar"    

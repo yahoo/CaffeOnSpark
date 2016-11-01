@@ -37,6 +37,12 @@ class Config:
     :ivar int test_data_layer_id: Get layer ID of training data source
     :ivar int train_data_layer_id: Get layer ID of training data source
     :ivar int transform_thread_per_device: Get/Set # of transformer threads per device
+    :ivar String imageCaptionDFDir: Path to generate the image caption dataframe
+    :ivar String vocabDir: Path to generate the Vocab
+    :ivar String embeddingDFDir: Path to generate the embedded dataframe
+    :ivar String captionFile: Path to the caption file
+    :ivar int captionLength: Embedding caption length
+    :ivar int vocabSize: Vocab size to consider
     """
     def __init__(self,sc,args=None):
         registerContext(sc)
