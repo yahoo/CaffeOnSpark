@@ -16,9 +16,9 @@ class Vocab:
 
     def __init__(self,sc):
         registerContext(sc)
-        self.__dict__['vocab']=wrapClass("com.yahoo.ml.caffe.tools.Vocab")
-        self.__dict__['sqlContext']=SQLContext(sc)
-        self.__dict__['vocabObject']=self.__dict__['vocab'](self.__dict__['sqlContext'])
+        self.vocab=wrapClass("com.yahoo.ml.caffe.tools.Vocab")
+        self.sqlContext=SQLContext(sc)
+        self.vocabObject=self.vocab(self.sqlContext)
 
     def genFromData(self,dataset,columnName,vocabSize):
         """Convert generate the vocabulary from dataset
@@ -26,18 +26,18 @@ class Vocab:
         :param columnName: column in the dataset which has the caption
         :param vocabSize: Size of the vocabulary to generate (with vocab in descending order)
         """
-        self.__dict__.get('vocabObject').genFromData(dataset,columnName,vocabSize)
+        self.vocabObject.genFromData(dataset._jdf,columnName,vocabSize)
 
     def save(self, vocabFilePath):
         """Save the generated vocabulary
         :param vocabFilePath: the name of the file to save the vocabulary to
         """
-        self.__dict__.get('vocabObject').save(vocabFilePath)
+        self.vocabObject.save(vocabFilePath)
         
     def load(self, vocabFilePath):
         """Load the vocabulary from a file
         :param vocabFilePath: the name of the file to load the vocabulary from
         """
-        self.__dict__.get('vocabObject').load(vocabFilePath)
+        self.vocabObject.load(vocabFilePath)
 
 

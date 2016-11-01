@@ -1,4 +1,4 @@
-net: "train_val.prototxt"
+net: "/Users/mridul/bigml/CaffeOnSpark/data/train_val.prototxt"
 test_iter: 0
 test_interval: 0
 base_lr: 0.01

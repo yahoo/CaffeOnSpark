@@ -26,14 +26,19 @@ class Conversions:
         :param src: the source for coco dataset i.e the caption file 
         :param clusterSize: No. of executors
         """
-        self.__dict__.get('conversions').Coco2ImageCaptionFile(self.__dict__.get('sqlContext'), src, clusterSize)
+        df = self.__dict__.get('conversions').Coco2ImageCaptionFile(self.__dict__.get('sqlContext'), src, clusterSize)
+        pydf = DataFrame(df,self.__dict__.get('sqlContext'))
+        return pydf
+
 
     def Image2Embedding(self, imageRootFolder, imageCaptionDF):
         """Get the embedding for the image as a dataframe
         :param imageRootFolder: the src folder of the images
         :param imageCaptionDF: the dataframe with the image file and image attributes
         """
-        self.__dict__.get('conversions').Image2Embedding(imageRootFolder, imageCaptionDF)
+        df = self.__dict__.get('conversions').Image2Embedding(imageRootFolder, imageCaptionDF._jdf)
+        pydf = DataFrame(df,self.__dict__.get('sqlContext'))
+        return pydf
 
     def ImageCaption2Embedding(self, imageRootFolder, imageCaptionDF, vocab, captionLength):
         """Get the embedding for the images as well as the caption as a dataframe
@@ -42,7 +47,10 @@ class Conversions:
         :param vocab: the vocab object
         :param captionLength: Length of the embedding to generate for the caption
         """
-        self.__dict__.get('conversions').ImageCaption2Embedding(imageRootFolder, imageCaptionDF, vocab, captionLength)
+        df = self.__dict__.get('conversions').ImageCaption2Embedding(imageRootFolder, imageCaptionDF._jdf, vocab.vocabObject, captionLength)
+        pydf = DataFrame(df,self.__dict__.get('sqlContext'))
+        return pydf
+
 
     def Embedding2Caption(self, embeddingDF, vocab, embeddingColumn, captionColumn):
         """Get the captions from the embeddings
@@ -50,4 +58,6 @@ class Conversions:
         :param vocab: the vocab object
         :param embeddingColumn: the embedding column name in embeddingDF which contains the caption embedding
         """
-        self.__dict__.get('conversions').Embedding2Caption(embeddingDF, vocab, embeddingColumn, captionColumn)
+        df = self.__dict__.get('conversions').Embedding2Caption(embeddingDF._jdf, vocab.vocabObject, embeddingColumn, captionColumn)
+        pydf = DataFrame(df,self.__dict__.get('sqlContext'))
+        return pydf
