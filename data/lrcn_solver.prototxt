@@ -1,4 +1,4 @@
-net: "/Users/mridul/bigml/CaffeOnSpark/data/lrcn_cos.prototxt"
+net: "CaffeOnSpark/data/lrcn_cos.prototxt"
 
 # lrcn.prototxt supports three variants of the LRCN architecture:
 # (1) stage: 'factored' stage: '2-layer'

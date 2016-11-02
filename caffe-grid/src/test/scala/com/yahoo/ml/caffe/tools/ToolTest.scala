@@ -87,72 +87,50 @@ class ToolTest extends FunSuite with BeforeAndAfterAll {
       fullPath.substring(0, fullPath.indexOf("caffe-grid/"))+"caffe-grid/"
     }
     val cocoJson = ROOT_PATH+"src/test/resources/coco.json"
-    val cocoImageRoot = ROOT_PATH+"target"
+    val cocoImageRoot = ROOT_PATH+"src/test/resources/"
     val cocoImageCaptionDF = ROOT_PATH+"target/coco_df_image_caption"
     val cocoVocab = ROOT_PATH+"target/coco_vocab"
     val cocoEmbeddingDF = ROOT_PATH+"target/coco_df_embedding"
-    val cocoTestImageDF = ROOT_PATH+"target/coco_test_image_df"
-    val cocoTestEmbeddingDF = ROOT_PATH+"target/coco_test_df_embedding"
 
     val sqlContext = new SQLContext(sc)
 
     FileUtils.deleteQuietly(new File(cocoImageCaptionDF))
     val df_image_caption = Conversions.Coco2ImageCaptionFile(sqlContext, cocoJson, 4)
-    df_image_caption.write.json(cocoImageCaptionDF)
-    val rdd_imageFileURL = df_image_caption.select("file", "url").rdd
-    downloadImageDataSet(cocoImageRoot, rdd_imageFileURL)
-
-    FileUtils.deleteQuietly(new File(cocoTestImageDF))
-    val df_test_image = Conversions.Coco2ImageCaptionFile(sqlContext,
-      ROOT_PATH+"src/test/resources/coco_test.json", 4)
-    df_test_image.write.json(cocoTestImageDF)
-
     val rdd_input_captions = inputDF2PairRDD(df_image_caption)
-    val rdd_test_image = inputDF2PairRDD(df_test_image)
     val count = rdd_input_captions.count.toInt
 
     FileUtils.deleteQuietly(new File(cocoEmbeddingDF))
-    FileUtils.deleteQuietly(new File(cocoTestEmbeddingDF))
-    for (format <- Array("json", "parquet")) {
-      FileUtils.deleteQuietly(new File(cocoVocab))
+    FileUtils.deleteQuietly(new File(cocoVocab))
 
-      val vocab:Vocab = new Vocab(sqlContext)
-      vocab.genFromData(df_image_caption, "caption", 23)
-      vocab.save(cocoVocab)
-
-      vocab.load(cocoVocab)
-      val map_word_index:scala.collection.Map[String, Int] = vocab.word2indexMap
-      assertTrue(map_word_index.size>10)
-      assertTrue(map_word_index("butterfly")>Vocab.VALID_TOKEN_INDEX)
-
-      val captionLength = 10
-      val df_embedding = Conversions.ImageCaption2Embedding(cocoImageRoot, df_image_caption, vocab, captionLength)
-      df_embedding.write.format(format).save(cocoEmbeddingDF+"/"+format)
-      assertImageEmbeddings(df_embedding, rdd_input_captions, cocoImageRoot)
-
-      val df_source_captions = Conversions.Embedding2Caption(df_embedding, vocab, "input_sentence", "caption").select("caption")
-      val df_target_captions = Conversions.Embedding2Caption(df_embedding, vocab, "target_sentence", "caption").select("caption")
-
-      val input_captions :Array[String] = df_image_caption.select("caption").rdd.map{case Row(c:String) => c}.take(count)
-      val source_captions :Array[String] = df_source_captions.rdd.map{case Row(c:String) => c}.take(count)
-      val target_captions :Array[String] = df_target_captions.rdd.map{case Row(c:String) => c}.take(count)
-      for (i <- 0 until count) {
-        val input_caption_array = Conversions.sentence2Words(input_captions(i))
-        var cutoff = input_caption_array.length
-        if (cutoff >= captionLength)
-          cutoff = captionLength-1
-        //Test the source embedding
-        assertEquals( input_caption_array.take(cutoff),
-          Conversions.sentence2Words(source_captions(i)))
-        //Test the target embedding
-        assertEquals(input_caption_array.take(cutoff),
-          Conversions.sentence2Words(target_captions(i)))
-      }
-
-      val df_test_embedding = Conversions.Image2Embedding(cocoImageRoot, df_test_image)
-      df_test_embedding.write.format(format).save(cocoTestEmbeddingDF+"/"+format)
-      assertEquals(df_test_embedding.count(), df_test_image.count())
-      assertImageEmbeddings(df_test_embedding, rdd_test_image, cocoImageRoot)
+    val vocab:Vocab = new Vocab(sqlContext)
+    vocab.genFromData(df_image_caption, "caption", 23)
+    vocab.save(cocoVocab)
+    
+    vocab.load(cocoVocab)
+    val map_word_index:scala.collection.Map[String, Int] = vocab.word2indexMap
+    assertTrue(map_word_index.size>10)
+    assertTrue(map_word_index("butterfly")>Vocab.VALID_TOKEN_INDEX)
+    
+    val captionLength = 10
+    val df_embedding = Conversions.ImageCaption2Embedding(cocoImageRoot, df_image_caption, vocab, captionLength)
+    
+    val df_source_captions = Conversions.Embedding2Caption(df_embedding, vocab, "input_sentence", "caption").select("caption")
+    val df_target_captions = Conversions.Embedding2Caption(df_embedding, vocab, "target_sentence", "caption").select("caption")
+    
+    val input_captions :Array[String] = df_image_caption.select("caption").rdd.map{case Row(c:String) => c}.take(count)
+    val source_captions :Array[String] = df_source_captions.rdd.map{case Row(c:String) => c}.take(count)
+    val target_captions :Array[String] = df_target_captions.rdd.map{case Row(c:String) => c}.take(count)
+    for (i <- 0 until count) {
+      val input_caption_array = Conversions.sentence2Words(input_captions(i))
+      var cutoff = input_caption_array.length
+      if (cutoff >= captionLength)
+        cutoff = captionLength-1
+      //Test the source embedding
+      assertEquals( input_caption_array.take(cutoff),
+        Conversions.sentence2Words(source_captions(i)))
+      //Test the target embedding
+      assertEquals(input_caption_array.take(cutoff),
+        Conversions.sentence2Words(target_captions(i)))
     }
   }
 }

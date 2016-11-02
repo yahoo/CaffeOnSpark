@@ -4,8 +4,8 @@ Licensed under the terms of the Apache 2.0 license.
 Please see LICENSE file in the project root for terms.
 '''
 
-from ConversionUtil import wrapClass
-from RegisterContext import registerContext
+from com.yahoo.ml.caffe.ConversionUtil import wrapClass
+from com.yahoo.ml.caffe.RegisterContext import registerContext
 from pyspark.sql import DataFrame,SQLContext
 
 class Vocab:

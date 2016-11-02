@@ -3,13 +3,18 @@ Copyright 2016 Yahoo Inc.
 Licensed under the terms of the Apache 2.0 license.
 Please see LICENSE file in the project root for terms.
 '''
-
-from ConversionUtil import wrapClass
-from RegisterContext import registerContext
+from PIL import Image
+from io import BytesIO
+from IPython.display import HTML
+import numpy as np
+from base64 import b64encode
+from google.protobuf import text_format
+import array
+from com.yahoo.ml.caffe.ConversionUtil import wrapClass, getScalaSingleton, toPython
+from com.yahoo.ml.caffe.RegisterContext import registerContext
 from pyspark.sql import DataFrame,SQLContext
-from ConversionUtil import getScalaSingleton, toPython
 
-class Conversions:
+class DFConversions:
     """
 
     :ivar SparkContext: The spark context of the current spark session
@@ -61,3 +66,27 @@ class Conversions:
         df = self.__dict__.get('conversions').Embedding2Caption(embeddingDF._jdf, vocab.vocabObject, embeddingColumn, captionColumn)
         pydf = DataFrame(df,self.__dict__.get('sqlContext'))
         return pydf
+
+
+def get_image(image):
+    bytes = array.array('b', image)
+    return "<img src='data:image/png;base64," + b64encode(bytes) + "' />"
+
+
+def show_captions(df, nrows=10):
+    """Displays a table of captions(both original as well as predictions) with their images, inline in html
+
+        :param DataFrame df: A python dataframe
+        :param int nrows: First n rows to display from the dataframe
+    """
+    data = df.take(nrows)
+    html = "<table><tr><th>Image Id</th><th>Image</th><th>Prediction</th>"
+    for i in range(nrows):
+        row = data[i]
+        html += "<tr>"
+        html += "<td>%s</td>" % row.id
+        html += "<td>%s</td>" % get_image(row.data.image)
+        html += "<td>%s</td>" % row.prediction
+        html += "</tr>"
+    html += "</table>"
+    return HTML(html)
