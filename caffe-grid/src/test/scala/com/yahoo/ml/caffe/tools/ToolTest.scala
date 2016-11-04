@@ -96,8 +96,8 @@ class ToolTest extends FunSuite with BeforeAndAfterAll {
 
     FileUtils.deleteQuietly(new File(cocoImageCaptionDF))
     val df_image_caption = Conversions.Coco2ImageCaptionFile(sqlContext, cocoJson, 4)
-    val rdd_input_captions = inputDF2PairRDD(df_image_caption)
-    val count = rdd_input_captions.count.toInt
+//    val rdd_input_captions = inputDF2PairRDD(df_image_caption)
+    val count = df_image_caption.count.toInt
 
     FileUtils.deleteQuietly(new File(cocoEmbeddingDF))
     FileUtils.deleteQuietly(new File(cocoVocab))
