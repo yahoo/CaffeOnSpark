@@ -23,7 +23,7 @@ build:
 	${CAFFE_ON_SPARK}/scripts/setup-mnist.sh
 	export LD_LIBRARY_PATH="${LD_LIBRARY_PATH2}"; GLOG_minloglevel=1 mvn ${MVN_SPARK_FLAG} -B test
 	cd ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/; zip -r caffeonsparkpythonapi  *; cd ${CAFFE_ON_SPARK}/caffe-public/python/; zip -ur ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/caffeonsparkpythonapi.zip *; cd - ; mv caffeonsparkpythonapi.zip ${CAFFE_ON_SPARK}/caffe-grid/target/; cd ${CAFFE_ON_SPARK}
-	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}; export SPARK_HOME=${SPARK_HOME};${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}; export SPARK_HOME=${SPARK_HOME};GLOG_minloglevel=1 ${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
 
 buildosx:
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
@@ -34,7 +34,7 @@ buildosx:
 	export LD_LIBRARY_PATH="${DYLD_LIBRARY_PATH2}"; GLOG_minloglevel=1 mvn ${MVN_SPARK_FLAG} -B test
 	cd ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/; zip -r caffeonsparkpythonapi  *; cd ${CAFFE_ON_SPARK}/caffe-public/python/; zip -ur ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/caffeonsparkpythonapi.zip *; cd -; mv caffeonsparkpythonapi.zip ${CAFFE_ON_SPARK}/caffe-grid/target/; cd ${CAFFE_ON_SPARK}
 	cd ${CAFFE_ON_SPARK}/caffe-grid/src/main/python/; zip -r caffeonsparkpythonapi *; mv caffeonsparkpythonapi.zip ${CAFFE_ON_SPARK}/caffe-grid/target/; cd ${CAFFE_ON_SPARK}
-	export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}; export SPARK_HOME=${SPARK_HOME};${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
+	export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}; export SPARK_HOME=${SPARK_HOME};GLOG_minloglevel=1 ${CAFFE_ON_SPARK}/caffe-grid/src/test/python/PythonTest.sh
 
 update:
 	git submodule init
