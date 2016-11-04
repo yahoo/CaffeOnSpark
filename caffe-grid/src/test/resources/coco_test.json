@@ -1,0 +1,1 @@
+{"info": { "description": "This is stable 1.0 version of the 2014 MS COCO dataset." }, "images": [  {   "file_name": "COCO_train2014_000000057870.jpg", "coco_url": "http://mscoco.org/images/57870",   "height": 480,  "width": 640, "id": 126 }]}

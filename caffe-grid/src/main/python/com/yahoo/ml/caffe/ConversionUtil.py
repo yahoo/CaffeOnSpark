@@ -388,7 +388,7 @@ def toJavaSC(pySc):
 Converts a Python SQLContext to a Scala SparkContext.
 '''
 def toScalaSQLC(pySQLc):
-    return pySQLc._scala_SQLContext
+    return jvm.org.apache.spark.sql.SQLContext(pySQLc._jsc.sc())
 
 '''
 Converts a Python SQLContext to a Java SparkContext.

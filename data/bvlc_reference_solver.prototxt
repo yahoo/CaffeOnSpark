@@ -1,0 +1,14 @@
+net: "CaffeOnSpark/data/bvlc_reference_net.prototxt"
+test_iter: 0
+test_interval: 0
+base_lr: 0.01
+lr_policy: "step"
+gamma: 0.1
+stepsize: 100000
+display: 20
+max_iter: 450000
+momentum: 0.9
+weight_decay: 0.0005
+snapshot: 10000
+snapshot_prefix: "bvlc_reference_caffenet"
+solver_mode: CPU

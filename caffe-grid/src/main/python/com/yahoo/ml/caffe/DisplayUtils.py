@@ -20,7 +20,6 @@ def image_tag(np_array):
 
 def show_df(df, nrows=10):
     """Displays a table of labels with their images, inline in html
-
         :param DataFrame df: A python dataframe
         :param int nrows: First n rows to display from the dataframe
     """
