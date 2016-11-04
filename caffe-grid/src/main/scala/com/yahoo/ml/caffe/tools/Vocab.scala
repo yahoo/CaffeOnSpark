@@ -44,7 +44,7 @@ private[tools] class Vocab(val sqlContext: SQLContext) {
 
   def save(vocabFilePath: String): Unit = {
     synchronized {
-      rdd_word.map(word => word.getString(0)).saveAsTextFile(vocabFilePath)
+      rdd_word.map(word => word.getString(0)).coalesce(1, true).saveAsTextFile(vocabFilePath)
     }
   }
 

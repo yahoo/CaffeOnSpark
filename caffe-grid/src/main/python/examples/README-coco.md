@@ -1,7 +1,7 @@
 Steps to run the COCO dataset for Image Captioning
 ==================================================
 ##### (1) Env setup
-    Initial Setup: https://github.com/yahoo/CaffeOnSpark/wiki/GetStarted_standalone
+    Set up both CAFFE_ON_SPARK and SPARK_HOME per https://github.com/yahoo/CaffeOnSpark/wiki/GetStarted_standalone
     export DYLD_LIBRARY_PATH=${CAFFE_ON_SPARK}/caffe-public/distribute/lib:${CAFFE_ON_SPARK}/caffe-distri/distribute/lib:/usr/local/cuda/lib:/usr/local/mkl/lib/intel64/:Python2.7.10/lib:/usr/local/cuda/lib:caffe_on_grid_archive/lib64/mkl/intel64/
     export LD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}
     export SPARK_HOME=/Users/mridul/bigml/spark-1.6.0-bin-hadoop2.6
@@ -9,7 +9,6 @@ Steps to run the COCO dataset for Image Captioning
     export PYSPARK_PYTHON=Python2.7.10/bin/python
     export PYTHONPATH=$PYTHONPATH:caffeonsparkpythonapi.zip:caffe_on_grid_archive/lib64:/usr/local/cuda-7.5/lib64
     export IPYTHON_ROOT=~/Python2.7.10
-    unset SPARK_CONF_DIR
 
 ##### (2) Download the coco dataset if required
 
@@ -81,7 +80,8 @@ Steps to run the COCO dataset for Image Captioning
              -model /tmp/coco/parquet/lrcn_coco.model
     popd
 
-##### (6) Submit the data for inference
+#### Run either of the steps below for running a script or notebook
+##### (6 a) Submit the data for inference
     Note that the below files also need to be shipped as shown
     #-model the image-lstm pretrained model to ship 
     #-imagenet the image network definition
@@ -93,25 +93,23 @@ Steps to run the COCO dataset for Image Captioning
     pushd ${CAFFE_ON_SPARK}/data/
     ln -s ~/Python2.7.10 Python2.7.10
     unzip ${CAFFE_ON_SPARK}/caffe-grid/target/caffeonsparkpythonapi.zip
-    cat /tmp/coco/parquet/vocab/part* > vocab.txt
     rm -rf /tmp/coco/parquet/df_caption_results_train2014
     spark-submit --master ${MASTER_URL} \
     		 --conf spark.cores.max=${TOTAL_CORES} \
     		 --conf spark.task.cpus=${CORES_PER_WORKER} \    
     		 --conf spark.driver.extraLibraryPath="${DYLD_LIBRARY_PATH}:Python2.7.10/lib" \
     		 --conf spark.executorEnv.LD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:Python2.7.10/lib" \
-    		 --conf spark.pythonargs="-model /tmp/coco/parquet/lrcn_coco.model -imagenet lstm_deploy.prototxt -lstmnet lrcn_word_to_preds.deploy.prototxt -vocab vocab.txt -input /tmp/coco/parquet/df_embedded_train2014 -output /tmp/coco/parquet/df_caption_results_train2014" examples/ImageCaption.py
+    		 --conf spark.pythonargs="-model /tmp/coco/parquet/lrcn_coco.model -imagenet lstm_deploy.prototxt -lstmnet lrcn_word_to_preds.deploy.prototxt -vocab /tmp/coco/parquet/vocab/part-00000 -input /tmp/coco/parquet/df_embedded_train2014 -output /tmp/coco/parquet/df_caption_results_train2014" examples/ImageCaption.py
     popd
-##### (7) Launch IPython Notebook
+##### (6 b) Launch IPython Notebook
     export IPYTHON_OPTS="notebook --no-browser --ip=127.0.0.1"
     pushd ${CAFFE_ON_SPARK}/data/
     ln -s ~/Python2.7.10 Python2.7.10
     unzip ${CAFFE_ON_SPARK}/caffe-grid/target/caffeonsparkpythonapi.zip
-    cat /tmp/coco/parquet/vocab/part* > vocab.txt
     pyspark --master ${MASTER_URL} --deploy-mode client \    
     	    --conf spark.driver.extraLibraryPath="${DYLD_LIBRARY_PATH}:Python2.7.10/lib" \
 	    --conf spark.executorEnv.LD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:Python2.7.10/lib" \
-	    --files "${CAFFE_ON_SPARK}/data/lstm_deploy.prototxt,${CAFFE_ON_SPARK}/data/vocab.txt,${CAFFE_ON_SPARK}/data/lrcn_word_to_preds.deploy.prototxt,${CAFFE_ON_SPARK}/data/caffe/_caffe.so,${CAFFE_ON_SPARK}/data/bvlc_reference_net.prototxt,${CAFFE_ON_SPARK}/data/bvlc_reference_solver.prototxt,${CAFFE_ON_SPARK}/data/lrcn_cos.prototxt,${CAFFE_ON_SPARK}/data/lrcn_solver.prototxt" \
+	    --files "${CAFFE_ON_SPARK}/data/lstm_deploy.prototxt,${CAFFE_ON_SPARK}/data/vocab.txt/part-00000,${CAFFE_ON_SPARK}/data/lrcn_word_to_preds.deploy.prototxt,${CAFFE_ON_SPARK}/data/caffe/_caffe.so,${CAFFE_ON_SPARK}/data/bvlc_reference_net.prototxt,${CAFFE_ON_SPARK}/data/bvlc_reference_solver.prototxt,${CAFFE_ON_SPARK}/data/lrcn_cos.prototxt,${CAFFE_ON_SPARK}/data/lrcn_solver.prototxt" \
 	    --py-files "${CAFFE_ON_SPARK}/caffe-grid/target/caffeonsparkpythonapi.zip" \
 	    --jars "${CAFFE_ON_SPARK}/caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar" \
 	    --driver-library-path "${CAFFE_ON_SPARK}/caffe-grid/target/caffe-grid-0.1-SNAPSHOT-jar-with-dependencies.jar" \

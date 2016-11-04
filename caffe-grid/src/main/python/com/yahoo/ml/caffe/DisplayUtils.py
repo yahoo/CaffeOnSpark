@@ -4,7 +4,6 @@ from IPython.display import HTML
 import numpy as np
 from base64 import b64encode
 from google.protobuf import text_format
-import array
 
 import caffe
 import caffe.draw
