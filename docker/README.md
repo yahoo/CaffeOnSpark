@@ -1,5 +1,7 @@
 # CaffeOnSpark Standalone Docker
 
+Dockerfiles for both CPU and GPU builds are available in `standalone` folder. To use the CPU only version use the commands given. A GPU version of docker can be run using the command [`nvidia-docker`](https://github.com/NVIDIA/nvidia-docker) instead of `docker` using the `standalone/gpu` folder. 
+
 Dockerfiles for CPU build is provided in `standalone/cpu` folder. The image can be built by running:
 ```
 docker build -t caffeonspark:cpu standalone/cpu
