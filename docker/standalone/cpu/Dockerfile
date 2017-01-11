@@ -32,10 +32,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         openssh-server \
         openssh-client \
         libopenblas-dev \
-        libboost-all-dev
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository ppa:openjdk-r/ppa
-RUN apt-get update && apt-get install -y openjdk-8-jdk
+        libboost-all-dev \
+        openjdk-8-jdk
+
 RUN rm -rf /var/lib/apt/lists/*
 
 
