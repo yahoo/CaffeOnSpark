@@ -1,5 +1,10 @@
+# Copyright 2016 Yahoo Inc.
+# Licensed under the terms of the Apache 2.0 license.
+# Please see LICENSE file in the project root for terms.
+#
+# This file is the dockerfile to setup caffeonspark cpu standalone version.
+
 FROM nvidia/cuda:7.5-cudnn5-devel-ubuntu14.04
-MAINTAINER arun.das@my.utsa.edu
 
 RUN apt-get update && apt-get install -y software-properties-common
 RUN add-apt-repository ppa:openjdk-r/ppa
