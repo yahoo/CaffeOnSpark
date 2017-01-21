@@ -1,4 +1,9 @@
 #!/bin/bash
+# Copyright 2016 Yahoo Inc.
+# Licensed under the terms of the Apache 2.0 license.
+# Please see LICENSE file in the project root for terms.
+#
+# This script starts hadoop dfs and yarn while the docker container is started.
 
 : ${HADOOP_PREFIX:=/usr/local/hadoop}
 
