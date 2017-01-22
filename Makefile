@@ -14,6 +14,9 @@ export SPARK_VERSION=$(shell ${SPARK_HOME}/bin/spark-submit --version 2>&1 | gre
 ifeq (${SPARK_VERSION}, 2)
     export MVN_SPARK_FLAG=-Dspark2
 endif
+ifeq (${object_storage}, 1)
+    export MVN_SPARK_FLAG=-Dspark2 -Dobject_storage
+endif
 
 build:
 	cd caffe-public; make proto; make -j4 -e distribute; cd ..
