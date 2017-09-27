@@ -5,6 +5,6 @@
 #
 # This script install Hadoop locally
 
-wget wget http://apache.cs.utah.edu/hadoop/common/hadoop-2.7.4/hadoop-2.7.4.tar.gz
+wget http://apache.cs.utah.edu/hadoop/common/hadoop-2.7.4/hadoop-2.7.4.tar.gz
 gunzip hadoop-2.7.4.tar.gz 
 tar -xvf hadoop-2.7.4.tar
