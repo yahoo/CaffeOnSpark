@@ -51,19 +51,19 @@ RUN cp /root/.ssh/id_rsa.pub ~/.ssh/authorized_keys
 
 
 # Apache Hadoop and Spark section
-RUN wget http://apache.mirrors.tds.net/hadoop/common/hadoop-2.6.4/hadoop-2.6.4.tar.gz
+RUN wget http://apache.cs.utah.edu/hadoop/common/hadoop-2.6.5/hadoop-2.6.5.tar.gz
 RUN wget http://archive.apache.org/dist/spark/spark-1.6.0/spark-1.6.0-bin-hadoop2.6.tgz
 
-RUN gunzip hadoop-2.6.4.tar.gz
+RUN gunzip hadoop-2.6.5.tar.gz
 RUN gunzip spark-1.6.0-bin-hadoop2.6.tgz
-RUN tar -xf hadoop-2.6.4.tar
+RUN tar -xf hadoop-2.6.5.tar
 RUN tar -xf spark-1.6.0-bin-hadoop2.6.tar
 
-RUN sudo cp -r hadoop-2.6.4 /usr/local/hadoop
+RUN sudo cp -r hadoop-2.6.5 /usr/local/hadoop
 RUN sudo cp -r spark-1.6.0-bin-hadoop2.6 /usr/local/spark
 
-RUN rm hadoop-2.6.4.tar spark-1.6.0-bin-hadoop2.6.tar
-RUN rm -rf hadoop-2.6.4/ spark-1.6.0-bin-hadoop2.6/
+RUN rm hadoop-2.6.5.tar spark-1.6.0-bin-hadoop2.6.tar
+RUN rm -rf hadoop-2.6.5/ spark-1.6.0-bin-hadoop2.6/
 
 RUN sudo mkdir -p /usr/local/hadoop/hadoop_data/hdfs/namenode
 RUN sudo mkdir -p /usr/local/hadoop/hadoop_data/hdfs/datanode
