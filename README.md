@@ -3,6 +3,8 @@ Copyright 2016 Yahoo Inc.
 Licensed under the terms of the Apache 2.0 license.
 Please see LICENSE file in the project root for terms.
 -->
+### Note: we're lovingly marking this project as Archived since we're no longer supporting it. You are welcome to read the code and fork your own version of it and continue to use this code under the terms of the project license.
+
 # CaffeOnSpark
 
 ## What's CaffeOnSpark?
